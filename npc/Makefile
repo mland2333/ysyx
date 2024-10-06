@@ -13,4 +13,7 @@ all:
 
 sim: all
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
+
+clean:
+	rm -rf ./obj_dir
 include ../Makefile
