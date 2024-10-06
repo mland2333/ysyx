@@ -7,6 +7,8 @@
 #include "Vtop.h"
 /* #include "verilated_vcd_c.h" */
 #include "verilated_fst_c.h"
+#include <nvboard.h>
+void nvboard_bind_all_pins(TOP_NAME* top);
 int main(int argc, char **argv) {
   // See a similar example walkthrough in the verilator manpage.
 
@@ -29,20 +31,24 @@ int main(int argc, char **argv) {
   /* tfp->open("dump.vcd"); */
   tfp->open("dump.fst");
   top->clk = 0;
+  nvboard_bind_all_pins(top);
+  nvboard_init();
   int clk = 0;
   // Simulate until $finish
+  int a = 0, b = 0;
   while (!contextp->gotFinish()) {
-    if(clk == 99) break;
+    nvboard_update();
     clk ++;
     top->clk = !top->clk;
-    int a = rand() & 1;
-    int b = rand() & 1;
-    top->a = a;
-    top->b = b;
     top->eval();
+   
     contextp->timeInc(1);
     tfp->dump(contextp->time());
-    printf("a = %d, b = %d, f = %d\n", a, b, top->f);
+    if(a != top->a || b != top->b){
+      a = top->a;
+      b = top->b;
+      printf("a = %d, b = %d, f = %d\n", top->a, top->b, top->f);
+    }
     assert(top->f == (a ^ b));
     // Evaluate model
   }
