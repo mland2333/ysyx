@@ -11,7 +11,6 @@ VSRC += ./vsrc/top.v
 all:
 	$(VERILATOR) -cc --exe --build -j --trace-fst $(VSRC) $(CSRC)
 
-sim:
+sim: all
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
-	$(VERILATOR) -cc --exe --build -j top.v sim_main.cpp
 include ../Makefile
