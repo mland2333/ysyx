@@ -1,8 +1,19 @@
+ifeq ($(VERILATOR_ROOT),)
+VERILATOR = verilator
+else
+export VERILATOR_ROOT
+VERILATOR = $(VERILATOR_ROOT)/bin/verilator
+endif
+
+CSRC += ./csrc/main.cpp
+VSRC += ./vsrc/top.v
+
 all:
-	@echo "Write this Makefile by your self."
+	$(VERILATOR) -cc --exe --build -j --trace-fst $(VSRC) $(CSRC)
 
-sim:
+sim: all
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
-	@echo "Write this Makefile by your self."
 
+clean:
+	rm -rf ./obj_dir
 include ../Makefile
