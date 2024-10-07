@@ -70,7 +70,7 @@ void Simulator::single_cycle() {
 
 int Simulator::run() {
 
-  while (!contextp->gotFinish()) {
+  while (true) {
     if (is_nvboard)
       nvboard_update();
     single_cycle();
