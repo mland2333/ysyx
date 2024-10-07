@@ -1,8 +1,12 @@
 module top(
-  input clk,
-  input a,
-  input b,
-  output f
+  input clock,
+  input reset,
+  output [15:0] led
 );
-  assign f = a ^ b;
+
+Light light(
+  .clock(clock),
+  .reset(reset),
+  .led(led)
+);
 endmodule

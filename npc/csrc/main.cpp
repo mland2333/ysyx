@@ -1,64 +1,7 @@
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <verilated.h>
-
-// Include model header, generated from Verilating "top.v"
-#include "Vtop.h"
-/* #include "verilated_vcd_c.h" */
-#include "verilated_fst_c.h"
-#include <nvboard.h>
-void nvboard_bind_all_pins(TOP_NAME* top);
+#include "simulator.h"
 int main(int argc, char **argv) {
-  // See a similar example walkthrough in the verilator manpage.
-
-  // This is intended to be a minimal example.  Before copying this to start a
-  // real project, it is better to start with a more complete example,
-  // e.g. examples/c_tracing.
-  
-  // Construct a VerilatedContext to hold simulation time, etc.
-  VerilatedContext *const contextp = new VerilatedContext;
-  /* VerilatedVcdC* tfp = new VerilatedVcdC; */
-  VerilatedFstC* tfp = new VerilatedFstC;
-  // Pass arguments so Verilated code can see them, e.g. $value$plusargs
-  // This needs to be called before you create any model
-  contextp->commandArgs(argc, argv);
-  Verilated::traceEverOn(true);
-  // Construct the Verilated model, from Vtop.h generated from Verilating
-  // "top.v"
-  Vtop *const top = new Vtop{contextp};
-  top->trace(tfp, 99);
-  /* tfp->open("dump.vcd"); */
-  tfp->open("dump.fst");
-  top->clk = 0;
-  nvboard_bind_all_pins(top);
-  nvboard_init();
-  int clk = 0;
-  // Simulate until $finish
-  int a = 0, b = 0;
-  while (!contextp->gotFinish()) {
-    nvboard_update();
-    clk ++;
-    top->clk = !top->clk;
-    top->eval();
-   
-    contextp->timeInc(1);
-    tfp->dump(contextp->time());
-    if(a != top->a || b != top->b){
-      a = top->a;
-      b = top->b;
-      printf("a = %d, b = %d, f = %d\n", top->a, top->b, top->f);
-    }
-    assert(top->f == (a ^ b));
-    // Evaluate model
-  }
-
-  // Final model cleanup
-  top->final();
-  tfp->close();
-  // Destroy model
-  delete top;
-
-  // Return good completion status
+  Simulator sim(argc, argv);
+  sim.reset(10);
+  sim.run();
   return 0;
 }
