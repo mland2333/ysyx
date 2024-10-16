@@ -79,7 +79,7 @@ static int cmd_x(char* args){
   sscanf(arg2, "%x", &addr);
   for(int i = 0; i<n; i++){
     addr += i*4;
-    printf("(0x%x) = 0x%x", addr, vaddr_read(addr, 1));
+    printf("(0x%x) = 0x%x\n", addr, vaddr_read(addr, 1));
   }
   return 0;
 }
