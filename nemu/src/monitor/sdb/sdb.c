@@ -17,7 +17,11 @@
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <stdio.h>
+#include <string.h>
 #include "sdb.h"
+#include "common.h"
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 
@@ -67,6 +71,19 @@ static int cmd_info(char *args){
   return 0;
 }
 
+static int cmd_x(char* args){
+  char* arg1 = strtok(args, " ");
+  char* arg2 = args + strlen(arg1) + 1;
+  int n = atoi(arg1);
+  vaddr_t addr;
+  sscanf(arg2, "%x", &addr);
+  for(int i = 0; i<n; i++){
+    addr += i*4;
+    printf("(0x%x) = 0x%x", addr, vaddr_read(addr, 1));
+  }
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -77,6 +94,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "si", "Single execute", cmd_si},
   { "info", "NEMU information", cmd_info},
+  { "x", "Print memory", cmd_x},
 
   /* TODO: Add more commands */
 
