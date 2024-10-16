@@ -61,6 +61,11 @@ static int cmd_si(char* args){
   return 0;
 }
 
+static int cmd_info(char *args){
+  isa_reg_display();
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -70,6 +75,7 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   { "si", "Single execute", cmd_si},
+  { "info", "NEMU information", cmd_info},
 
   /* TODO: Add more commands */
 
