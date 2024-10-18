@@ -191,7 +191,7 @@ int main_op(int p, int q){
 }
 void scan_expr(){
   for(int i = 0; i<nr_token; i++){
-    if(tokens[i].type == TK_SUB && (i==0 || (tokens[i].type != TK_INT&&tokens[i].type != TK_RIGHT)))
+    if(tokens[i].type == TK_SUB && (i==0 || (tokens[i-1].type != TK_INT&&tokens[i-1].type != TK_RIGHT)))
        tokens[i].type = TK_NEG;
   }
 }
