@@ -200,6 +200,9 @@ uint32_t eval(int p, int q){
   else if (check_parentheses(p, q)) {
     return eval(p+1, q-1);
   }
+  else if(tokens[p].type == TK_SUB) {
+    return -eval(p+1, q);
+  }
   else {
     int op = main_op(p, q);
     uint32_t val1 = eval(p, op-1);
