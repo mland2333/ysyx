@@ -157,11 +157,9 @@ int main_op(int p, int q){
   for (int i = p; i <= q; i++) {
     if(tokens[i].type == TK_LEFT){
       a++;
-      break;
     }
     else if(tokens[i].type == TK_RIGHT){
       a--;
-      break;
     }
     else if(a==0){
       if(prioritys[tokens[i].type] > priority){
