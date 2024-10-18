@@ -212,7 +212,10 @@ uint32_t eval(int p, int q){
     return p!=0 && tokens[p-1].type == TK_NEG? -eval(p+1, q-1) : eval(p+1, q-1);
   }
   else {
-    if (IS_XXX(p, NEG)) p++;
+    if (IS_XXX(p, NEG)) {
+      p++;
+      return eval(p, q);
+    }
     int op = main_op(p, q);
     uint32_t val1 = eval(p, op-1);
     uint32_t val2 = eval(op+1, q);
