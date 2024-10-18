@@ -32,15 +32,15 @@ enum {
   TK_DIV,
   TK_EQ,
   TK_INT,
+  TK_NEG,
   TK_LEFT,
   TK_RIGHT,
-  TK_NEG,
   /* TODO: Add more token types */
 
 };
 
 const int prioritys[] = {
-  6, 6, 5, 5, 7, 0
+  6, 6, 5, 5, 7, 0, 0
 };
 
 static struct rule {
