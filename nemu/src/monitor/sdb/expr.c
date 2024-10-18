@@ -201,13 +201,13 @@ uint32_t eval(int p, int q){
   {
     uint32_t num;
     sscanf(tokens[p].str, "%d", &num);
-    return num;
+    return p!=0 && tokens[p-1].type == TK_NEG? -num : num;
   }
   else if (check_parentheses(p, q)) {
-    return eval(p+1, q-1);
-  }
-  else if(tokens[p].type == TK_NEG) {
-    return -eval(p+1, q);
+    if (p!=0 && tokens[p-1].type == TK_NEG)
+      return -eval(p+1, q-1);
+    else 
+      return eval(p+1, q-1);
   }
   else {
     int op = main_op(p, q);
