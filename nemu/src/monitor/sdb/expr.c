@@ -148,7 +148,20 @@ static bool make_token(char *e) {
 }
 
 bool check_parentheses(int p, int q){
-  return tokens[p].type == TK_LEFT && tokens[q].type == TK_RIGHT;
+  if (tokens[p].type != TK_LEFT || tokens[q].type != TK_RIGHT) return false;
+  int a = 1;
+  for (int i = p + 1; i < p; i++) {
+    if (tokens[i].type == TK_LEFT) {
+      a++;
+    }
+    else if (tokens[i].type == TK_RIGHT) {
+      a--;
+    }
+    else if (a < 1) {
+      return false;
+    }
+  }
+  return true;
 }
 
 int main_op(int p, int q){
