@@ -62,7 +62,8 @@ static struct rule {
   {"\\(", TK_LEFT},
   {"\\)", TK_RIGHT},
 };
-
+#define IS_XXX(x, xxx) (x==0 || (tokens[x-1].type==TK_##xxx))
+#define OP2(x) (x==0 || (tokens[x-1].type==TK_INT&&tokens[x-1].type!=TK_RIGHT))
 #define NR_REGEX ARRLEN(rules)
 
 static regex_t re[NR_REGEX] = {};
@@ -130,10 +131,7 @@ static bool make_token(char *e) {
             tokens[nr_token++].type = rules[i].token_type;
             break;
           case TK_SUB:
-            if (nr_token == 0 || 
-              (tokens[nr_token-1].type != TK_INT
-              &&tokens[nr_token-1].type != TK_RIGHT)
-            ) {
+            if (OP2(nr_token)) {
               tokens[nr_token++].type = TK_NEG;
             }
             else {
@@ -214,6 +212,7 @@ uint32_t eval(int p, int q){
     return p!=0 && tokens[p-1].type == TK_NEG? -eval(p+1, q-1) : eval(p+1, q-1);
   }
   else {
+    if (IS_XXX(p, NEG)) p++;
     int op = main_op(p, q);
     uint32_t val1 = eval(p, op-1);
     uint32_t val2 = eval(op+1, q);
