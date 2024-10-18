@@ -122,7 +122,6 @@ static bool make_token(char *e) {
             tokens[nr_token++].type = rules[i].token_type;
             break;
           case TK_ADD:
-          case TK_SUB:
           case TK_MUL:
           case TK_DIV:
           case TK_LEFT:
@@ -130,6 +129,16 @@ static bool make_token(char *e) {
           case TK_EQ:
             tokens[nr_token++].type = rules[i].token_type;
             break;
+          case TK_SUB:
+            if (nr_token == 0 || 
+              (tokens[nr_token-1].type != TK_INT
+              &&tokens[nr_token-1].type != TK_RIGHT)
+            ) {
+              tokens[nr_token++].type = TK_NEG;
+            }
+            else {
+              tokens[nr_token++].type = TK_SUB;
+            }
           case TK_NOTYPE:
             break;
           default: TODO();
@@ -176,6 +185,9 @@ int main_op(int p, int q){
     else if(tokens[i].type == TK_RIGHT){
       a--;
     }
+    else if(tokens[i].type == TK_NEG){
+      continue;
+    }
     else if(a==0){
       if(prioritys[tokens[i].type] > priority){
         op_position = i;
@@ -189,12 +201,7 @@ int main_op(int p, int q){
   }
   return op_position;
 }
-void scan_expr(){
-  for(int i = 0; i<nr_token; i++){
-    if(tokens[i].type == TK_SUB && (i==0 || (tokens[i-1].type != TK_INT&&tokens[i-1].type != TK_RIGHT)))
-       tokens[i].type = TK_NEG;
-  }
-}
+
 uint32_t eval(int p, int q){
   if(p > q) assert(0);
   else if(p == q)
@@ -204,10 +211,7 @@ uint32_t eval(int p, int q){
     return p!=0 && tokens[p-1].type == TK_NEG? -num : num;
   }
   else if (check_parentheses(p, q)) {
-    if (p!=0 && tokens[p-1].type == TK_NEG)
-      return -eval(p+1, q-1);
-    else 
-      return eval(p+1, q-1);
+    return p!=0 && tokens[p-1].type == TK_NEG? -eval(p+1, q-1) : eval(p+1, q-1);
   }
   else {
     int op = main_op(p, q);
@@ -228,7 +232,6 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-  scan_expr();
   uint32_t result = eval(0, nr_token - 1);
   *success = true;
   /* TODO: Insert codes to evaluate the expression. */
