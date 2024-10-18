@@ -126,6 +126,7 @@ static bool make_token(char *e) {
           case TK_DIV:
           case TK_LEFT:
           case TK_RIGHT:
+          case TK_EQ:
             tokens[nr_token++].type = rules[i].token_type;
             break;
           case TK_NOTYPE:
