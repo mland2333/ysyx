@@ -206,10 +206,10 @@ uint32_t eval(int p, int q){
   {
     uint32_t num;
     sscanf(tokens[p].str, "%d", &num);
-    return p!=0 && tokens[p-1].type == TK_NEG? -num : num;
+    return IS_XXX(p, NEG) ? -num : num;
   }
   else if (check_parentheses(p, q)) {
-    return p!=0 && tokens[p-1].type == TK_NEG? -eval(p+1, q-1) : eval(p+1, q-1);
+    return IS_XXX(p, NEG) ? -eval(p+1, q-1) : eval(p+1, q-1);
   }
   else {
     if (tokens[p].type == TK_NEG) {
