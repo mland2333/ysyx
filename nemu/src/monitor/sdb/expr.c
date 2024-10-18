@@ -128,6 +128,8 @@ static bool make_token(char *e) {
           case TK_RIGHT:
             tokens[nr_token++].type = rules[i].token_type;
             break;
+          case TK_NOTYPE:
+            break;
           default: TODO();
         }
 
