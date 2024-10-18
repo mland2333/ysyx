@@ -83,6 +83,13 @@ static int cmd_x(char* args){
   return 0;
 }
 
+static int cmd_p(char* args){
+  bool success;
+  word_t result = expr(args, &success);
+  printf("%s = %x\n", args, result);
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -94,6 +101,7 @@ static struct {
   { "si", "Single execute", cmd_si},
   { "info", "NEMU information", cmd_info},
   { "x", "Print memory", cmd_x},
+  { "p", "Expression value", cmd_p},
 
   /* TODO: Add more commands */
 
