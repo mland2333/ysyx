@@ -34,6 +34,7 @@ enum {
   TK_INT,
   TK_LEFT,
   TK_RIGHT,
+  TK_NEG,
   /* TODO: Add more token types */
 
 };
@@ -188,7 +189,12 @@ int main_op(int p, int q){
   }
   return op_position;
 }
-
+void scan_expr(){
+  for(int i = 0; i<nr_token; i++){
+    if(tokens[i].type == TK_SUB && (i==0 || (tokens[i].type != TK_INT&&tokens[i].type != TK_RIGHT)))
+       tokens[i].type = TK_NEG;
+  }
+}
 uint32_t eval(int p, int q){
   if(p > q) assert(0);
   else if(p == q)
@@ -200,7 +206,7 @@ uint32_t eval(int p, int q){
   else if (check_parentheses(p, q)) {
     return eval(p+1, q-1);
   }
-  else if(tokens[p].type == TK_SUB) {
+  else if(tokens[p].type == TK_NEG) {
     return -eval(p+1, q);
   }
   else {
