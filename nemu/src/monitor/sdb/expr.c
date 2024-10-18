@@ -150,7 +150,7 @@ static bool make_token(char *e) {
 bool check_parentheses(int p, int q){
   if (tokens[p].type != TK_LEFT || tokens[q].type != TK_RIGHT) return false;
   int a = 1;
-  for (int i = p + 1; i < p; i++) {
+  for (int i = p + 1; i < q; i++) {
     if (tokens[i].type == TK_LEFT) {
       a++;
     }
