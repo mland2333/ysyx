@@ -154,7 +154,7 @@ int main_op(int p, int q){
   int a = 0;
   int priority = 0;
   int op_position = 0;
-  for (int i = 0; i < nr_token; i++) {
+  for (int i = p; i <= q; i++) {
     if(tokens[i].type == TK_LEFT){
       a++;
       break;
