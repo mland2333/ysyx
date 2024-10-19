@@ -61,6 +61,7 @@ static struct rule {
   {"[0-9]+", TK_INT},
   {"\\(", TK_LEFT},
   {"\\)", TK_RIGHT},
+  {"u", TK_NOTYPE},
 };
 #define IS_XXX(x, xxx) (x==0 || (tokens[x-1].type==TK_##xxx))
 #define OP2(x) (x==0 || (tokens[x-1].type!=TK_INT&&tokens[x-1].type!=TK_RIGHT))
