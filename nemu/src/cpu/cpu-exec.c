@@ -38,7 +38,7 @@ void watch_update(){
   while(wp){
     uint32_t value = expr(wp->expression, &success);
     if (value != wp->value){
-      printf("Watchpoint %d, old value: %x(%u), new value: %x(%u)\n", wp->NO, wp->value, wp->value, value, value);
+      printf("Watchpoint %d, old value: 0x%x(%u), new value: 0x%x(%u)\n", wp->NO, wp->value, wp->value, value, value);
       wp->value = value;
       flag = 1;
     }

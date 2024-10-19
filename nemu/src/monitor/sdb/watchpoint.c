@@ -80,7 +80,7 @@ WP* get_head(){
 void print_wp(){
   WP* wp = head;
   while (wp) {
-    printf("Watchpoint %d, expression: %s, value: %d\n", wp->NO, wp->expression, wp->value);
+    printf("Watchpoint %d, expression: %s, value: 0x%x(%u)\n", wp->NO, wp->expression, wp->value, wp->value);
     wp = wp->next;
   }
 }
