@@ -73,7 +73,7 @@ static struct rule {
   {"u", TK_NOTYPE},
 };
 #define IS_XXX(x, xxx) (x!=0 && (tokens[x-1].type==TK_##xxx))
-#define OP2(x) (x==0 || (tokens[x-1].type!=TK_INT&&tokens[x-1].type!=TK_RIGHT&&tokens[x-1].type!=TK_HEX&&tokens[x-1].type!=TK_NEG&&tokens[x-1].type!=TK_REF))
+#define OP2(x) (x==0 || (tokens[x-1].type!=TK_INT&&tokens[x-1].type!=TK_RIGHT&&tokens[x-1].type!=TK_HEX&&tokens[x-1].type!=TK_NEG&&tokens[x-1].type!=TK_REF&&tokens[x-1].type!=TK_REG))
 #define NR_REGEX ARRLEN(rules)
 
 static regex_t re[NR_REGEX] = {};
