@@ -33,14 +33,17 @@ int buf_i = 0;
 const static char* nums = "0123456789";
 const static char* ops = "+-*/";
 static void gen_num(){
-  if(rand()%1 == 1){
+  if(rand()%2 == 1){
+    buf[buf_i++] = '(';
     buf[buf_i++] = '-';
     buf[buf_i++] = nums[rand()%10];
+    buf[buf_i++] = 'u';
+    buf[buf_i++] = ')';
   }
   else {
     buf[buf_i++] = nums[rand()%10];
+    buf[buf_i++] = 'u';
   }
-  buf[buf_i++] = 'u';
 }
 static void gen(char c){
   buf[buf_i++] = c;
@@ -82,7 +85,7 @@ int main(int argc, char *argv[]) {
     fputs(code_buf, fp);
     fclose(fp);
 
-    int ret = system("gcc /tmp/.code.c -o /tmp/.expr -Werror >/dev/null 2>&1");
+    int ret = system("gcc /tmp/.code.c -o /tmp/.expr -Werror ");
     if (ret != 0) continue;
 
     fp = popen("/tmp/.expr", "r");
