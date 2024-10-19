@@ -34,6 +34,7 @@ enum {
   TK_NEQ,
   TK_AND,
   TK_INT,
+  TK_HEX,
   TK_NEG,
   TK_LEFT,
   TK_RIGHT,
@@ -42,7 +43,7 @@ enum {
 };
 
 const int prioritys[] = {
-  6, 6, 5, 5, 7, 7, 8, 0, 0
+  6, 6, 5, 5, 7, 7, 8, 0, 0, 0
 };
 
 static struct rule {
@@ -62,6 +63,7 @@ static struct rule {
   {"==", TK_EQ},        // equal
   {"!=", TK_NEQ},
   {"&&", TK_AND},
+  {"0[xX][0-9]+", TK_HEX},
   {"[0-9]+", TK_INT},
   {"\\(", TK_LEFT},
   {"\\)", TK_RIGHT},
@@ -124,6 +126,7 @@ static bool make_token(char *e) {
 
         switch (rules[i].token_type) {
           case TK_INT:
+          case TK_HEX:
             strncpy(tokens[nr_token].str, substr_start, substr_len);
             tokens[nr_token++].type = rules[i].token_type;
             break;
@@ -212,7 +215,8 @@ uint32_t eval(int p, int q){
   else if(p == q)
   {
     uint32_t num;
-    sscanf(tokens[p].str, "%d", &num);
+    char* ft = tokens[p].type == TK_INT ? "%d" : "%x";
+    sscanf(tokens[p].str, ft, &num);
     return IS_XXX(p, NEG) ? -num : num;
   }
   else if (check_parentheses(p, q)) {
