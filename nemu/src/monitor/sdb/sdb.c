@@ -159,6 +159,9 @@ void sdb_mainloop() {
       printf("r1 = %d, r2 = %d\nexpression = %s\n", r1, r2, expression);
       exit(0);
     }
+    else {
+      printf("%s = %d", expression, r1);
+    }
     
   }
   fclose(fp);
