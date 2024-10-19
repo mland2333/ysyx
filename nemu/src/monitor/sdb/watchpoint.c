@@ -76,5 +76,12 @@ WP* get_wp(int NO){
 WP* get_head(){
   return head;
 }
+void print_wp(){
+  WP* wp = head;
+  while (wp) {
+    printf("Watchpoint %d, expression: %s, value: %d", wp->NO, wp->expression, wp->value);
+    wp = wp->next;
+  }
+}
 /* TODO: Implement the functionality of watchpoint */
 

@@ -33,4 +33,5 @@ WP* new_wp();
 WP* get_wp(int NO);
 void free_wp(WP* wp);
 WP* get_head();
+void print_wp();
 #endif

@@ -68,6 +68,8 @@ static int cmd_si(char* args){
 static int cmd_info(char *args){
   if(args == NULL || args[0]=='r')
     isa_reg_display();
+  else if(args[0] == 'w')
+    print_wp();
   return 0;
 }
 
@@ -96,7 +98,7 @@ static int cmd_w(char* args){
   bool success;
   wp->value = expr(args, &success);
   strcpy(wp->expression, args);
-  printf("Watchpoint %d", wp->NO);
+  printf("Watchpoint %d\n", wp->NO);
   return 0;
 }
 
