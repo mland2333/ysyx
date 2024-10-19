@@ -35,6 +35,7 @@ enum {
   TK_AND,
   TK_INT,
   TK_HEX,
+  TK_REG,
   TK_NEG,
   TK_LEFT,
   TK_RIGHT,
@@ -43,7 +44,7 @@ enum {
 };
 
 const int prioritys[] = {
-  6, 6, 5, 5, 7, 7, 8, 0, 0, 0
+  6, 6, 5, 5, 7, 7, 8, 0, 0, 0, 0
 };
 
 static struct rule {
@@ -64,6 +65,7 @@ static struct rule {
   {"!=", TK_NEQ},
   {"&&", TK_AND},
   {"0[xX][0-9]+", TK_HEX},
+  {"$[0-9]+", TK_REG},
   {"[0-9]+", TK_INT},
   {"\\(", TK_LEFT},
   {"\\)", TK_RIGHT},
@@ -210,13 +212,23 @@ int main_op(int p, int q){
   return op_position;
 }
 
+static bool valid;
 uint32_t eval(int p, int q){
-  if(p > q) assert(0);
+  if(p > q) {
+    assert(0);
+  }
   else if(p == q)
   {
     uint32_t num;
-    char* ft = tokens[p].type == TK_INT ? "%d" : "%x";
-    sscanf(tokens[p].str, ft, &num);
+    if(tokens[p].type == TK_INT){
+      sscanf(tokens[p].str, "%d", &num);
+    }
+    else if (tokens[p].type == TK_HEX) {
+      sscanf(tokens[p].str, "%x", &num);
+    }
+    else if (tokens[p].type == TK_REG){
+      num = isa_reg_str2val(tokens[p].str+1, &valid);
+    }
     return IS_XXX(p, NEG) ? -num : num;
   }
   else if (check_parentheses(p, q)) {
@@ -244,14 +256,16 @@ uint32_t eval(int p, int q){
 }
 
 word_t expr(char *e, bool *success) {
+  valid = true;
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
   uint32_t result = eval(0, nr_token - 1);
-  *success = true;
+  *success = valid;
   /* TODO: Insert codes to evaluate the expression. */
   //TODO();
 
   return result;
+  return 0;
 }
