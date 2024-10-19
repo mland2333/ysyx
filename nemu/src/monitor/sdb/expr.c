@@ -188,7 +188,7 @@ int main_op(int p, int q){
       continue;
     }
     else if(a==0){
-      if(prioritys[tokens[i].type] > priority){
+      if(prioritys[tokens[i].type] >= priority){
         op_position = i;
         priority = prioritys[tokens[i].type];
       }
