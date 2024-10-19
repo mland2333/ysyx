@@ -143,6 +143,7 @@ void sdb_mainloop() {
   }
   FILE *fp = fopen("/home/mland/ysyx-workbench/nemu/tools/gen-expr/input", "r");
   char line[1000];
+  int n = 0;
   while (fgets(line, sizeof(line), fp)) {
     line[strcspn(line, "\n")] = 0;
     char *space_pos = strchr(line, ' ');
@@ -160,7 +161,8 @@ void sdb_mainloop() {
       exit(0);
     }
     else {
-      printf("%s = %d", expression, r1);
+      printf("%d: %s = %d\n", n, expression, r1);
+      n++;
     }
     
   }
