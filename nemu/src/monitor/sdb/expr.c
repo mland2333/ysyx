@@ -23,7 +23,7 @@
 #include <regex.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <memory/vaddr.h>
 enum {
   TK_NOTYPE = 256, 
   TK_ADD = 0,
@@ -37,6 +37,7 @@ enum {
   TK_HEX,
   TK_REG,
   TK_NEG,
+  TK_REF,
   TK_LEFT,
   TK_RIGHT,
   /* TODO: Add more token types */
@@ -72,7 +73,7 @@ static struct rule {
   {"u", TK_NOTYPE},
 };
 #define IS_XXX(x, xxx) (x!=0 && (tokens[x-1].type==TK_##xxx))
-#define OP2(x) (x==0 || (tokens[x-1].type!=TK_INT&&tokens[x-1].type!=TK_RIGHT))
+#define OP2(x) (x==0 || (tokens[x-1].type!=TK_INT&&tokens[x-1].type!=TK_RIGHT&&tokens[x-1].type!=TK_HEX&&tokens[x-1].type!=TK_NEG&&tokens[x-1].type!=TK_REF))
 #define NR_REGEX ARRLEN(rules)
 
 static regex_t re[NR_REGEX] = {};
@@ -134,7 +135,6 @@ static bool make_token(char *e) {
             tokens[nr_token++].type = rules[i].token_type;
             break;
           case TK_ADD:
-          case TK_MUL:
           case TK_DIV:
           case TK_LEFT:
           case TK_RIGHT:
@@ -149,6 +149,13 @@ static bool make_token(char *e) {
             }
             else {
               tokens[nr_token++].type = TK_SUB;
+            }
+          case TK_MUL:
+            if (OP2(nr_token)) {
+              tokens[nr_token++].type = TK_REF;
+            }
+            else {
+              tokens[nr_token++].type = TK_MUL;
             }
           case TK_NOTYPE:
             break;
@@ -230,13 +237,18 @@ uint32_t eval(int p, int q){
     else if (tokens[p].type == TK_REG){
       num = isa_reg_str2val(tokens[p].str+1, &valid);
     }
-    return IS_XXX(p, NEG) ? -num : num;
+    
+    return IS_XXX(p, NEG) ? -num : IS_XXX(p, REF) ? vaddr_read(num, 4) : num;
   }
   else if (check_parentheses(p, q)) {
-    return IS_XXX(p, NEG) ? -eval(p+1, q-1) : eval(p+1, q-1);
+    return IS_XXX(p, NEG) ? -eval(p+1, q-1) : IS_XXX(p, REF) ? vaddr_read(eval(p+1, q-1), 4) : eval(p+1, q-1);
   }
   else {
     if (tokens[p].type == TK_NEG) {
+      p++;
+      return eval(p, q);
+    }
+    else if (tokens[p].type == TK_REF) {
       p++;
       return eval(p, q);
     }
