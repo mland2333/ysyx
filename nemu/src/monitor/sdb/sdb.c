@@ -91,6 +91,20 @@ static int cmd_p(char* args){
   return 0;
 }
 
+static int cmd_w(char* args){
+  WP* wp = new_wp();
+  bool success;
+  wp->value = expr(args, &success);
+  strcpy(wp->expression, args);
+  printf("Watchpoint %d", wp->NO);
+  return 0;
+}
+
+static int cmd_d(char* args){
+  free_wp(get_wp(atoi(args)));
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -103,6 +117,8 @@ static struct {
   { "info", "NEMU information", cmd_info},
   { "x", "Print memory", cmd_x},
   { "p", "Expression value", cmd_p},
+  { "w", "Add watchpoint", cmd_w},
+  { "d", "Delete watchpoint", cmd_d},
 
   /* TODO: Add more commands */
 
