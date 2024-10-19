@@ -35,6 +35,7 @@ WP* new_wp(){
   if(free_){
     WP* temp = free_;
     free_ = free_->next;
+    temp->next = NULL;
     if(!head) head = temp;
     else {
       temp->next = head->next;
@@ -79,7 +80,7 @@ WP* get_head(){
 void print_wp(){
   WP* wp = head;
   while (wp) {
-    printf("Watchpoint %d, expression: %s, value: %d", wp->NO, wp->expression, wp->value);
+    printf("Watchpoint %d, expression: %s, value: %d\n", wp->NO, wp->expression, wp->value);
     wp = wp->next;
   }
 }
