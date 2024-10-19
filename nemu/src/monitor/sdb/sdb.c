@@ -141,6 +141,28 @@ void sdb_mainloop() {
     cmd_c(NULL);
     return;
   }
+  FILE *fp = fopen("../tools/gen-expr/input", "r");
+  char line[1000];
+  while (fgets(line, sizeof(line), fp)) {
+    line[strcspn(line, "\n")] = 0;
+    char *space_pos = strchr(line, ' ');
+    char result[34];
+    strncpy(result, line, space_pos - line);
+    result[space_pos - line] = '\0';  // 添加字符串结束符
+    char *expression = space_pos + 1;
+    bool success;
+    word_t r1 = expr(expression, &success);
+    word_t r2;
+    sscanf(result, "%u", &r2);
+    if(r1 != r2)
+    {
+      printf("r1 = %d, r2 = %d\nexpression = %s\n", r1, r2, expression);
+      exit(0);
+    }
+    
+  }
+  fclose(fp);
+
 
   for (char *str; (str = rl_gets()) != NULL; ) {
     char *str_end = str + strlen(str);
