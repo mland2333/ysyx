@@ -31,6 +31,8 @@ enum {
   TK_MUL,
   TK_DIV,
   TK_EQ,
+  TK_NEQ,
+  TK_AND,
   TK_INT,
   TK_NEG,
   TK_LEFT,
@@ -40,7 +42,7 @@ enum {
 };
 
 const int prioritys[] = {
-  6, 6, 5, 5, 7, 0, 0
+  6, 6, 5, 5, 7, 7, 8, 0, 0
 };
 
 static struct rule {
@@ -58,6 +60,8 @@ static struct rule {
   {"\\*", TK_MUL},
   {"/", TK_DIV},
   {"==", TK_EQ},        // equal
+  {"!=", TK_NEQ},
+  {"&&", TK_AND},
   {"[0-9]+", TK_INT},
   {"\\(", TK_LEFT},
   {"\\)", TK_RIGHT},
@@ -129,6 +133,8 @@ static bool make_token(char *e) {
           case TK_LEFT:
           case TK_RIGHT:
           case TK_EQ:
+          case TK_NEG:
+          case TK_AND:
             tokens[nr_token++].type = rules[i].token_type;
             break;
           case TK_SUB:
@@ -225,6 +231,9 @@ uint32_t eval(int p, int q){
       case TK_SUB: return val1 - val2; break;
       case TK_MUL: return val1 * val2; break;
       case TK_DIV: return val1 / val2; break;
+      case TK_EQ : return val1 == val2; break;
+      case TK_NEQ: return val1 != val2; break;
+      case TK_AND: return val1 && val2; break;
     }
   }
   return 0;

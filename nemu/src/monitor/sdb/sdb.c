@@ -141,7 +141,7 @@ void sdb_mainloop() {
     cmd_c(NULL);
     return;
   }
-  FILE *fp = fopen("/home/mland/ysyx-workbench/nemu/tools/gen-expr/input", "r");
+  /*FILE *fp = fopen("/home/mland/ysyx-workbench/nemu/tools/gen-expr/input", "r");
   char line[1000];
   int n = 0;
   while (fgets(line, sizeof(line), fp)) {
@@ -167,7 +167,7 @@ void sdb_mainloop() {
     
   }
   fclose(fp);
-
+*/
 
   for (char *str; (str = rl_gets()) != NULL; ) {
     char *str_end = str + strlen(str);
