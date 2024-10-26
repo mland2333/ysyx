@@ -35,6 +35,11 @@ enum {
 #define immJ() do { *imm = SEXT((BITS(i,31,31)<<19|BITS(i,30,21)|BITS(i,20,20)<<10|BITS(i,19,12)<<11)<<1,21);}while(0)
 #define immB() do { *imm = SEXT((BITS(i,31,31)<<11|BITS(i,30,25)<<4|BITS(i,11,8)|BITS(i,7,7)<<10)<<1,13);}while(0)
 
+static int mul(int a, int b){
+  long long r = (long long)a * (long long)b;
+  return r >> 32;
+}
+
 static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_t *imm, int type) {
   uint32_t i = s->isa.inst;
   int rs1 = BITS(i, 19, 15);
@@ -113,6 +118,10 @@ static int decode_exec(Decode *s) {
   // load-store
   INSTPAT("??????? ????? ????? 001 ????? 00000 11", lh     , I, R(rd) = SEXT(Mr(src1 + imm, 2), 16));
   INSTPAT("??????? ????? ????? 101 ????? 00000 11", lh     , I, R(rd) = Mr(src1 + imm, 2));
+  // matrix-mul
+  // max
+  // mersenne
+  INSTPAT("0000001 ????? ????? 001 ????? 01100 11", mulh   , R, R(rd) = mul(src1, src2));
 
 
 
