@@ -148,6 +148,9 @@ static int decode_exec(Decode *s) {
   // sum
   // switch
   INSTPAT("??????? ????? ????? 110 ????? 11000 11", bltu   , B, if(src1 < src2) s->dnpc = s->pc + imm);
+  // to-lower-case
+  // unalign
+  // wanshu
 
 
 
