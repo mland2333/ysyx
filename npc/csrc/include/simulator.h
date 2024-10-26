@@ -21,6 +21,7 @@ public:
   Simulator(int argc, char *argv[]);
   ~Simulator();
   int run();
+  //重置n个时钟周期
   void reset(int n) {
     top->reset = 1;
     while (n-- > 0)

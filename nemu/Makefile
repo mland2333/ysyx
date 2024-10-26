@@ -61,3 +61,5 @@ else
 # Include rules to build NEMU
 include $(NEMU_HOME)/scripts/native.mk
 endif
+count:
+	@git diff --stat | sed -n 's/.* \([0-9]\+\) insertions.*/\1/p'
