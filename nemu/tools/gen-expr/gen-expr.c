@@ -19,7 +19,6 @@
 #include <time.h>
 #include <assert.h>
 #include <string.h>
-
 // this should be enough
 static char buf[65536] = {};
 static char code_buf[65536 + 128] = {}; // a little larger than `buf`
@@ -30,10 +29,42 @@ static char *code_format =
 "  printf(\"%%u\", result); "
 "  return 0; "
 "}";
+int buf_i = 0;
+const static char* nums = "0123456789";
+const static char* ops = "+-*/";
+static void gen_num(){
+  if(rand()%2 == 1){
+    buf[buf_i++] = '(';
+    buf[buf_i++] = '-';
+    buf[buf_i++] = nums[rand()%10];
+    buf[buf_i++] = 'u';
+    buf[buf_i++] = ')';
+  }
+  else {
+    buf[buf_i++] = nums[rand()%10];
+    buf[buf_i++] = 'u';
+  }
+}
+static void gen(char c){
+  buf[buf_i++] = c;
+}
+static void gen_rand_op(){
+  buf[buf_i++] = ops[rand()%4];
+}
 
 static void gen_rand_expr() {
-  buf[0] = '\0';
+  if (buf_i > 30000){
+    gen_num();
+    return;
+  }
+  switch (rand() % 4) {
+    case 0 : gen_num(); break;
+    case 1 : gen('('); gen_rand_expr(); gen(')'); break;
+    case 2 : gen(' '); gen_rand_expr(); break;
+    default: gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break;
+  }
 }
+
 
 int main(int argc, char *argv[]) {
   int seed = time(0);
@@ -44,8 +75,9 @@ int main(int argc, char *argv[]) {
   }
   int i;
   for (i = 0; i < loop; i ++) {
+    buf_i = 0;
     gen_rand_expr();
-
+    buf[buf_i] = 0;
     sprintf(code_buf, code_format, buf);
 
     FILE *fp = fopen("/tmp/.code.c", "w");
@@ -53,7 +85,7 @@ int main(int argc, char *argv[]) {
     fputs(code_buf, fp);
     fclose(fp);
 
-    int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
+    int ret = system("gcc /tmp/.code.c -o /tmp/.expr -Werror ");
     if (ret != 0) continue;
 
     fp = popen("/tmp/.expr", "r");
