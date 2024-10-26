@@ -36,8 +36,12 @@ enum {
 #define immJ() do { *imm = SEXT((BITS(i,31,31)<<19|BITS(i,30,21)|BITS(i,20,20)<<10|BITS(i,19,12)<<11)<<1,21);}while(0)
 #define immB() do { *imm = SEXT((BITS(i,31,31)<<11|BITS(i,30,25)<<4|BITS(i,11,8)|BITS(i,7,7)<<10)<<1,13);}while(0)
 
-static int mul(int a, int b){
+static int mulh(int a, int b){
   long long r = (long long)a * (long long)b;
+  return r >> 32;
+}
+static uint32_t mulhu(uint32_t a, uint32_t b){
+  uint64_t r = (uint64_t)a*(uint64_t)b;
   return r >> 32;
 }
 
@@ -122,7 +126,7 @@ static int decode_exec(Decode *s) {
   // matrix-mul
   // max
   // mersenne
-  INSTPAT("0000001 ????? ????? 001 ????? 01100 11", mulh   , R, R(rd) = mul(src1, src2));
+  INSTPAT("0000001 ????? ????? 001 ????? 01100 11", mulh   , R, R(rd) = mulh(src1, src2));
   INSTPAT("0000001 ????? ????? 111 ????? 01100 11", remu   , R, R(rd) = src1 % src2);
   INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu   , R, R(rd) = src1 / src2);
   // min3
@@ -138,6 +142,8 @@ static int decode_exec(Decode *s) {
   // shift
   INSTPAT("0100000 ????? ????? 101 ????? 01100 11", sra    , R, R(rd) = (sword_t)src1 >> (src2&0x1f));
   INSTPAT("0000000 ????? ????? 101 ????? 01100 11", srl    , R, R(rd) = src1 >> src2);
+  // shuixianhua
+  INSTPAT("0000001 ????? ????? 011 ????? 01100 11", mulhu    , R, R(rd) = mulhu(src1, src2));
 
 
 
