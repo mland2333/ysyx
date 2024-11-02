@@ -150,6 +150,7 @@ static bool make_token(char *e) {
             else {
               tokens[nr_token++].type = TK_SUB;
             }
+            break;
           case TK_MUL:
             if (OP2(nr_token)) {
               tokens[nr_token++].type = TK_REF;
