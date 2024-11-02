@@ -45,7 +45,7 @@ enum {
 };
 
 const int prioritys[] = {
-  6, 6, 5, 5, 7, 7, 8, 0, 0, 0, 0
+  6, 6, 5, 5, 7, 7, 8, 0, 0, 0, 0,
 };
 
 static struct rule {
