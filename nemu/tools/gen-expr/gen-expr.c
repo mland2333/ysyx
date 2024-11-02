@@ -53,7 +53,7 @@ static void gen_rand_op(){
 }
 
 static void gen_rand_expr() {
-  if (buf_i > 30000){
+  if (buf_i > 3000){
     gen_num();
     return;
   }
