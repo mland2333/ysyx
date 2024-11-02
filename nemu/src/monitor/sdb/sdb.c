@@ -88,7 +88,7 @@ static int cmd_x(char* args){
 static int cmd_p(char* args){
   bool success;
   word_t result = expr(args, &success);
-  if(success) printf("%s = %x\n", args, result);
+  if(success) printf("%s = 0x%x\n", args, result);
   else printf("Invalid expression\n");
   return 0;
 }
@@ -160,7 +160,7 @@ void sdb_mainloop() {
     cmd_c(NULL);
     return;
   }
-  /*FILE *fp = fopen("/home/mland/ysyx-workbench/nemu/tools/gen-expr/input", "r");
+  FILE *fp = fopen("/home/mland/ysyx-workbench/nemu/tools/gen-expr/input", "r");
   char line[1000];
   int n = 0;
   while (fgets(line, sizeof(line), fp)) {
@@ -186,7 +186,7 @@ void sdb_mainloop() {
     
   }
   fclose(fp);
-*/
+
 
   for (char *str; (str = rl_gets()) != NULL; ) {
     char *str_end = str + strlen(str);

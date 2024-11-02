@@ -45,7 +45,7 @@ enum {
 };
 
 const int prioritys[] = {
-  6, 6, 5, 5, 7, 7, 8, 0, 0, 0, 0
+  6, 6, 5, 5, 7, 7, 8, 0, 0, 0, 0,
 };
 
 static struct rule {
@@ -97,7 +97,7 @@ void init_regex() {
 
 typedef struct token {
   int type;
-  char str[32];
+  char str[320];
 } Token;
 
 static Token tokens[1000] __attribute__((used)) = {};
@@ -150,6 +150,7 @@ static bool make_token(char *e) {
             else {
               tokens[nr_token++].type = TK_SUB;
             }
+            break;
           case TK_MUL:
             if (OP2(nr_token)) {
               tokens[nr_token++].type = TK_REF;
