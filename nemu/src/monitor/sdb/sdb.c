@@ -88,7 +88,7 @@ static int cmd_x(char* args){
 static int cmd_p(char* args){
   bool success;
   word_t result = expr(args, &success);
-  if(success) printf("%s = %x\n", args, result);
+  if(success) printf("%s = 0x%x\n", args, result);
   else printf("Invalid expression\n");
   return 0;
 }
