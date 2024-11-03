@@ -32,7 +32,7 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
             buf[j++] = digits[num%10];
             num /= 10;
           }while (num != 0);
-          for(; j>0; j++)
+          for(; j>0; j--)
             out[count++] = buf[j-1];
           s++;
         break;
