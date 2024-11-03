@@ -15,29 +15,37 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
   char* str;
   char digits[] = "0123456789abcdef";
   int num;
+  char buf[33];
   int count = 0;
   while (*s) {
     if (*s == '%') {
       s++;
       switch (*s) {
-      case 'd':
-        num = va_arg(ap, int);
-        if(num < 0) out[count++] = '-';
-        do {
-          out[count++] = digits[num%10];
-          num /= 10;
-        }while (num != 0);
-        s++;
+        case 'd':
+          num = va_arg(ap, int);
+          if(num < 0) {
+            out[count++] = '-';
+            num = -num;
+          }
+          int j = 0;
+          do {
+            buf[j++] = digits[num%10];
+            num /= 10;
+          }while (num != 0);
+          for(; j>0; j++)
+            out[count++] = buf[j-1];
+          s++;
         break;
-      case 's':
+        case 's':
           if ((str = va_arg(ap, char*)) == 0) {
             str = "(null)";
           }
           while (*str) {
             out[count++] = *str++;
           }
+          s++;
         break;
-      default:
+        default:
           return count;
       }
     }
