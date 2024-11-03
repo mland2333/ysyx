@@ -45,6 +45,7 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
       out[count++] = *s++;
     }
   }
+  out[count] = 0;
   return count;
 }
 
@@ -52,6 +53,7 @@ int sprintf(char *out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   return vsprintf(out, fmt, ap);
+  va_end(ap);
 }
 
 int snprintf(char *out, size_t n, const char *fmt, ...) {
