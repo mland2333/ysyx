@@ -65,8 +65,11 @@ int Sdb::run(Simulator* sim_){
   char *cmd;
   char *strend;
   std::string line;
+  SIM_STATE result;
   if (is_batch) {
-    sim_->run();
+    result = cmd_c(sim_, NULL);
+    if (result == SIM_STATE::QUIT)
+      return 0;
   }
   else {
     std::cout << "<< ";
@@ -77,10 +80,11 @@ int Sdb::run(Simulator* sim_){
       char *sdb_args = cmd + strlen(cmd) + 1;
       if (sdb_args >= strend)
         sdb_args = nullptr;
-      SIM_STATE result = sdb_map_[cmd](sim_, sdb_args);
+      result = sdb_map_[cmd](sim_, sdb_args);
       if (result == SIM_STATE::QUIT)
-        return -1;
+        return 0;
       std::cout << "<< ";
     }
   }
+  return 0;
 }
