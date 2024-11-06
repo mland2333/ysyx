@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
   if (argc > 1) {
     sscanf(argv[1], "%d", &loop);
   }
-  int i;
-  for (i = 0; i < loop; i ++) {
+  int i = 0;
+  while(i < loop){
     buf_i = 0;
     gen_rand_expr();
     buf[buf_i] = 0;
@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
     pclose(fp);
 
     printf("%u %s\n", result, buf);
+    i++;
   }
   return 0;
 }
