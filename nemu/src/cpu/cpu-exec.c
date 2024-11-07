@@ -44,7 +44,7 @@ void watch_update(){
     }
     wp = wp->next;
   }
-  if (flag) nemu_state.state = NEMU_STOP;
+  if (flag && nemu_state.state != NEMU_QUIT) nemu_state.state = NEMU_STOP;
 }
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND

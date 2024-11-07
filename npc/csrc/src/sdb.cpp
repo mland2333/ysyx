@@ -67,7 +67,7 @@ int Sdb::run(Simulator* sim_){
   std::string line;
   SIM_STATE result;
   if (is_batch) {
-    result = cmd_c(sim_, NULL);
+    result = cmd_c(sim_, nullptr);
     if (result == SIM_STATE::QUIT)
       return 0;
   }
