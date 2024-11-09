@@ -62,11 +62,11 @@ void print_buffer()
     if(buffer_index <=  MAX_RING_BUFFER)
     {
         for(int i = 0; i<buffer_index; i++)
-            log_write("%s\n", ring_buffer[i]);
+            printf("%s\n", ring_buffer[i]);
     }
     else {
         for(int i = 0; i < MAX_RING_BUFFER; i++)
-            log_write("%s\n", ring_buffer[(buffer_index+i)%MAX_RING_BUFFER]);
+            printf("%s\n", ring_buffer[(buffer_index+i)%MAX_RING_BUFFER]);
     }
 }
 #endif
