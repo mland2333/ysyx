@@ -16,6 +16,7 @@
 #include <cpu/cpu.h>
 #include <cpu/decode.h>
 #include <cpu/difftest.h>
+#include <stdio.h>
 #include <locale.h>
 #include "../../monitor/sdb/sdb.h"
 /* The assembly code of instructions executed is only output to the screen
@@ -118,6 +119,7 @@ static void execute(uint64_t n) {
     trace_and_difftest(&s, cpu.pc);
     if (nemu_state.state != NEMU_RUNNING) {
       IFDEF(CONFIG_ITRACE, print_buffer());
+      printf("here\n");
       break;
     }
     IFDEF(CONFIG_DEVICE, device_update());
