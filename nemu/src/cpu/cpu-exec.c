@@ -119,7 +119,6 @@ static void execute(uint64_t n) {
     trace_and_difftest(&s, cpu.pc);
     if (nemu_state.state != NEMU_RUNNING) {
       IFDEF(CONFIG_ITRACE, print_buffer());
-      IFDEF(CONFIG_ITRACE, printf("here\n"));
       break;
     }
     IFDEF(CONFIG_DEVICE, device_update());
