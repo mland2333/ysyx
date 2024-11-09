@@ -34,11 +34,9 @@ const static char* nums = "0123456789";
 const static char* ops = "+-*/";
 static void gen_num(){
   if(rand()%2 == 1){
-    buf[buf_i++] = '(';
     buf[buf_i++] = '-';
     buf[buf_i++] = nums[rand()%10];
     buf[buf_i++] = 'u';
-    buf[buf_i++] = ')';
   }
   else {
     buf[buf_i++] = nums[rand()%10];
