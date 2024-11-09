@@ -46,10 +46,34 @@ void watch_update(){
   }
   if (flag && nemu_state.state != NEMU_END) nemu_state.state = NEMU_STOP;
 }
+#ifdef CONFIG_ITRACE
+#define MAX_RING_BUFFER 10
+int buffer_index = 0;
+char ring_buffer[MAX_RING_BUFFER][128];
+void insert_buffer(char* logstr)
+{
+    //static int index = 0;
+    memcpy(ring_buffer[buffer_index%MAX_RING_BUFFER], logstr, 128);
+    ++buffer_index;
+}
+void print_buffer()
+{
+    if(buffer_index <=  MAX_RING_BUFFER)
+    {
+        for(int i = 0; i<buffer_index; i++)
+            log_write("%s\n", ring_buffer[i]);
+    }
+    else {
+        for(int i = 0; i < MAX_RING_BUFFER; i++)
+            log_write("%s\n", ring_buffer[(buffer_index+i)%MAX_RING_BUFFER]);
+    }
+}
+#endif
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
+  IFDEF(CONFIG_ITRACE, insert_buffer(_this->logbuf));
   IFDEF(CONFIG_WATCHPOINT, watch_update());
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
@@ -132,6 +156,7 @@ void cpu_exec(uint64_t n) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
 
     case NEMU_END: case NEMU_ABORT:
+      IFDEF(CONFIG_ITRACE, print_buffer());
       Log("nemu: %s at pc = " FMT_WORD,
           (nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
