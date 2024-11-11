@@ -1,3 +1,5 @@
+#ifdef CONFIG_FTRACE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,3 +72,5 @@ int ret_func(uint32_t ptr)
   }
   return -1;
 }
+
+#endif

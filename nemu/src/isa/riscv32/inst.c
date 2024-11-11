@@ -68,7 +68,7 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
 extern Ftrace* ftrace;
 int space_num = 0;
 #endif
-
+extern bool is_ftrace;
 static int decode_exec(Decode *s) {
   s->dnpc = s->snpc;
 
@@ -93,7 +93,7 @@ static int decode_exec(Decode *s) {
 #ifdef CONFIG_FTRACE
   ;
   int name;
-  if((name = call_func(s->dnpc)) != -1)
+  if(is_ftrace && (name = call_func(s->dnpc)) != -1)
   {
     space_num++;
     printf("0x%x:", s->pc);
@@ -109,7 +109,7 @@ static int decode_exec(Decode *s) {
 #ifdef CONFIG_FTRACE
   ;
   int name;
-  if((name = ret_func(s->dnpc)) != -1)
+  if(is_ftrace && (name = ret_func(s->dnpc)) != -1)
   {
     printf("0x%x:", s->pc);                                  
     for(int i = 0; i<space_num; i++)                         
@@ -175,7 +175,7 @@ static int decode_exec(Decode *s) {
 #ifdef CONFIG_FTRACE                                  
   ;
   int name;
-  if((name = call_func(s->dnpc)) != -1)
+  if(is_ftrace && (name = call_func(s->dnpc)) != -1)
   {
     space_num++;
     printf("0x%x:", s->pc);
