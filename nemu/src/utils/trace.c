@@ -65,7 +65,7 @@ int ret_func(uint32_t ptr)
 {
   for(int i = 0; i < ftrace->func_num; i++)
   {
-    if(ptr == ftrace->func_table[i].st_value)
+    if(ptr >= ftrace->func_table[i].st_value && ptr < ftrace->func_table[i].st_value + ftrace->func_table[i].st_size)
       return ftrace->func_table[i].st_name;
   }
   return -1;
