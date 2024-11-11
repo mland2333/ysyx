@@ -69,7 +69,10 @@ static long load_img() {
   fclose(fp);
   return size;
 }
-
+#ifdef CONFIG_FTRACE
+Ftrace* ftrace;
+#endif
+bool is_ftrace = false;
 static int parse_args(int argc, char *argv[]) {
   const struct option table[] = {
     {"batch"    , no_argument      , NULL, 'b'},
@@ -87,7 +90,7 @@ static int parse_args(int argc, char *argv[]) {
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
       case 'l': log_file = optarg; break;
       case 'd': diff_so_file = optarg; break;
-      case 'e': elf_file = optarg; break;
+      case 'e': is_ftrace = true; elf_file = optarg; break;
       case 1: img_file = optarg; return 0;
       default:
         printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
@@ -101,9 +104,7 @@ static int parse_args(int argc, char *argv[]) {
   }
   return 0;
 }
-#ifdef CONFIG_FTRACE
-Ftrace* ftrace;
-#endif
+
 void init_monitor(int argc, char *argv[]) {
   /* Perform some global initialization. */
 
@@ -128,7 +129,8 @@ void init_monitor(int argc, char *argv[]) {
   /* Load the image to memory. This will overwrite the built-in image. */
   long img_size = load_img();
 #ifdef CONFIG_FTRACE
-  ftrace = init_ftrace(elf_file);
+  if (is_ftrace)
+    ftrace = init_ftrace(elf_file);
 #endif
   /* Initialize differential testing. */
   init_difftest(diff_so_file, img_size, difftest_port);
