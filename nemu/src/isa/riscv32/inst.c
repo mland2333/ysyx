@@ -18,7 +18,9 @@
 #include <cpu/cpu.h>
 #include <cpu/ifetch.h>
 #include <cpu/decode.h>
-
+#ifdef CONFIG_FTRACE
+#include <ftrace.h>
+#endif
 #define R(i) gpr(i)
 #define Mr vaddr_read
 #define Mw vaddr_write
@@ -62,6 +64,11 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
   }
 }
 
+#ifdef CONFIG_FTRACE
+extern Ftrace* ftrace;
+int space_num = 0;
+#endif
+
 static int decode_exec(Decode *s) {
   s->dnpc = s->snpc;
 
@@ -82,9 +89,36 @@ static int decode_exec(Decode *s) {
   // dummy
   INSTPAT("??????? ????? 00000 000 ????? 00100 11", li     , I, R(rd) = imm);
   INSTPAT("??????? ????? ????? 000 ????? 00100 11", addi   , I, R(rd) = src1 + imm);
-  INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, R(rd) = s->pc + 4; s->dnpc = s->pc + imm);
+  INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, R(rd) = s->pc + 4; s->dnpc = s->pc + imm
+#ifdef CONFIG_FTRACE
+  ;
+  int name;
+  if((name = call_func(s->dnpc)) != -1)
+  {
+    space_num++;
+    printf("0x%x:", s->pc);
+    for(int i = 0; i<space_num; i++)
+      printf(" ");
+    printf("call [%s@0x%x]\n", &ftrace->string_table[name], s->dnpc);
+  }
+#endif
+
+);
   INSTPAT("??????? ????? ????? 010 ????? 01000 11", sw     , S, Mw(src1 + imm, 4, src2));
-  INSTPAT("0000000 00000 00001 000 00000 11001 11", ret    , I, s->dnpc = src1);
+  INSTPAT("0000000 00000 00001 000 00000 11001 11", ret    , I, s->dnpc = src1
+#ifdef CONFIG_FTRACE
+  ;
+  int name;
+  if((name = ret_func(s->dnpc)) != -1)
+  {
+    printf("0x%x:", s->pc);                                  
+    for(int i = 0; i<space_num; i++)                         
+      printf(" ");                                         
+    space_num--;                                             
+    printf("ret  [%s@0x%x]\n", &ftrace->string_table[name], s->dnpc);
+  }
+#endif
+);
   // add
   INSTPAT("??????? ????? ????? 010 ????? 00000 11", lw     , I, R(rd) = Mr(src1 + imm, 4));
   INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , R, R(rd) = src1 + src2);
@@ -137,7 +171,20 @@ static int decode_exec(Decode *s) {
   // prime
   // quick-sort
   // recursion
-  INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, R(rd) = s->pc + 4; s->dnpc = (src1 + imm)&(~1));
+  INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, R(rd) = s->pc + 4; s->dnpc = (src1 + imm)&(~1)
+#ifdef CONFIG_FTRACE                                  
+  ;
+  int name;
+  if((name = call_func(s->dnpc)) != -1)
+  {
+    space_num++;
+    printf("0x%x:", s->pc);
+    for(int i = 0; i<space_num; i++)
+      printf(" ");
+    printf("call [%s@0x%x]\n", &ftrace->string_table[name], s->dnpc);
+  }
+#endif
+);
   // select-sort
   // shift
   INSTPAT("0100000 ????? ????? 101 ????? 01100 11", sra    , R, R(rd) = (sword_t)src1 >> (src2&0x1f));
