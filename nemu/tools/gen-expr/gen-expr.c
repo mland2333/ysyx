@@ -34,11 +34,9 @@ const static char* nums = "0123456789";
 const static char* ops = "+-*/";
 static void gen_num(){
   if(rand()%2 == 1){
-    buf[buf_i++] = '(';
     buf[buf_i++] = '-';
     buf[buf_i++] = nums[rand()%10];
     buf[buf_i++] = 'u';
-    buf[buf_i++] = ')';
   }
   else {
     buf[buf_i++] = nums[rand()%10];
@@ -73,8 +71,8 @@ int main(int argc, char *argv[]) {
   if (argc > 1) {
     sscanf(argv[1], "%d", &loop);
   }
-  int i;
-  for (i = 0; i < loop; i ++) {
+  int i = 0;
+  while(i < loop){
     buf_i = 0;
     gen_rand_expr();
     buf[buf_i] = 0;
@@ -96,6 +94,7 @@ int main(int argc, char *argv[]) {
     pclose(fp);
 
     printf("%u %s\n", result, buf);
+    i++;
   }
   return 0;
 }
