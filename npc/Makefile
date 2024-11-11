@@ -14,7 +14,7 @@ VERILATOR_CFLAGS += -MMD --build -cc  \
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 BIN = $(BUILD_DIR)/$(TOPNAME)
-
+IMG ?=
 default: $(BIN)
 
 $(shell mkdir -p $(BUILD_DIR))
@@ -50,6 +50,9 @@ all: default
 
 sim: all
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
+
+run: all
+	@$^ $(IMG)
 
 clean:
 	rm -rf $(BUILD_DIR)

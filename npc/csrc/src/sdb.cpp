@@ -30,9 +30,9 @@ SIM_STATE cmd_x(Simulator* sim_, char* args){
   int n = atoi(arg1);
   uint32_t addr;
   sscanf(arg2, "%x", &addr);
-  extern Memory mem;
+  extern Memory* mem;
   for(int i = 0; i<n; i++){
-    printf("(0x%x) = 0x%x\n", addr+i*4, mem.read<uint32_t>(addr+i*4));
+    printf("(0x%x) = 0x%x\n", addr+i*4, mem->read<uint32_t>(addr+i*4));
   }
   return SIM_STATE::NORMAL;
 }
