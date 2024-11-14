@@ -4,7 +4,8 @@
 #include <cstdio>
 class Args{
 public:
-  char* gtk_file;
+  char* gtk_file = NULL;
+  char* image = NULL;
   bool is_nvboard = false;
   bool is_gtk = false;
   bool is_batch = false;
@@ -33,6 +34,9 @@ public:
     case 'b':
       is_batch = true;
       break;
+    case 1:
+      image = optarg;
+    break;
     default:
       printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
       printf("\t-b,--batch              run with batch mode\n");

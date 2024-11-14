@@ -2,7 +2,8 @@
 #include <cstdio>
 #include <cstring>
 #include <sdb.h>
-
+#include <debug.h>
+#include <chrono>
 SIM_STATE cmd_c(Simulator* sim_, char* args){
   SIM_STATE sim_state;
   while (true) {
@@ -30,9 +31,9 @@ SIM_STATE cmd_x(Simulator* sim_, char* args){
   int n = atoi(arg1);
   uint32_t addr;
   sscanf(arg2, "%x", &addr);
-  extern Memory mem;
+  extern Memory* mem;
   for(int i = 0; i<n; i++){
-    printf("(0x%x) = 0x%x\n", addr+i*4, mem.read<uint32_t>(addr+i*4));
+    printf("(0x%x) = 0x%x\n", addr+i*4, mem->read<uint32_t>(addr+i*4));
   }
   return SIM_STATE::NORMAL;
 }
@@ -60,6 +61,19 @@ void Sdb::init(){
   /* }; */
 }
 
+void Sdb::welcome(){
+  Log("Build time: %s, %s", __TIME__, __DATE__);
+  printf("Welcome to npc\n");
+  printf("For help, type \"help\"\n");
+}
+
+uint64_t Sdb::get_time(){
+  auto now = std::chrono::system_clock::now();
+  return (std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch())).count();
+}
+void Sdb::statistic(){
+  Log("host time spent = %lu us", timer);
+}
 int Sdb::run(Simulator* sim_){
   char args[32];
   char *cmd;
@@ -80,9 +94,20 @@ int Sdb::run(Simulator* sim_){
       char *sdb_args = cmd + strlen(cmd) + 1;
       if (sdb_args >= strend)
         sdb_args = nullptr;
+      uint64_t now = get_time();
       result = sdb_map_[cmd](sim_, sdb_args);
-      if (result == SIM_STATE::QUIT)
-        return 0;
+      timer += get_time() - now;
+      switch (result) {
+        case SIM_STATE::NORMAL : break;
+        case SIM_STATE::QUIT :
+          Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
+          statistic();
+          return 0;
+        default: 
+          Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
+          statistic();
+          return 0;
+      }
       std::cout << "<< ";
     }
   }

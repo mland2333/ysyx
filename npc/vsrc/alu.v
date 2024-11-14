@@ -1,9 +1,9 @@
-module ysyx_20020207_ALU(
-  input [31:0] src1,
-  input [31:0] src2,
-  output [31:0] result
+module ysyx_24110006_ALU(
+  input [31:0] i_a,
+  input [31:0] i_b,
+  output [31:0] o_r
 );
 
-  assign result = src1 + src2;
+  assign o_r = i_a + i_b;
 
 endmodule

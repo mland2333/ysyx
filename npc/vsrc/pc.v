@@ -1,14 +1,17 @@
-module ysyx_20020207_PC(
-  input clock,
-  input reset,
-  input jump,
-  input [31:0] upc,
-  output reg [31:0] pc
+module ysyx_24110006_PC(
+  input i_clock,
+  input i_reset,
+  input i_jump,
+  input [31:0] i_upc,
+  output [31:0] o_pc
 );
 
-always@(posedge clock)begin
-  if(reset) pc <= 32'h80000000;
-  else if(jump) pc <= upc;
+reg[31:0] pc;
+
+always@(posedge i_clock)begin
+  if(i_reset) pc <= 32'h80000000;
+  else if(i_jump) pc <= i_upc;
   else pc <= pc + 4;
-  end
+end
+assign o_pc = pc;
 endmodule

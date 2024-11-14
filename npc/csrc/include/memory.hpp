@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <ios>
 #include <iostream>
 
 class Memory {
@@ -9,7 +10,10 @@ class Memory {
   uint32_t base_;
   uint32_t size_;
   uint64_t translate(uint32_t vaddr) const{
-    assert(vaddr >= base_ && vaddr < base_ + size_);
+    if(!(vaddr >= base_ && vaddr < base_ + size_)){
+      std::cout << "vaddr = " << std::hex << vaddr << '\n';
+      assert(0);
+    }
     return reinterpret_cast<uint64_t>(mem_ + vaddr - base_);
   }
   void init(){
@@ -23,7 +27,8 @@ class Memory {
 public:
   Memory();
   Memory(uint32_t base, uint32_t size);
-  Memory(uint32_t base, uint32_t size, std::string& filename);
+  Memory(uint32_t base, uint32_t size, const char* image);
+  long load_img(const char* image);
   template<typename T>
   T read(uint32_t vaddr) const;
   template<typename T>
