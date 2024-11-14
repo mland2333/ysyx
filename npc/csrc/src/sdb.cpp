@@ -88,8 +88,15 @@ int Sdb::run(Simulator* sim_){
       if (sdb_args >= strend)
         sdb_args = nullptr;
       result = sdb_map_[cmd](sim_, sdb_args);
-      if (result == SIM_STATE::QUIT)
-        return 0;
+      switch (result) {
+        case SIM_STATE::NORMAL : break;
+        case SIM_STATE::QUIT :
+          Log(ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN));
+          return 0;
+        default: 
+          Log(ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED));
+          return 0;
+      }
       std::cout << "<< ";
     }
   }
