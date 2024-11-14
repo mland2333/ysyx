@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstring>
 #include <sdb.h>
+#include <debug.h>
 
 SIM_STATE cmd_c(Simulator* sim_, char* args){
   SIM_STATE sim_state;
@@ -61,7 +62,6 @@ void Sdb::init(){
 }
 
 void Sdb::welcome(){
-  Log("Trace: %s", MUXDEF(CONFIG_TRACE, ANSI_FMT("ON", ANSI_FG_GREEN), ANSI_FMT("OFF", ANSI_FG_RED)));
   Log("Build time: %s, %s", __TIME__, __DATE__);
   printf("Welcome to npc\n");
   printf("For help, type \"help\"\n");

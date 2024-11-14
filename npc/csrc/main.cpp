@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
   sim = new Simulator(args);
   sdb = new Sdb(args);
   sim->reset(10);
+  sdb->welcome();
   sdb->run(sim);
   return 0;
 }
