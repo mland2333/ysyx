@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <unordered_map>
 #include <iostream>
@@ -17,6 +18,9 @@ class Sdb{
   std::unordered_map<std::string, std::function<SIM_STATE(Simulator*, char*)>> sdb_map_;
   bool is_batch = false;
   NPC_STATE state = NPC_STATE::RUNNING;
+  uint64_t timer = 0;
+  void statistic();
+  uint64_t get_time();
 public:
   Sdb(Args& args) : is_batch(args.is_batch){
     init();
