@@ -22,6 +22,7 @@ public:
     init();
   }
   void init();
+  void welcome();
   void add_command(const char* command, std::function<SIM_STATE(Simulator*, char*)> func){
     sdb_map_[command] = func;
   }

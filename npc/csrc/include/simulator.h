@@ -26,7 +26,7 @@ private:
     for (int i = 0; i < cpu.nums; i++) {
       cpu.gpr[i] = top->rootp->top__DOT__mreg__DOT__rf[i];
     }
-    cpu.pc = top->rootp->top__DOT__pc;
+    cpu.pc = top->rootp->top__DOT__mpc__DOT__pc;
   }
   SIM_STATE state = SIM_STATE::NORMAL;
 public:

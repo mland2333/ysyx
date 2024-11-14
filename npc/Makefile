@@ -53,7 +53,8 @@ sim: all
 
 run: $(BIN)
 	@$^ $(IMG)
-
+gdb: $(BIN)
+	gdb --args $(BIN) $(IMG)
 clean:
 	rm -rf $(BUILD_DIR)
 include ../Makefile
