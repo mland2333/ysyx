@@ -1,4 +1,4 @@
-module ysyx_20020207_IDU(
+module ysyx_24110006_IDU(
   input [31:0] i_inst,
   output [6:0] o_op,
   output [2:0] o_func,

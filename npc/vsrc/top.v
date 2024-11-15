@@ -15,7 +15,7 @@ wire[31:0] imm, src1, src2;
 wire[31:0] reg_src1, reg_src2;
 wire reg_wen;
 wire[31:0] result;
-ysyx_20020207_PC mpc(
+ysyx_24110006_PC mpc(
   .i_clock(clock),
   .i_reset(reset),
   .i_jump(jump),
@@ -23,7 +23,7 @@ ysyx_20020207_PC mpc(
   .o_pc(pc)
 );
 
-ysyx_20020207_IFU mifu(
+ysyx_24110006_IFU mifu(
   .i_en(!reset),
   .i_pc(pc),
   .o_inst(inst)
@@ -33,7 +33,7 @@ always@ *
   if(inst == 32'h100073)
     quit();
 
-ysyx_20020207_IDU midu(
+ysyx_24110006_IDU midu(
   .i_inst(inst),
   .o_op(op),
   .o_func(func),
@@ -43,7 +43,7 @@ ysyx_20020207_IDU midu(
   .o_imm(imm)
 );
 
-ysyx_20020207_RegisterFile mreg(
+ysyx_24110006_RegisterFile mreg(
   .i_clock(clock),
   .i_waddr(reg_rd),
   .i_wdata(result),
@@ -54,7 +54,7 @@ ysyx_20020207_RegisterFile mreg(
   .o_rdata2(reg_src2)
 );
 
-ysyx_20020207_EXU mexu(
+ysyx_24110006_EXU mexu(
   .i_op(op),
   .i_func(func),
   .i_reg_src1(reg_src1),

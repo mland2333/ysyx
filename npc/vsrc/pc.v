@@ -1,4 +1,4 @@
-module ysyx_20020207_PC(
+module ysyx_24110006_PC(
   input i_clock,
   input i_reset,
   input i_jump,

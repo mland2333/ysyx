@@ -1,4 +1,4 @@
-module ysyx_20020207_ALU(
+module ysyx_24110006_ALU(
   input [31:0] i_a,
   input [31:0] i_b,
   output [31:0] o_r

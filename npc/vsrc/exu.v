@@ -1,4 +1,4 @@
-module ysyx_20020207_EXU(
+module ysyx_24110006_EXU(
   input [6:0] i_op,
   input [2:0] i_func,
   input [31:0] i_reg_src1,
@@ -35,7 +35,7 @@ assign alu_a = JAL || JALR || AUIPC ? i_pc : LUI ? 0 : i_reg_src1;
 assign alu_b = I || L || AUIPC || S  || LUI ? i_imm : JAL || JALR ? 32'b100 : i_reg_src2;
 
 
-ysyx_20020207_ALU malu(
+ysyx_24110006_ALU malu(
   .i_a(alu_a),
   .i_b(alu_b),
   .o_r(o_result)
