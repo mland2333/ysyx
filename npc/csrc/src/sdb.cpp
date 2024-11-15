@@ -86,7 +86,7 @@ int Sdb::run(Simulator* sim_){
       return 0;
   }
   else {
-    std::cout << "npc << ";
+    std::cout << "npc ";
     while (getline(std::cin, line)) {
       strcpy(args, line.c_str());
       strend = args + strlen(args);
@@ -108,7 +108,7 @@ int Sdb::run(Simulator* sim_){
           statistic();
           return 0;
       }
-      std::cout << "npc << ";
+      std::cout << "npc ";
     }
   }
   return 0;
