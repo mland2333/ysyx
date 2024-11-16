@@ -6,7 +6,7 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
   if (is_gtk) {
     Verilated::traceEverOn(true);
     contextp = new VerilatedContext;
-    tfp = new VerilatedFstC;
+    tfp = new VerilatedVcdC;
     top->trace(tfp, 0);
     tfp->open(gtk_file);
   }
@@ -53,7 +53,6 @@ Simulator::~Simulator() {
   top->final();
   delete top;
   if (is_gtk) {
-    tfp->close();
     delete tfp;
     delete contextp;
   }

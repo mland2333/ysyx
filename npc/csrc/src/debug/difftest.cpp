@@ -39,8 +39,12 @@ void Diff::init_difftest(char *ref_so_file, long img_size, int port){
 }
 
 bool Diff::difftest_step() {
+  if (first_inst) {
+    ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
+    first_inst = false;
+    return true;
+  }
   ref_difftest_exec(1);
-
   ref_difftest_regcpy((void*)ref_cpu, DIFFTEST_TO_DUT);
   int i;
   if((i = cpu_->check(ref_cpu)) != 0){
@@ -49,8 +53,8 @@ bool Diff::difftest_step() {
           cpu_->pc, cpu_->pc, ref_cpu->pc);
     }
     else {
-      printf("difftest失败, 寄存器为：%s, 地址：0x%x\ncpu.gpr[i] = 0x%x\nref_gpr[i] = 0x%x\n",
-           RegName::regs[i], cpu_->pc, cpu_->gpr[i], ref_cpu->gpr[i]);
+      printf("difftest失败, 寄存器为：%s, 地址：0x%x\ncpu.gpr[%d] = 0x%x\nref_gpr[%d] = 0x%x\n",
+           RegName::regs[i], cpu_->pc, i, cpu_->gpr[i], i, ref_cpu->gpr[i]);
     }
     return false;
   }

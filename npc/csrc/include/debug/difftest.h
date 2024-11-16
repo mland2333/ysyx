@@ -7,6 +7,7 @@ class Diff{
   Memory* mem_;
   Cpu<32>* cpu_;
   Cpu<32>* ref_cpu;
+  bool first_inst = true;
 public:
   Diff(Memory* mem, Cpu<32>* cpu) : mem_(mem), cpu_(cpu){
     ref_cpu = new Cpu<32>();
