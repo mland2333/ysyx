@@ -123,20 +123,21 @@ int Sdb::run(){
       uint64_t now = get_time();
       result = sdb_map_[cmd](this, sdb_args);
       timer += get_time() - now;
-      switch (result) {
-        case SIM_STATE::NORMAL : break;
-        case SIM_STATE::QUIT :
-          Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
-          statistic();
-          return 0;
-        default: 
-          Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
-          statistic();
-          return 0;
+      if (result != SIM_STATE::NORMAL) {
+        break;
       }
       std::cout << "(npc) ";
     }
   }
+  switch (result) {
+    case SIM_STATE::QUIT :
+      Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
+      break;
+    default: 
+      Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
+      break;
+  }
+  statistic();
   if (is_itrace) itrace->print_buffer();
   return 0;
 }
