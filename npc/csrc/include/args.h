@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <cstdlib>
 #include <getopt.h>
 #include <cstdio>
 class Args{
@@ -11,26 +12,26 @@ public:
   bool is_batch = false;
   bool is_itrace = false;
   bool is_ftrace = false;
-  char* ftrace_file = nullptr;
+  bool is_diff = false;
+
   Args(int argc, char* argv[]){
     constexpr struct option table[] = {
       {"batch", no_argument, NULL, 'b'},
       {"log", required_argument, NULL, 'l'},
-      {"diff", required_argument, NULL, 'd'},
+      {"diff", no_argument, NULL, 'd'},
       {"port", required_argument, NULL, 'p'},
-      {"ftrace", required_argument, NULL, 'f'},
-      {"gtktrace", required_argument, NULL, 'g'},
+      {"ftrace", no_argument, NULL, 'f'},
+      {"gtktrace", no_argument, NULL, 'g'},
       {"nvboard", no_argument, NULL, 'n'},
       {"itrace", no_argument, NULL, 'i'},
       {"help", no_argument, NULL, 'h'},
       {0, 0, NULL, 0},
   };
   int o;
-  while ((o = getopt_long(argc, argv, "-bhnig:d:f:", table, NULL)) != -1) {
+  while ((o = getopt_long(argc, argv, "-bhnigdf", table, NULL)) != -1) {
     switch (o) {
     case 'g':
       is_gtk = true;
-      gtk_file = optarg;
       break;
     case 'n':
       is_nvboard = true;
@@ -43,7 +44,9 @@ public:
       break;
     case 'f':
       is_ftrace = true;
-      ftrace_file = optarg;
+      break;
+    case 'd':
+      is_diff = true;
       break;
     case 1:
       image = optarg;
@@ -56,6 +59,7 @@ public:
       printf("\t-g,--gtktrace           run with gtktrace\n");
       printf("\t-p,--port=PORT          run DiffTest with port PORT\n");
       printf("\n");
+      exit(-1);
     }
   }
   return;

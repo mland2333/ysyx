@@ -11,6 +11,7 @@
 #include <cpu.h>
 #include <debug/itrace.h>
 #include <debug/ftrace.h>
+#include <debug/difftest.h>
 enum class NPC_STATE{
   RUNNING,
   STOP,
@@ -22,6 +23,8 @@ class Sdb{
   bool is_batch = false;
   bool is_itrace = false;
   bool is_ftrace = false;
+  bool is_diff = false;
+  const char* diff_file = "/home/mland/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so";
   uint64_t timer = 0;
   uint64_t inst_nums = 0;
   uint32_t inst_ = 0;
@@ -30,16 +33,12 @@ class Sdb{
   uint64_t get_time();
   Simulator* sim_;
   Memory* mem_;
+
   Itrace* itrace;
   Ftrace* ftrace;
+  Diff* diff;
 public:
-  Sdb(Args& args, Simulator* sim, Memory* mem) : 
-    is_batch(args.is_batch), is_itrace(args.is_itrace), is_ftrace(args.is_ftrace), 
-    sim_(sim), mem_(mem){
-    init();
-    if (is_itrace) itrace = new Itrace;
-    if (is_ftrace) ftrace = new Ftrace(args.ftrace_file);
-  }
+  Sdb(Args& args, Simulator* sim, Memory* mem);
   void init();
   void welcome();
   void add_command(const char* command, std::function<SIM_STATE(Sdb*, char*)> func){

@@ -6,7 +6,6 @@
 #include <iostream>
 
 class Memory {
-  char* mem_;
   uint32_t base_;
   uint32_t size_;
   uint64_t translate(uint32_t vaddr) const{
@@ -25,6 +24,8 @@ class Memory {
     write<uint32_t>(base_ + 20, 0x100073);
   }
 public:
+  uint32_t image_size = 0;
+  char* mem_;
   Memory();
   Memory(uint32_t base, uint32_t size);
   Memory(uint32_t base, uint32_t size, const char* image);

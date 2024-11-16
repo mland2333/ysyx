@@ -13,6 +13,7 @@ VERILATOR_CFLAGS += -MMD --build -cc  \
 
 
 LIBS += -lcapstone
+ARGS ?=
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
@@ -40,8 +41,8 @@ include $(NVBOARD_HOME)/scripts/nvboard.mk
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
-CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g
-LDFLAGS += $(LIBS)
+CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g -fsanitize=address
+LDFLAGS += $(LIBS) -fsanitize=address
 
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
@@ -57,9 +58,9 @@ sim: all
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
 run: $(BIN)
-	@$^ $(IMG)
+	@$^ $(IMG) $(ARGS)
 gdb: $(BIN)
-	gdb --args $(BIN) $(IMG)
+	gdb --args $(BIN) $(IMG) $(ARGS)
 clean:
 	rm -rf $(BUILD_DIR)
 include ../Makefile

@@ -55,13 +55,27 @@ void Sdb::init(){
   /*   return NPC_STATE::QUIT; */
   /* }; */
 }
-static char inst_buf[128];
-static char logstr[128];
+
+Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) : 
+  is_batch(args.is_batch), is_itrace(args.is_itrace), is_ftrace(args.is_ftrace), 
+  is_diff(args.is_diff), sim_(sim), mem_(mem){
+  init();
+  if (is_itrace) itrace = new Itrace;
+  if (is_ftrace) ftrace = new Ftrace(args.image);
+  if (is_diff) {
+    diff = new Diff(mem_, &sim_->cpu);
+    diff->init_difftest(diff_file, mem_->image_size, 1234);
+  }
+}
+
 SIM_STATE Sdb::exec_once(){
   inst_nums++;
   SIM_STATE state = sim_->exec_once();
   if (is_itrace) itrace->trace(pc_, inst_);
   if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
+  if (is_diff) 
+    if (!diff->difftest_step()) state = SIM_STATE::DIFF_FAILURE;
+  
   return state;
 }
 
@@ -95,7 +109,9 @@ int Sdb::run(){
   std::string line;
   SIM_STATE result;
   if (is_batch) {
+    uint64_t now = get_time();
     result = cmd_c(this, nullptr);
+    timer += get_time() - now;
   }
   else {
     std::cout << "(npc) ";
@@ -109,20 +125,21 @@ int Sdb::run(){
       uint64_t now = get_time();
       result = sdb_map_[cmd](this, sdb_args);
       timer += get_time() - now;
-      switch (result) {
-        case SIM_STATE::NORMAL : break;
-        case SIM_STATE::QUIT :
-          Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
-          statistic();
-          return 0;
-        default: 
-          Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
-          statistic();
-          return 0;
+      if (result != SIM_STATE::NORMAL) {
+        break;
       }
       std::cout << "(npc) ";
     }
   }
+  switch (result) {
+    case SIM_STATE::QUIT :
+      Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
+      break;
+    default: 
+      Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
+      break;
+  }
+  statistic();
   if (is_itrace) itrace->print_buffer();
   return 0;
 }
