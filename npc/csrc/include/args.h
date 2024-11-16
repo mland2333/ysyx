@@ -12,6 +12,9 @@ public:
   bool is_itrace = false;
   bool is_ftrace = false;
   char* ftrace_file = nullptr;
+  bool is_diff = false;
+  char* diff_file = nullptr;
+
   Args(int argc, char* argv[]){
     constexpr struct option table[] = {
       {"batch", no_argument, NULL, 'b'},
@@ -44,6 +47,10 @@ public:
     case 'f':
       is_ftrace = true;
       ftrace_file = optarg;
+      break;
+    case 'd':
+      is_diff = true;
+      diff_file = optarg;
       break;
     case 1:
       image = optarg;

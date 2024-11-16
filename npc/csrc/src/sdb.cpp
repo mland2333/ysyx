@@ -55,13 +55,27 @@ void Sdb::init(){
   /*   return NPC_STATE::QUIT; */
   /* }; */
 }
-static char inst_buf[128];
-static char logstr[128];
+
+Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) : 
+  is_batch(args.is_batch), is_itrace(args.is_itrace), is_ftrace(args.is_ftrace), 
+  is_diff(args.is_diff), diff_file(args.diff_file), sim_(sim), mem_(mem){
+  init();
+  if (is_itrace) itrace = new Itrace;
+  if (is_ftrace) ftrace = new Ftrace(args.ftrace_file);
+  if (is_diff) {
+    diff = new Diff(mem_, &sim_->cpu);
+    diff->init_difftest(diff_file, mem_->image_size, 1234);
+  }
+}
+
 SIM_STATE Sdb::exec_once(){
   inst_nums++;
   SIM_STATE state = sim_->exec_once();
   if (is_itrace) itrace->trace(pc_, inst_);
   if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
+  if (is_diff) 
+    if (!diff->difftest_step()) state = SIM_STATE::DIFF_FAILURE;
+  
   return state;
 }
 

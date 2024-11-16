@@ -9,7 +9,8 @@
 #include <Vtop___024root.h>
 enum class SIM_STATE{
   NORMAL,
-  QUIT
+  QUIT,
+  DIFF_FAILURE
 };
 class Simulator {
 private:
