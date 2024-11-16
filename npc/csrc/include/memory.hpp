@@ -29,7 +29,7 @@ public:
   Memory();
   Memory(uint32_t base, uint32_t size);
   Memory(uint32_t base, uint32_t size, const char* image);
-  void load_img(const char* image);
+  long load_img(const char* image);
   template<typename T>
   T read(uint32_t vaddr) const;
   template<typename T>

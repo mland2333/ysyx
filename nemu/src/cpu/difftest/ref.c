@@ -13,12 +13,14 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include <stdio.h>
 #include <isa.h>
 #include <cpu/cpu.h>
 #include <difftest-def.h>
 #include <memory/paddr.h>
 
 __EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction) {
+  printf("addr = %x\n", addr);
   if (addr >= CONFIG_MBASE && addr < CONFIG_MBASE + CONFIG_MSIZE) {
     if (direction == DIFFTEST_TO_DUT) {
       for (int i = 0; i < n; i++) {
