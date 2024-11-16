@@ -1,18 +1,10 @@
-#include <common.h>
-#ifdef CONFIG_FTRACE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <elf.h>
-#include <ftrace.h>
-
-extern Ftrace* ftrace;
-Ftrace* init_ftrace(char* filename){
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <debug/ftrace.h>
+Ftrace::Ftrace(const char* filename){
   FILE* file = fopen(filename, "r");
   Elf32_Ehdr elf_header;
-  Elf32_Sym* func_table = NULL;
-  int func_num = 0;
   fread(&elf_header, sizeof(Elf32_Ehdr), 1, file);
   fseek(file, elf_header.e_shoff, SEEK_SET);
   Elf32_Shdr* section_headers =
@@ -30,9 +22,9 @@ Ftrace* init_ftrace(char* filename){
   }
   if (symtab_hdr == NULL || strtab_hdr == NULL) {
     printf("未找到符号表或字符串表\n");
-    return 0;
+    return;
   }
-  char* string_table = (char *)malloc(strtab_hdr->sh_size);
+  string_table = (char *)malloc(strtab_hdr->sh_size);
   Elf32_Sym* symbol_table = (Elf32_Sym *)malloc(symtab_hdr->sh_size);
   fseek(file, strtab_hdr->sh_offset, SEEK_SET);
   fread(string_table, 1, strtab_hdr->sh_size, file);
@@ -47,31 +39,43 @@ Ftrace* init_ftrace(char* filename){
   free(section_headers);
   free(symbol_table);
   fclose(file);
-  Ftrace* m_ftrace = (Ftrace*) malloc(sizeof(Ftrace));
-  m_ftrace->func_num = func_num;
-  m_ftrace->func_table = func_table;
-  m_ftrace->string_table = string_table;
-  return m_ftrace;
 }
 
-int call_func(uint32_t ptr)
-{
-  for(int i = 0; i < ftrace->func_num; i++)
+int Ftrace::func_head(uint32_t ptr){
+  for(int i = 0; i < func_num; i++)
   {
-    if(ptr == ftrace->func_table[i].st_value)
-      return ftrace->func_table[i].st_name;
+    if(ptr == func_table[i].st_value)
+      return func_table[i].st_name;
   }
   return -1;
 }
 
-int ret_func(uint32_t ptr)
-{
-  for(int i = 0; i < ftrace->func_num; i++)
+int Ftrace::func_body(uint32_t ptr){
+  for(int i = 0; i < func_num; i++)
   {
-    if(ptr >= ftrace->func_table[i].st_value && ptr < ftrace->func_table[i].st_value + ftrace->func_table[i].st_size)
-      return ftrace->func_table[i].st_name;
+    if(ptr >= func_table[i].st_value && ptr < func_table[i].st_value + func_table[i].st_size)
+      return func_table[i].st_name;
   }
   return -1;
 }
 
-#endif
+void Ftrace::trace(uint32_t pc, uint32_t upc, bool jump){
+  int name;
+  if (jump) {
+    if ((name = func_head(upc)) != -1) {
+      space_num++;
+      printf("0x%x:", pc);
+      for(int i = 0; i<space_num; i++)
+        printf(" ");
+      printf("call [%s@0x%x]\n", &string_table[name], upc);
+    }
+    else if ((name = func_body(upc)) != -1) {
+      printf("0x%x:", pc);                                  
+      for(int i = 0; i<space_num; i++)                         
+        printf(" ");                                         
+      space_num--;                                             
+      printf("ret  [%s@0x%x]\n", &string_table[name], upc);
+    }
+  }
+}
+

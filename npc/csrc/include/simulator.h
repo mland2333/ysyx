@@ -44,6 +44,12 @@ public:
     cpu_update();
   }
   SIM_STATE exec_once();
+  bool is_jump(){
+    return top->rootp->top__DOT__jump;
+  }
+  uint32_t get_upc(){
+    return top->rootp->top__DOT__upc;
+  }
   void quit(){
     state = SIM_STATE::QUIT;
   }
