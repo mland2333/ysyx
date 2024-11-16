@@ -19,19 +19,19 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
 
 
 void Simulator::step_and_dump_wave() {
-    top->eval();
-    if (is_gtk) {
-      contextp->timeInc(1);
-      tfp->dump(contextp->time());
-    }
+  top->eval();
+  if (is_gtk) {
+    contextp->timeInc(1);
+    tfp->dump(contextp->time());
   }
+}
 
 void Simulator::single_cycle() {
-    top->clock = 1;
-    step_and_dump_wave();
-    top->clock = 0;
-    step_and_dump_wave();
-  }
+  top->clock = 1;
+  step_and_dump_wave();
+  top->clock = 0;
+  step_and_dump_wave();
+}
 
 SIM_STATE Simulator::exec_once(){
   if (is_nvboard) nvboard_update();
@@ -50,8 +50,10 @@ int Simulator::run() {
   return 0;
 }
 Simulator::~Simulator() {
+  top->final();
   delete top;
   if (is_gtk) {
+    tfp->close();
     delete tfp;
     delete contextp;
   }

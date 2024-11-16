@@ -1,12 +1,9 @@
-#include <memory.hpp>
-#include <simulator.h>
-
-extern Memory* mem;
-extern Simulator* sim;
+#include <sdb.h>
+extern Sdb* sdb;
 
 extern "C" int inst_fetch(int pc){
-  return mem->read<uint32_t>(pc);
+  return sdb->inst_fetch(pc);
 }
 extern "C" void quit(){
-  sim->quit();
+  sdb->quit();
 }

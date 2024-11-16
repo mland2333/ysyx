@@ -26,14 +26,12 @@ long Memory::load_img(const char* image){
   std::string img_file(image);
   std::filesystem::path img_path(img_file);
   if (!std::filesystem::exists(img_path)) {
-    throw std::runtime_error("Cannot open '" + img_file + "'");
+    std::cout << "Cannot open '" << img_file << "'\n";
+    return -1;
   }
   std::cout << "打开文件" << img_file << '\n';
   long size = std::filesystem::file_size(img_path);
   std::ifstream file(image, std::ios::binary);
-  if (!file) {
-    throw std::runtime_error("Failed to open '" + img_file + "'");
-  }
 
   file.read(mem_, size);
   return size;

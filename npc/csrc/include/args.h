@@ -9,6 +9,7 @@ public:
   bool is_nvboard = false;
   bool is_gtk = false;
   bool is_batch = false;
+  bool is_itrace = false;
   Args(int argc, char* argv[]){
     constexpr struct option table[] = {
       {"batch", no_argument, NULL, 'b'},
@@ -18,11 +19,12 @@ public:
       {"file", required_argument, NULL, 'f'},
       {"gtktrace", required_argument, NULL, 'g'},
       {"nvboard", no_argument, NULL, 'n'},
+      {"itrace", no_argument, NULL, 'i'},
       {"help", no_argument, NULL, 'h'},
       {0, 0, NULL, 0},
   };
   int o;
-  while ((o = getopt_long(argc, argv, "-bhng:d:f:", table, NULL)) != -1) {
+  while ((o = getopt_long(argc, argv, "-bhnig:d:f:", table, NULL)) != -1) {
     switch (o) {
     case 'g':
       is_gtk = true;
@@ -33,6 +35,9 @@ public:
       break;
     case 'b':
       is_batch = true;
+      break;
+    case 'i':
+      is_itrace = true;
       break;
     case 1:
       image = optarg;

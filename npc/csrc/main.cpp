@@ -3,18 +3,16 @@
 #include <memory.hpp>
 #include <args.h>
 #include <sdb.h>
-Memory* mem;
-Simulator* sim;
 Sdb* sdb;
 
 int main(int argc, char **argv) {
   Args args(argc, argv);
-  mem = new Memory();
-  mem->load_img(args.image);
-  sim = new Simulator(args);
-  sdb = new Sdb(args);
+  Memory* mem = new Memory();
+  if(mem->load_img(args.image) == 0) return 0;
+  Simulator* sim = new Simulator(args);
+  sdb = new Sdb(args, sim, mem);
   sim->reset(10);
   sdb->welcome();
-  sdb->run(sim);
+  sdb->run();
   return 0;
 }
