@@ -8,7 +8,7 @@ Sdb* sdb;
 int main(int argc, char **argv) {
   Args args(argc, argv);
   Memory* mem = new Memory();
-  mem->load_img(args.image);
+  if(mem->load_img(args.image) == 0) return 0;
   Simulator* sim = new Simulator(args);
   sdb = new Sdb(args, sim, mem);
   sim->reset(10);

@@ -2,8 +2,9 @@
 #include <cstdio>
 #include <cstring>
 #include <sdb.h>
-#include <debug.h>
+#include <debug/log.h>
 #include <chrono>
+#include <debug/disasm.h>
 SIM_STATE cmd_c(Sdb* sdb, char* args){
   SIM_STATE sim_state;
   while (true) {
@@ -54,6 +55,18 @@ void Sdb::init(){
   /*   return NPC_STATE::QUIT; */
   /* }; */
 }
+static char inst_buf[128];
+static char logstr[128];
+SIM_STATE Sdb::exec_once(){
+  inst_nums++;
+  SIM_STATE state = sim_->exec_once();
+  if (is_itrace){
+    disassemble(inst_buf, 128, (uint64_t)pc_, (uint8_t *)(&inst_), 4);
+    sprintf(logstr, "0x%x\t0x%08x\t%s\t", pc_, inst_, inst_buf);
+    itrace.insert_buffer(logstr);
+  }
+  return state;
+}
 
 SIM_STATE Sdb::exec(int n){
   for (int i = 0; i < n; i++) {
@@ -86,8 +99,6 @@ int Sdb::run(){
   SIM_STATE result;
   if (is_batch) {
     result = cmd_c(this, nullptr);
-    if (result == SIM_STATE::QUIT)
-      return 0;
   }
   else {
     std::cout << "(npc) ";
@@ -115,5 +126,6 @@ int Sdb::run(){
       std::cout << "(npc) ";
     }
   }
+  itrace.print_buffer();
   return 0;
 }
