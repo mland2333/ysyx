@@ -7,9 +7,13 @@ module ysyx_24110006_PC(
 );
 
 reg[31:0] pc;
+reg reset;
+
+always@(posedge i_clock)
+  reset <= i_reset;
 
 always@(posedge i_clock)begin
-  if(i_reset) pc <= 32'h80000000;
+  if(reset) pc <= 32'h80000000;
   else if(i_jump) pc <= i_upc;
   else pc <= pc + 4;
 end

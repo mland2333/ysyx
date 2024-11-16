@@ -63,7 +63,6 @@ SIM_STATE Sdb::exec_once(){
   if (is_itrace){
     disassemble(inst_buf, 128, (uint64_t)pc_, (uint8_t *)(&inst_), 4);
     sprintf(logstr, "0x%x\t0x%08x\t%s\t", pc_, inst_, inst_buf);
-    printf(logstr);
     itrace.insert_buffer(logstr);
   }
   return state;

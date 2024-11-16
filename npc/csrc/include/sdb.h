@@ -50,7 +50,6 @@ public:
   uint32_t inst_fetch(uint32_t pc){
     inst_ = mem_->read<uint32_t>(pc);
     pc_ = pc;
-    printf("pc = 0x%x\n", pc);
     return inst_;
   }
   void quit(){
