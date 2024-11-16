@@ -5,8 +5,6 @@
 Ftrace::Ftrace(const char* filename){
   FILE* file = fopen(filename, "r");
   Elf32_Ehdr elf_header;
-  Elf32_Sym* func_table = NULL;
-  int func_num = 0;
   fread(&elf_header, sizeof(Elf32_Ehdr), 1, file);
   fseek(file, elf_header.e_shoff, SEEK_SET);
   Elf32_Shdr* section_headers =
@@ -26,7 +24,7 @@ Ftrace::Ftrace(const char* filename){
     printf("未找到符号表或字符串表\n");
     return;
   }
-  char* string_table = (char *)malloc(strtab_hdr->sh_size);
+  string_table = (char *)malloc(strtab_hdr->sh_size);
   Elf32_Sym* symbol_table = (Elf32_Sym *)malloc(symtab_hdr->sh_size);
   fseek(file, strtab_hdr->sh_offset, SEEK_SET);
   fread(string_table, 1, strtab_hdr->sh_size, file);
@@ -37,6 +35,12 @@ Ftrace::Ftrace(const char* filename){
     if (ELF32_ST_TYPE(symbol_table[i].st_info) == STT_FUNC) {
       memcpy(&func_table[func_num++], &symbol_table[i], sizeof(Elf32_Sym));
     }
+  }
+  for(int i = 0; i < func_num; i++)
+  {
+      char *symbol_name = &string_table[func_table[i].st_name];
+      printf("i = %u, 函数名称：%s, 地址：%x\n", i, symbol_name,
+             (unsigned)func_table[i].st_value);
   }
   free(section_headers);
   free(symbol_table);
