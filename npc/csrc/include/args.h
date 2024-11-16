@@ -4,19 +4,21 @@
 #include <cstdio>
 class Args{
 public:
-  char* gtk_file = NULL;
-  char* image = NULL;
+  char* gtk_file = nullptr;
+  char* image = nullptr;
   bool is_nvboard = false;
   bool is_gtk = false;
   bool is_batch = false;
   bool is_itrace = false;
+  bool is_ftrace = false;
+  char* ftrace_file = nullptr;
   Args(int argc, char* argv[]){
     constexpr struct option table[] = {
       {"batch", no_argument, NULL, 'b'},
       {"log", required_argument, NULL, 'l'},
       {"diff", required_argument, NULL, 'd'},
       {"port", required_argument, NULL, 'p'},
-      {"file", required_argument, NULL, 'f'},
+      {"ftrace", required_argument, NULL, 'f'},
       {"gtktrace", required_argument, NULL, 'g'},
       {"nvboard", no_argument, NULL, 'n'},
       {"itrace", no_argument, NULL, 'i'},
@@ -38,6 +40,10 @@ public:
       break;
     case 'i':
       is_itrace = true;
+      break;
+    case 'f':
+      is_ftrace = true;
+      ftrace_file = optarg;
       break;
     case 1:
       image = optarg;

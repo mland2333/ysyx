@@ -3,10 +3,9 @@
 #include <cstdio>
 #include <debug/disasm.h>
 Itrace::Itrace(){
-  extern void init_disasm(const char*);
-  init_disasm("riscv32-linux-pc-gnu");
+  init_disasm();
 }
-void Itrace::insert_buffer(char* logstr){
+void Itrace::insert_buffer(){
   memcpy(ring_buffer[buffer_index%MAX_RING_BUFFER], logstr, 128);
   ++buffer_index;
 }
@@ -21,4 +20,10 @@ void Itrace::print_buffer(){
     for(int i = 0; i < MAX_RING_BUFFER; i++)
       printf("%s\n", ring_buffer[(buffer_index+i)%MAX_RING_BUFFER]);
   }
+}
+
+void Itrace::trace(uint32_t pc, uint32_t inst){
+  disassemble(inst_buf, 128, (uint64_t)pc, (uint8_t *)(&inst), 4);
+  sprintf(logstr, "0x%x\t0x%08x\t%s\t", pc, inst, inst_buf);
+  insert_buffer();
 }

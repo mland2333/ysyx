@@ -60,11 +60,8 @@ static char logstr[128];
 SIM_STATE Sdb::exec_once(){
   inst_nums++;
   SIM_STATE state = sim_->exec_once();
-  if (is_itrace){
-    disassemble(inst_buf, 128, (uint64_t)pc_, (uint8_t *)(&inst_), 4);
-    sprintf(logstr, "0x%x\t0x%08x\t%s\t", pc_, inst_, inst_buf);
-    itrace.insert_buffer(logstr);
-  }
+  if (is_itrace) itrace->trace(pc_, inst_);
+  if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
   return state;
 }
 
@@ -126,6 +123,6 @@ int Sdb::run(){
       std::cout << "(npc) ";
     }
   }
-  itrace.print_buffer();
+  if (is_itrace) itrace->print_buffer();
   return 0;
 }
