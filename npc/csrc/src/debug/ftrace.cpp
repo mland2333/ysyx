@@ -36,12 +36,6 @@ Ftrace::Ftrace(const char* filename){
       memcpy(&func_table[func_num++], &symbol_table[i], sizeof(Elf32_Sym));
     }
   }
-  for(int i = 0; i < func_num; i++)
-  {
-      char *symbol_name = &string_table[func_table[i].st_name];
-      printf("i = %u, 函数名称：%s, 地址：%x\n", i, symbol_name,
-             (unsigned)func_table[i].st_value);
-  }
   free(section_headers);
   free(symbol_table);
   fclose(file);
