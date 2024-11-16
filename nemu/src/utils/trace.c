@@ -1,4 +1,4 @@
-#ifndef CONFIG_FTRACE
+#ifdef CONFIG_FTRACE
 
 #include <stdio.h>
 #include <stdlib.h>
