@@ -53,7 +53,7 @@ assign alu_b = I || L || AUIPC || S  || LUI ? i_imm : JAL || JALR ? 32'b100 : i_
 assign alu_t = I||R ? {1'b0, i_func} : B ? {1'b1, i_func} : 0;
 assign alu_sign = R && f010 || B && (f100 || f101);
 assign alu_sub = (I || R) && (f011 || f010) || B || R && f000 && i_imm[5];
-assign alu_sra = i_imm[5];
+assign alu_sra = R && i_imm[5] || I && i_imm[10];
 
 ysyx_24110006_ALU malu(
   .i_a(alu_a),
