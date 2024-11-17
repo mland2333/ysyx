@@ -12,7 +12,7 @@ public:
   Diff(Memory* mem, Cpu<32>* cpu) : mem_(mem), cpu_(cpu){
     ref_cpu = new Cpu<32>();
   }
-  void init_difftest(char *ref_so_file, long img_size, int port);
+  void init_difftest(const char *ref_so_file, long img_size, int port);
   bool difftest_step();
 };
 

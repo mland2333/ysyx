@@ -9,10 +9,11 @@ TOPNAME = top
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --trace
+				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --timing
 
 
 LIBS += -lcapstone
+ARGS ?=
 
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
@@ -57,9 +58,9 @@ sim: all
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
 run: $(BIN)
-	@$^ $(IMG)
+	@$^ $(IMG) $(ARGS)
 gdb: $(BIN)
-	gdb --args $(BIN) $(IMG)
+	gdb --args $(BIN) $(IMG) $(ARGS)
 clean:
 	rm -rf $(BUILD_DIR)
 include ../Makefile

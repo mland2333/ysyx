@@ -6,9 +6,9 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
   if (is_gtk) {
     Verilated::traceEverOn(true);
     contextp = new VerilatedContext;
-    tfp = new VerilatedVcdC;
+    tfp = new VerilatedFstC;
     top->trace(tfp, 0);
-    tfp->open(gtk_file);
+    tfp->open("dump.fst");
   }
   if (is_nvboard) {
     void nvboard_bind_all_pins(TOP_NAME *);
@@ -16,7 +16,6 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
     nvboard_init();
   }
 }
-
 
 void Simulator::step_and_dump_wave() {
   top->eval();

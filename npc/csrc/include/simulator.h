@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vtop.h"
-#include "verilated_vcd_c.h"
+#include "verilated_fst_c.h"
 #include <iostream>
 #include <verilated.h>
 #include <cpu.h>
@@ -16,7 +16,7 @@ class Simulator {
 private:
   TOP_NAME *top;
   VerilatedContext *contextp;
-  VerilatedVcdC *tfp;
+  VerilatedFstC *tfp;
   bool is_gtk = false;
   bool is_nvboard = false;
   char *gtk_file;

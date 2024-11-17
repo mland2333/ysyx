@@ -2,8 +2,18 @@
 #include <cstdlib>
 #include <cstring>
 #include <debug/ftrace.h>
-Ftrace::Ftrace(const char* filename){
-  FILE* file = fopen(filename, "r");
+
+void Ftrace::ftrace_file(const char* image){
+  filename = image;
+  size_t pos = filename.rfind(".bin");
+  if (pos != std::string::npos) {
+    filename.replace(pos, 4, ".elf");
+  }
+}
+Ftrace::Ftrace(const char* image){
+  ftrace_file(image);
+  int name_size = 0;
+  FILE* file = fopen(filename.c_str(), "r");
   Elf32_Ehdr elf_header;
   fread(&elf_header, sizeof(Elf32_Ehdr), 1, file);
   fseek(file, elf_header.e_shoff, SEEK_SET);
