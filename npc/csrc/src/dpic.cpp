@@ -9,9 +9,9 @@ extern "C" void quit(){
 }
 
 extern "C" int pmem_read(int raddr){
-  return sdb->mem_read(raddr);
+  return sdb->mem_read(raddr & ~0x3u);
 }
 
 extern "C" void pmem_write(int waddr, int wdata, char wmask){
-  sdb->mem_write(waddr, wdata, wmask & 0x0f);
+  sdb->mem_write(waddr & ~0x3u, wdata, wmask & 0x0f);
 }

@@ -5,7 +5,7 @@
 !/nexus-am/*
 !/nanos-lite/*
 !/navy-apps/*
-!/npc/*
+npc/result/
 !Makefile
 !README.md
 !.gitignore
@@ -13,3 +13,4 @@
 /fceux-am
 /nvboard
 /am-kernels
+

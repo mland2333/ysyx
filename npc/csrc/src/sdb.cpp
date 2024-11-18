@@ -1,5 +1,6 @@
 #include "simulator.h"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <sdb.h>
 #include <debug/log.h>
@@ -139,6 +140,7 @@ int Sdb::run(){
       break;
     default: 
       Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
+      exit(-1);
       break;
   }
   statistic();

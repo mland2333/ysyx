@@ -58,5 +58,4 @@ Simulator::~Simulator() {
     delete tfp;
     delete contextp;
   }
-  printf("析构了\n");
 }
