@@ -82,10 +82,12 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
           for (; j>0; j--) {
             out[count++] = buf[j-1];
           }
+          s++;
         break;
         case 'c':
           numu = va_arg(ap, uint32_t);
           out[count++] = (char)numu;
+          s++;
         break;
         default:
           return count;
