@@ -33,15 +33,15 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
   while (*s) {
     if (*s == '%') {
       s++;
+      if (*s == '0') {
+        fill_num = '0';
+        s++;
+      }
       if('1' <= *s && *s <= '9') {
         num_counts = (int)(*s - '0');
         s++;
       }
       switch (*s) {
-        case '0':
-          fill_num = '0';
-          s++;
-        break;
         case 'd':
           num = va_arg(ap, int);
           if(num < 0) {
