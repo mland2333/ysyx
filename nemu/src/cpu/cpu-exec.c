@@ -32,6 +32,8 @@ static uint64_t g_timer = 0; // unit: us
 static bool g_print_step = false;
 
 void device_update();
+
+#ifdef CONFIG_WATCHPOINT
 void watch_update(){
   WP* wp = get_head();
   bool success;
@@ -47,6 +49,8 @@ void watch_update(){
   }
   if (flag && nemu_state.state != NEMU_END) nemu_state.state = NEMU_STOP;
 }
+#endif
+
 #ifdef CONFIG_ITRACE
 #define MAX_RING_BUFFER 10
 int buffer_index = 0;
