@@ -12,6 +12,7 @@
 #include <debug/itrace.h>
 #include <debug/ftrace.h>
 #include <debug/difftest.h>
+#include <debug/mtrace.h>
 enum class NPC_STATE{
   RUNNING,
   STOP,
@@ -23,6 +24,7 @@ class Sdb{
   bool is_batch = false;
   bool is_itrace = false;
   bool is_ftrace = false;
+  bool is_mtrace = false;
   bool is_diff = false;
   const char* diff_file = "/home/mland/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so";
   uint64_t timer = 0;
@@ -36,6 +38,7 @@ class Sdb{
 
   Itrace* itrace;
   Ftrace* ftrace;
+  Mtrace* mtrace;
   Diff* diff;
 public:
   Sdb(Args& args, Simulator* sim, Memory* mem);
@@ -50,7 +53,18 @@ public:
     sim_->cpu.display();
   }
   uint32_t mem_read(uint32_t addr){
-    return mem_->read<uint32_t>(addr);
+    if (is_mtrace) printf("pc=0x%x, raddr=0x%x, ", pc_, addr);
+    uint32_t rdata = mem_->read<uint32_t>(addr);
+    if (is_mtrace) printf("rdata=0x%x\n", rdata);
+    return rdata;
+  }
+  void mem_write(uint32_t addr, uint32_t wdata, char wmask){
+    if (is_mtrace) printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc_, addr, wdata);
+    uint8_t* data = (uint8_t*)&wdata;
+    for(int i = 0; i<4; i++){
+      if(((1<<i)&wmask) != 0)
+        mem_->write<uint8_t>(addr+i, data[i]);
+    }
   }
   uint32_t inst_fetch(uint32_t pc){
     inst_ = mem_->read<uint32_t>(pc);

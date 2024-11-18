@@ -1,5 +1,6 @@
 #include "simulator.h"
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <sdb.h>
 #include <debug/log.h>
@@ -58,10 +59,11 @@ void Sdb::init(){
 
 Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) : 
   is_batch(args.is_batch), is_itrace(args.is_itrace), is_ftrace(args.is_ftrace), 
-  is_diff(args.is_diff), sim_(sim), mem_(mem){
+  is_mtrace(args.is_mtrace), is_diff(args.is_diff), sim_(sim), mem_(mem){
   init();
   if (is_itrace) itrace = new Itrace;
   if (is_ftrace) ftrace = new Ftrace(args.image);
+  if (is_mtrace) mtrace = new Mtrace();
   if (is_diff) {
     diff = new Diff(mem_, &sim_->cpu);
     diff->init_difftest(diff_file, mem_->image_size, 1234);
@@ -102,6 +104,7 @@ void Sdb::statistic(){
   Log("host time spent = %lu us", timer);
   Log("total host instructions = %lu", inst_nums);
 }
+
 int Sdb::run(){
   char args[32];
   char *cmd;
@@ -137,6 +140,7 @@ int Sdb::run(){
       break;
     default: 
       Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
+      exit(-1);
       break;
   }
   statistic();

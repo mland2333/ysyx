@@ -12,7 +12,9 @@ public:
   bool is_batch = false;
   bool is_itrace = false;
   bool is_ftrace = false;
+  bool is_mtrace = false;
   bool is_diff = false;
+
 
   Args(int argc, char* argv[]){
     constexpr struct option table[] = {
@@ -24,11 +26,12 @@ public:
       {"gtktrace", no_argument, NULL, 'g'},
       {"nvboard", no_argument, NULL, 'n'},
       {"itrace", no_argument, NULL, 'i'},
+      {"mtrace", no_argument, NULL, 'm'},
       {"help", no_argument, NULL, 'h'},
       {0, 0, NULL, 0},
   };
   int o;
-  while ((o = getopt_long(argc, argv, "-bhnigdf", table, NULL)) != -1) {
+  while ((o = getopt_long(argc, argv, "-bhnigdfm", table, NULL)) != -1) {
     switch (o) {
     case 'g':
       is_gtk = true;
@@ -44,6 +47,9 @@ public:
       break;
     case 'f':
       is_ftrace = true;
+      break;
+    case 'm':
+      is_mtrace = true;
       break;
     case 'd':
       is_diff = true;

@@ -19,7 +19,6 @@ private:
   VerilatedFstC *tfp;
   bool is_gtk = false;
   bool is_nvboard = false;
-  char *gtk_file;
   void step_and_dump_wave(); 
   void single_cycle();
   void args_init(int argc, char *argv[]);

@@ -1,7 +1,9 @@
 #include "simulator.h"
+#include <cstdio>
 #include <getopt.h>
 #include <nvboard.h>
-Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gtk), gtk_file(args.gtk_file){
+
+Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gtk){
   top = new TOP_NAME;
   if (is_gtk) {
     Verilated::traceEverOn(true);
@@ -52,6 +54,7 @@ Simulator::~Simulator() {
   top->final();
   delete top;
   if (is_gtk) {
+    tfp->close();
     delete tfp;
     delete contextp;
   }
