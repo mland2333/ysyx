@@ -6,8 +6,17 @@
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
+static char print_buffer[65535];
 int printf(const char *fmt, ...) {
-  panic("Not implemented");
+  va_list ap;
+  int count;
+  va_start(ap, fmt);
+  count = vsprintf(print_buffer, fmt, ap);
+  va_end(ap);
+  int i = 0;
+  while(print_buffer[i])
+    putch(print_buffer[i++]);
+  return count;
 }
 
 int vsprintf(char *out, const char *fmt, va_list ap) {
