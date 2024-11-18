@@ -24,8 +24,10 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
   char* str;
   char digits[] = "0123456789abcdef";
   int num;
+  unsigned int numu;
   char buf[33];
   int count = 0;
+  int j = 0;
   while (*s) {
     if (*s == '%') {
       s++;
@@ -36,7 +38,7 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
             out[count++] = '-';
             num = -num;
           }
-          int j = 0;
+          j = 0;
           do {
             buf[j++] = digits[num%10];
             num /= 10;
@@ -54,6 +56,17 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
           }
           s++;
         break;
+        case 'x':
+          numu = va_arg(ap, uint32_t);
+          j = 0;
+          do{
+            buf[j++] = digits[numu%16];
+            numu >>= 4;
+          }while(numu != 0);
+          for (; j>0; j--) {
+            out[count++] = buf[j-1];
+          }
+          break;
         default:
           return count;
       }
