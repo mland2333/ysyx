@@ -228,7 +228,7 @@ uint32_t eval(int p, int q){
   }
   else if(p == q)
   {
-    uint32_t num;
+    uint32_t num = 0;
     if(tokens[p].type == TK_INT){
       sscanf(tokens[p].str, "%d", &num);
     }
