@@ -9,7 +9,7 @@ TOPNAME = top
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --timing
+				-O3 --x-assign fast --x-initial fast --noassert --trace-fst
 
 
 LIBS += -lcapstone
