@@ -34,7 +34,7 @@ always@(i_ren or i_addr)begin
   end
 end
 
-always@(i_wen or i_addr)begin
+always@(i_wen or i_addr or i_wdata)begin
   if(i_wen) begin
     pmem_write(i_addr, i_wdata, {4'b0, i_wmask});
   end
