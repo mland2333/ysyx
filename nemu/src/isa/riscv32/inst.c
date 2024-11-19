@@ -67,8 +67,9 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
 #ifdef CONFIG_FTRACE
 extern Ftrace* ftrace;
 int space_num = 0;
-#endif
 extern bool is_ftrace;
+#endif
+
 static int decode_exec(Decode *s) {
   s->dnpc = s->snpc;
 
