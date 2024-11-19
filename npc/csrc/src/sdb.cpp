@@ -4,8 +4,10 @@
 #include <cstring>
 #include <sdb.h>
 #include <debug/log.h>
-#include <chrono>
 #include <debug/disasm.h>
+#include <device/device.h>
+#include <utils.h>
+
 SIM_STATE cmd_c(Sdb* sdb, char* args){
   SIM_STATE sim_state;
   while (true) {
@@ -59,7 +61,8 @@ void Sdb::init(){
 
 Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) : 
   is_batch(args.is_batch), is_itrace(args.is_itrace), is_ftrace(args.is_ftrace), 
-  is_mtrace(args.is_mtrace), is_diff(args.is_diff), sim_(sim), mem_(mem){
+  is_mtrace(args.is_mtrace), is_diff(args.is_diff), is_vga(args.is_vga), 
+  sim_(sim), mem_(mem){
   init();
   if (is_itrace) itrace = new Itrace;
   if (is_ftrace) ftrace = new Ftrace(args.image);
@@ -68,6 +71,8 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
     diff = new Diff(mem_, &sim_->cpu);
     diff->init_difftest(diff_file, mem_->image_size, 1234);
   }
+  if (is_vga) init_vga();
+  rtc_begin = Utils::get_time();
 }
 
 SIM_STATE Sdb::exec_once(){
@@ -77,7 +82,7 @@ SIM_STATE Sdb::exec_once(){
   if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
   if (is_diff) 
     if (!diff->difftest_step()) state = SIM_STATE::DIFF_FAILURE;
-  
+  if (is_vga) if (device_update() == -1) state = SIM_STATE::QUIT;
   return state;
 }
 
@@ -96,9 +101,8 @@ void Sdb::welcome(){
   printf("For help, type \"help\"\n");
 }
 
-uint64_t Sdb::get_time(){
-  auto now = std::chrono::system_clock::now();
-  return (std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch())).count();
+uint64_t Sdb::get_rtc(){
+  return Utils::get_time() - rtc_begin;
 }
 void Sdb::statistic(){
   Log("host time spent = %lu us", timer);
@@ -112,9 +116,9 @@ int Sdb::run(){
   std::string line;
   SIM_STATE result;
   if (is_batch) {
-    uint64_t now = get_time();
+    uint64_t now = Utils::get_time();
     result = cmd_c(this, nullptr);
-    timer += get_time() - now;
+    timer += Utils::get_time() - now;
   }
   else {
     std::cout << "(npc) ";
@@ -125,9 +129,9 @@ int Sdb::run(){
       char *sdb_args = cmd + strlen(cmd) + 1;
       if (sdb_args >= strend)
         sdb_args = nullptr;
-      uint64_t now = get_time();
+      uint64_t now = Utils::get_time();
       result = sdb_map_[cmd](this, sdb_args);
-      timer += get_time() - now;
+      timer += Utils::get_time() - now;
       if (result != SIM_STATE::NORMAL) {
         break;
       }

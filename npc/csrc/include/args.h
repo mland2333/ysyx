@@ -14,6 +14,7 @@ public:
   bool is_ftrace = false;
   bool is_mtrace = false;
   bool is_diff = false;
+  bool is_vga = false;
 
 
   Args(int argc, char* argv[]){
@@ -28,10 +29,11 @@ public:
       {"itrace", no_argument, NULL, 'i'},
       {"mtrace", no_argument, NULL, 'm'},
       {"help", no_argument, NULL, 'h'},
+      {"vga", no_argument, NULL, 'v'},
       {0, 0, NULL, 0},
   };
   int o;
-  while ((o = getopt_long(argc, argv, "-bhnigdfm", table, NULL)) != -1) {
+  while ((o = getopt_long(argc, argv, "-bhnigdfmv", table, NULL)) != -1) {
     switch (o) {
     case 'g':
       is_gtk = true;
@@ -53,6 +55,9 @@ public:
       break;
     case 'd':
       is_diff = true;
+      break;
+    case 'v':
+      is_vga = true;
       break;
     case 1:
       image = optarg;
