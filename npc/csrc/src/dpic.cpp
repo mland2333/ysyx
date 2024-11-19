@@ -24,7 +24,8 @@ extern "C" int pmem_read(int raddr){
     return SCREEN_H;
   }
   else if(raddr == VGACTL_ADDR + 2){
-    return SCREEN_W;
+    /* printf("read addr: 0x%x, rdata: %d\n", raddr, SCREEN_W); */
+    return SCREEN_W << 16;
   }
   else if(raddr == VGACTL_ADDR + 4){
     return sync_update;
@@ -45,7 +46,7 @@ extern "C" void pmem_write(uint32_t waddr, int wdata, char wmask){
     return;
   }
   else if (waddr >= FB_ADDR && waddr < FB_ADDR + SCREEN_SIZE) {
-    printf("write addr: 0x%x, wdata: %d\n", waddr, wdata);
+    /* printf("write addr: 0x%x, wdata: %d\n", waddr, wdata); */
     set_vga_buf(waddr, wdata);
     return;
   }
