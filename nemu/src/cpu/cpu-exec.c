@@ -16,6 +16,7 @@
 #include <cpu/cpu.h>
 #include <cpu/decode.h>
 #include <cpu/difftest.h>
+#include <stdio.h>
 #include <locale.h>
 #include "../../monitor/sdb/sdb.h"
 /* The assembly code of instructions executed is only output to the screen
@@ -31,6 +32,8 @@ static uint64_t g_timer = 0; // unit: us
 static bool g_print_step = false;
 
 void device_update();
+
+#ifdef CONFIG_WATCHPOINT
 void watch_update(){
   WP* wp = get_head();
   bool success;
@@ -38,18 +41,44 @@ void watch_update(){
   while(wp){
     uint32_t value = expr(wp->expression, &success);
     if (value != wp->value){
-      printf("Watchpoint %d, old value: 0x%x(%u), new value: 0x%x(%u)\n", wp->NO, wp->value, wp->value, value, value);
+      printf("Watchpoint %d\nold value: %s = 0x%x(%u)\nnew value: %s = 0x%x(%u)\n", wp->NO, wp->expression, wp->value, wp->value, wp->expression, value, value);
       wp->value = value;
       flag = 1;
     }
     wp = wp->next;
   }
-  if (flag) nemu_state.state = NEMU_STOP;
+  if (flag && nemu_state.state != NEMU_END) nemu_state.state = NEMU_STOP;
 }
+#endif
+
+#ifdef CONFIG_ITRACE
+#define MAX_RING_BUFFER 10
+int buffer_index = 0;
+char ring_buffer[MAX_RING_BUFFER][128];
+void insert_buffer(char* logstr)
+{
+    //static int index = 0;
+    memcpy(ring_buffer[buffer_index%MAX_RING_BUFFER], logstr, 128);
+    ++buffer_index;
+}
+void print_buffer()
+{
+    if(buffer_index <=  MAX_RING_BUFFER)
+    {
+        for(int i = 0; i<buffer_index; i++)
+            printf("%s\n", ring_buffer[i]);
+    }
+    else {
+        for(int i = 0; i < MAX_RING_BUFFER; i++)
+            printf("%s\n", ring_buffer[(buffer_index+i)%MAX_RING_BUFFER]);
+    }
+}
+#endif
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
+  IFDEF(CONFIG_ITRACE, insert_buffer(_this->logbuf));
   IFDEF(CONFIG_WATCHPOINT, watch_update());
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
@@ -132,6 +161,8 @@ void cpu_exec(uint64_t n) {
     case NEMU_RUNNING: nemu_state.state = NEMU_STOP; break;
 
     case NEMU_END: case NEMU_ABORT:
+      if (nemu_state.state == NEMU_ABORT)
+        IFDEF(CONFIG_ITRACE, print_buffer());
       Log("nemu: %s at pc = " FMT_WORD,
           (nemu_state.state == NEMU_ABORT ? ANSI_FMT("ABORT", ANSI_FG_RED) :
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
