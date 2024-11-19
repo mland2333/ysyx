@@ -26,20 +26,21 @@ class Sdb{
   bool is_ftrace = false;
   bool is_mtrace = false;
   bool is_diff = false;
+  bool is_vga = false;
   const char* diff_file = "/home/mland/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so";
   uint64_t timer = 0;
   uint64_t inst_nums = 0;
   uint32_t inst_ = 0;
   uint32_t pc_ = 0;
   void statistic();
-  uint64_t get_time();
   Simulator* sim_;
   Memory* mem_;
-
   Itrace* itrace;
   Ftrace* ftrace;
   Mtrace* mtrace;
   Diff* diff;
+  
+  uint64_t rtc_begin;
 public:
   Sdb(Args& args, Simulator* sim, Memory* mem);
   void init();
@@ -74,5 +75,6 @@ public:
   void quit(){
     sim_->quit();
   }
+  uint64_t get_rtc();
   int run();
 };
