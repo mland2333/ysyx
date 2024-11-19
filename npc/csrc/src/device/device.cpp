@@ -1,7 +1,6 @@
-#include "SDL_events.h"
 #include <device/device.h>
 #include <utils.h>
-
+#include <SDL2/SDL.h>
 int device_update(){
   static uint64_t last = 0;
   uint64_t now = Utils::get_time();

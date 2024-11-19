@@ -29,10 +29,7 @@ static inline void update_screen() {
   SDL_RenderPresent(renderer);
 }
 
-static uint32_t sync_update = 0;
-void vga_sync(uint32_t sync){
-  sync_update = sync;
-}
+uint32_t sync_update = 0;
 void vga_update_screen() {
   if(sync_update == 1){
     update_screen();

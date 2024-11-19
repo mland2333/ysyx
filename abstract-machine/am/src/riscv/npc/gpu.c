@@ -1,6 +1,6 @@
 #include <am.h>
 #include <npc.h>
-
+#include <klib.h>
 #define SYNC_ADDR (VGACTL_ADDR + 4)
 
 void __am_gpu_init() {
@@ -26,12 +26,15 @@ void __am_gpu_fbdraw(AM_GPU_FBDRAW_T *ctl) {
   int w = ctl->w;
   int h = ctl->h;
   int screen_w = inw(VGACTL_ADDR + 2);
-  for(int i = y; i < h + y; i++){
-    for(int j = x; j < w + x; j++){
-      outl(FB_ADDR+(i*screen_w+j)*4,((uint32_t*)ctl->pixels)[(i-y)*w+j-x]);
+  for(uint32_t i = y; i < h + y; i++){
+    for(uint32_t j = x; j < w + x; j++){
+      uint32_t addr = FB_ADDR+(i*screen_w+j)*4;
+      printf("addr = 0x%x\n", addr);
+      outl(addr,((uint32_t*)ctl->pixels)[(i-y)*w+j-x]);
     }
   }
   if (ctl->sync) {
+    printf("here\n");
     outl(SYNC_ADDR, 1);
   }
 }

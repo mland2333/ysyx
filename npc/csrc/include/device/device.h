@@ -23,7 +23,5 @@ void init_vga();
 uint32_t get_vga_buf(uint32_t raddr);
 void set_vga_buf(uint32_t waddr, int wdata);
 void vga_update_screen();
-void vga_sync(uint32_t);
-
 
 int device_update();
