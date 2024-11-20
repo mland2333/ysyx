@@ -18,6 +18,7 @@
 #include <isa.h>
 #include <cpu/cpu.h>
 #include <memory/paddr.h>
+#include <stdio.h>
 #include <utils.h>
 #include <difftest-def.h>
 
@@ -92,9 +93,12 @@ void init_difftest(char *ref_so_file, long img_size, int port) {
 }
 
 static void checkregs(CPU_state *ref, vaddr_t pc) {
-  if (!isa_difftest_checkregs(ref, pc)) {
+  int no;
+  if ((no = isa_difftest_checkregs(ref, pc)) != 0) {
     nemu_state.state = NEMU_ABORT;
     nemu_state.halt_pc = pc;
+    if(no == -1) printf("pc 失败\n");
+    else printf("寄存器x[%d] 失败\n", no);
     isa_reg_display(&cpu);
     isa_reg_display(ref);
   }
