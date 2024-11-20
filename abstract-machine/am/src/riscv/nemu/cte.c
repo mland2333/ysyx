@@ -7,7 +7,7 @@ static Context* (*user_handler)(Event, Context*) = NULL;
 Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     for (int i = 0; i < 32; i++) {
-      printf("x[%d] = %d", i, c->gpr[i]);
+      printf("x[%d] = %x ", i, c->gpr[i]);
     }
     Event ev = {0};
     switch (c->mcause) {
