@@ -17,7 +17,7 @@
 
 word_t isa_raise_intr(word_t NO, vaddr_t epc) {
   cpu.csr[MEPC] = epc;
-  cpu.csr[MSTATUS] = NO;
+  cpu.csr[MCAUSE] = NO;
   /* TODO: Trigger an interrupt/exception with ``NO''.
    * Then return the address of the interrupt/exception vector.
    */

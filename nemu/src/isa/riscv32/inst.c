@@ -205,7 +205,7 @@ static int decode_exec(Decode *s) {
   // unalign
   // wanshu
   INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , I, s->dnpc = cpu.csr[MEPC]); 
-  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , I, s->dnpc = isa_raise_intr(0, s->pc));
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , I, s->dnpc = isa_raise_intr(11, s->pc));
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , I, );
   INSTPAT("??????? ????? ????? 001 00000 11100 11", csrw   , I, 
     switch(imm){
