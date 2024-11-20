@@ -16,7 +16,9 @@
 #include <isa.h>
 
 word_t isa_raise_intr(word_t NO, vaddr_t epc) {
-  cpu.csr[MEPC] = epc;
+  if (NO == 11) {
+    cpu.csr[MEPC] = epc + 4;
+  }
   cpu.csr[MCAUSE] = NO;
   /* TODO: Trigger an interrupt/exception with ``NO''.
    * Then return the address of the interrupt/exception vector.
