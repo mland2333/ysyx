@@ -1,7 +1,8 @@
-import "DPI-C" function void quit();
+/* import "DPI-C" function void quit(); */
 module top(
   input clock,
-  input reset
+  input reset,
+  output [31:0] reg_wdata
 );
 
 wire jump;
@@ -52,10 +53,10 @@ ysyx_24110006_IFU mifu(
   .o_inst(inst)
 );
 
-always@ *
-  if(inst == 32'h100073)
-    quit();
-
+/* always@ * */
+/*   if(inst == 32'h100073) */
+/*     quit(); */
+/**/
 ysyx_24110006_IDU midu(
   .i_inst(inst),
   .o_op(op),

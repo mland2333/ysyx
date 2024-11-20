@@ -1,4 +1,4 @@
-import "DPI-C" function int inst_fetch(input int addr);
+/* import "DPI-C" function int inst_fetch(input int addr); */
 
 module ysyx_24110006_IFU(
   input i_en,
@@ -7,7 +7,7 @@ module ysyx_24110006_IFU(
 );
 
 always@(i_en or i_pc) begin
-  if(i_en) o_inst = inst_fetch(i_pc);
+  if(i_en) o_inst = 0; //inst_fetch(i_pc);
   else o_inst = 0;
 end
 
