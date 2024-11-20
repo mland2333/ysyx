@@ -5,6 +5,7 @@ module top(
 );
 
 wire jump;
+wire trap;
 wire branch;
 wire[31:0] upc, pc;
 
@@ -13,9 +14,18 @@ wire[6:0] op;
 wire[2:0] func;
 wire[4:0] reg_rs1, reg_rs2, reg_rd;
 wire[31:0] imm;
-wire[31:0] reg_src1, reg_src2;
+
+wire[31:0] reg_src1, reg_src2, reg_wdata;
+wire[31:0] csr_src;
+
 wire reg_wen;
+wire csr_wen;
 wire[31:0] exu_result;
+wire[31:0] csr_mcause = 32'd11;
+wire[31:0] csr_upc;
+wire[11:0] csr = imm[11:0];
+wire[2:0] csr_t;
+wire[31:0] csr_wdata;
 
 wire mem_ren, mem_wen;
 wire[3:0] mem_wmask;
@@ -25,12 +35,13 @@ wire[31:0] mem_wdata = reg_src2;
 wire[31:0] mem_rdata;
 wire result_t;
 
-wire[31:0] reg_wdata = result_t ? mem_rdata : exu_result;
+assign reg_wdata = result_t ? mem_rdata : exu_result;
+assign csr_wdata = exu_result;
 
 ysyx_24110006_PC mpc(
   .i_clock(clock),
   .i_reset(reset),
-  .i_jump(jump|branch),
+  .i_jump(jump||branch||trap),
   .i_upc(upc),
   .o_pc(pc)
 );
@@ -66,18 +77,36 @@ ysyx_24110006_RegisterFile mreg(
   .o_rdata2(reg_src2)
 );
 
+ysyx_24110006_CSR mcsr(
+  .i_clock(clock),
+  .i_reset(reset),
+  .i_wen(csr_wen),
+  .i_csr_t(csr_t),
+  .i_csr(csr),
+  .i_pc(pc),
+  .i_mcause(csr_mcause),
+  .i_wdata(csr_wdata),
+  .o_rdata(csr_src),
+  .o_upc(csr_upc)
+);
+
 ysyx_24110006_EXU mexu(
   .i_op(op),
   .i_func(func),
   .i_reg_src1(reg_src1),
   .i_reg_src2(reg_src2),
+  .i_csr_src(csr_src),
   .i_imm(imm),
   .i_pc(pc),
+  .i_csr_upc(csr_upc),
   .o_result(exu_result),
   .o_upc(upc),
   .o_reg_wen(reg_wen),
+  .o_csr_wen(csr_wen),
   .o_result_t(result_t),
+  .o_csr_t(csr_t),
   .o_jump(jump),
+  .o_trap(trap),
   .o_branch(branch),
   .o_mem_ren(mem_ren),
   .o_mem_wen(mem_wen),

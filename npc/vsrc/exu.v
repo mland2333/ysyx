@@ -3,13 +3,18 @@ module ysyx_24110006_EXU(
   input [2:0] i_func,
   input [31:0] i_reg_src1,
   input [31:0] i_reg_src2,
+  input [31:0] i_csr_src,
   input [31:0] i_imm,
   input [31:0] i_pc,
+  input [31:0] i_csr_upc,
   output [31:0] o_result,
   output [31:0] o_upc,
   output o_result_t,
+  output [2:0] o_csr_t,
   output o_reg_wen,
+  output o_csr_wen,
   output o_jump,
+  output o_trap,
   output o_branch,
   output o_mem_ren,
   output o_mem_wen,
@@ -27,6 +32,8 @@ wire JALR = i_op == 7'b1100111;
 wire AUIPC = i_op == 7'b0010111;
 wire LUI = i_op == 7'b0110111;
 wire B = i_op == 7'b1100011;
+wire CSR = i_op == 7'b1110011;
+
 wire f000 = i_func == 3'b000;
 wire f001 = i_func == 3'b001;
 wire f010 = i_func == 3'b010;
@@ -49,11 +56,16 @@ wire alu_sra;
 wire [3:0] alu_t;
 wire branch;
 assign alu_a = JAL || JALR || AUIPC ? i_pc : LUI ? 0 : i_reg_src1;
-assign alu_b = I || L || AUIPC || S  || LUI ? i_imm : JAL || JALR ? 32'b100 : i_reg_src2;
-assign alu_t = I||R ? {1'b0, i_func} : B ? {1'b1, i_func} : 0;
+assign alu_b = I || L || AUIPC || S  || LUI ? i_imm : JAL || JALR ? 32'b100 : CSR && f001 ? 32'b0 : CSR && f010 ? i_csr_src : i_reg_src2;
+assign alu_t = I||R ? {1'b0, i_func} : B ? {1'b1, i_func} : CSR && f010 ? 4'b0110 : 0;
 assign alu_sign = R && f010 || B && (f100 || f101);
 assign alu_sub = (I || R) && (f011 || f010) || B || R && f000 && i_imm[5];
 assign alu_sra = R && i_imm[5] || I && i_imm[10];
+
+localparam MRET = 3'b000;
+localparam CSRW = 3'b001;
+localparam ECALL = 3'b011;
+assign o_csr_t = f000 ? (i_imm[1] ? MRET : ECALL) : CSRW;
 
 ysyx_24110006_ALU malu(
   .i_a(alu_a),
@@ -65,9 +77,11 @@ ysyx_24110006_ALU malu(
   .o_r(o_result),
   .o_branch(o_branch)
 );
+assign o_upc = CSR ? i_csr_upc : (JALR ? i_reg_src1 : i_pc) + i_imm;
 
 assign o_jump = JAL || JALR;
-assign o_upc = (JALR ? i_reg_src1 : i_pc) + i_imm;
+assign o_trap = CSR && f000;
 assign o_reg_wen = !(S || B);
+assign o_csr_wen = CSR;
 
 endmodule

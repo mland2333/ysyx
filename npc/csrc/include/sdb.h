@@ -12,7 +12,6 @@
 #include <debug/itrace.h>
 #include <debug/ftrace.h>
 #include <debug/difftest.h>
-#include <debug/mtrace.h>
 enum class NPC_STATE{
   RUNNING,
   STOP,
@@ -37,12 +36,12 @@ class Sdb{
   Memory* mem_;
   Itrace* itrace;
   Ftrace* ftrace;
-  Mtrace* mtrace;
   Diff* diff;
   
   uint64_t rtc_begin;
 public:
   Sdb(Args& args, Simulator* sim, Memory* mem);
+  ~Sdb(); 
   void init();
   void welcome();
   void add_command(const char* command, std::function<SIM_STATE(Sdb*, char*)> func){
@@ -77,4 +76,5 @@ public:
   }
   uint64_t get_rtc();
   int run();
+  void diff_skip_step(){ if(is_diff) diff->diff_skip_step();}
 };
