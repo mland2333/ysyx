@@ -24,12 +24,12 @@ const char *regs[] = {
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
 };
 
-void isa_reg_display() {
+void isa_reg_display(CPU_state* mcpu) {
   for(int i = 0; i < MUXDEF(CONFIG_RVE, 16, 32); i++){
-    printf("%s = 0x%x  ", regs[i], cpu.gpr[i]);
+    printf("%s = 0x%x  ", regs[i], mcpu->gpr[i]);
   }
   printf("\n");
-  printf("pc = 0x%x\n", cpu.pc);
+  printf("pc = 0x%x\n", mcpu->pc);
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
