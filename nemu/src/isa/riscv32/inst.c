@@ -210,10 +210,12 @@ static int decode_exec(Decode *s) {
   #endif
           s->dnpc = cpu.csr[MEPC]); 
   INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , I, 
+          s->dnpc = isa_raise_intr(11, s->pc)
   #ifdef CONFIG_ETRACE
-    printf("ecall, pc = 0x%x\n", s->pc);
+    ; 
+          printf("ecall, pc = 0x%x, dnpc = 0x%x\n", s->pc, s->snpc);
   #endif
-          s->dnpc = isa_raise_intr(11, s->pc));
+  );
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , I, );
   INSTPAT("??????? ????? ????? 001 00000 11100 11", csrw   , I, 
     switch(imm){
