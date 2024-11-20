@@ -43,6 +43,7 @@ class Sdb{
   uint64_t rtc_begin;
 public:
   Sdb(Args& args, Simulator* sim, Memory* mem);
+  ~Sdb(); 
   void init();
   void welcome();
   void add_command(const char* command, std::function<SIM_STATE(Sdb*, char*)> func){

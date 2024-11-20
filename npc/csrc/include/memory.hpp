@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <ios>
 #include <iostream>
+#include <stdexcept>
 
 class Memory {
   uint32_t base_;
@@ -11,7 +12,7 @@ class Memory {
   uint64_t translate(uint32_t vaddr) const{
     if(!(vaddr >= base_ && vaddr < base_ + size_)){
       std::cout << "vaddr = " << std::hex << vaddr << '\n';
-      assert(0);
+      throw std::runtime_error("Memory error\n");
     }
     return reinterpret_cast<uint64_t>(mem_ + vaddr - base_);
   }

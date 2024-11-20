@@ -13,7 +13,7 @@ module ysyx_24110006_IDU(
   assign o_reg_rd = i_inst[11:7];
   assign o_reg_rs1 = i_inst[19:15];
   assign o_reg_rs2 = i_inst[24:20];
-  wire is_i = o_op == 7'b0010011 || o_op == 7'b1100111 || o_op == 7'b0000011;
+  wire is_i = o_op == 7'b0010011 || o_op == 7'b1100111 || o_op == 7'b0000011 || o_op == 7'b1110011;
   wire is_u = o_op == 7'b0110111 || o_op == 7'b0010111;
   wire is_j = o_op == 7'b1101111;
   wire is_s = o_op == 7'b0100011;

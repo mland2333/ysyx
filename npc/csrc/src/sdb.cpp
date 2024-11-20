@@ -147,7 +147,11 @@ int Sdb::run(){
       exit(-1);
       break;
   }
+  
+  return 0;
+}
+
+Sdb::~Sdb(){
   statistic();
   if (is_itrace) itrace->print_buffer();
-  return 0;
 }
