@@ -67,7 +67,7 @@ static int cmd_si(char* args){
 
 static int cmd_info(char *args){
   if(args == NULL || args[0]=='r')
-    isa_reg_display();
+    isa_reg_display(&cpu);
   else if(args[0] == 'w')
     print_wp();
   return 0;

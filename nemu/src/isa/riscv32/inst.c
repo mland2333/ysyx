@@ -204,13 +204,32 @@ static int decode_exec(Decode *s) {
   // to-lower-case
   // unalign
   // wanshu
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , I, 
+  #ifdef CONFIG_ETRACE
+    printf("mret, pc = 0x%x, dnpc = 0x%x\n", s->pc, cpu.csr[MEPC] + 4);
+  #endif
+          s->dnpc = cpu.csr[MEPC]); 
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , I, 
+  #ifdef CONFIG_ETRACE
+    printf("ecall, pc = 0x%x\n", s->pc);
+  #endif
+          s->dnpc = isa_raise_intr(11, s->pc));
+  INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , I, );
+  INSTPAT("??????? ????? ????? 001 00000 11100 11", csrw   , I, 
+    switch(imm){
+      case 0x300: cpu.csr[MSTATUS] = src1; break;
+      case 0x305: cpu.csr[MTVEC] = src1; break;
+      case 0x341: cpu.csr[MEPC] = src1; break;
+      case 0x342: cpu.csr[MCAUSE] = src1; break;
+  });
+  INSTPAT("??????? ????? 00000 010 ????? 11100 11", csrr   , I, 
+    switch(imm){
+      case 0x300: R(rd) = cpu.csr[MSTATUS]; break;
+      case 0x305: R(rd) = cpu.csr[MTVEC]; break;
+      case 0x341: R(rd) = cpu.csr[MEPC]; break;
+      case 0x342: R(rd) = cpu.csr[MCAUSE]; break;
+  });
   
-  
-
-
-
-
-
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));
   INSTPAT_END();
 
