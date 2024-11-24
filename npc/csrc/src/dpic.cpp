@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <cstdio>
+#include <iostream>
 #include <sdb.h>
 #include <device/device.h>
 extern Sdb* sdb;
@@ -10,24 +11,29 @@ extern "C" int inst_fetch(int pc){
 extern "C" void quit(){
   sdb->quit();
 }
+
 uint64_t rtc_time = 0;
 extern uint32_t sync_update;
 extern "C" int pmem_read(int raddr){
   if (raddr == RTC_ADDR + 4){
     rtc_time = sdb->get_rtc();
+    sdb->diff_skip_step(); 
     return (int)(rtc_time >> 32);
   }
-  else if(raddr == RTC_ADDR)
+  else if(raddr == RTC_ADDR){
+    sdb->diff_skip_step();
     return (int)rtc_time;
-
+  }
   if(raddr == VGACTL_ADDR){
+    sdb->diff_skip_step();
     return SCREEN_H;
   }
   else if(raddr == VGACTL_ADDR + 2){
-    /* printf("read addr: 0x%x, rdata: %d\n", raddr, SCREEN_W); */
+    sdb->diff_skip_step();
     return SCREEN_W << 16;
   }
   else if(raddr == VGACTL_ADDR + 4){
+    sdb->diff_skip_step();
     return sync_update;
   }
 
@@ -37,16 +43,17 @@ extern "C" int pmem_read(int raddr){
 extern "C" void pmem_write(uint32_t waddr, int wdata, char wmask){
   /* printf("write addr: 0x%x, wdata: %d\n", waddr, wdata); */
   if (waddr == SERIAL_PORT) {
-    putchar(wdata);
+    sdb->diff_skip_step();
+    std::cout << (char)wdata << std::flush;
     return;
   }
   if(waddr == VGACTL_ADDR + 4){
-    
+    sdb->diff_skip_step();
     sync_update = wdata;
     return;
   }
   else if (waddr >= FB_ADDR && waddr < FB_ADDR + SCREEN_SIZE) {
-    /* printf("write addr: 0x%x, wdata: %d\n", waddr, wdata); */
+    sdb->diff_skip_step();
     set_vga_buf(waddr, wdata);
     return;
   }

@@ -27,3 +27,7 @@ void Itrace::trace(uint32_t pc, uint32_t inst){
   sprintf(logstr, "0x%x\t0x%08x\t%s\t", pc, inst, inst_buf);
   insert_buffer();
 }
+
+Itrace::~Itrace(){
+  print_buffer();
+}

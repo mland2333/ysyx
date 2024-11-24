@@ -65,7 +65,7 @@ assign alu_sra = R && i_imm[5] || I && i_imm[10];
 localparam MRET = 3'b000;
 localparam CSRW = 3'b001;
 localparam ECALL = 3'b011;
-assign o_csr_t = f000 ? (i_imm[3] ? MRET : ECALL) : CSRW;
+assign o_csr_t = f000 ? (i_imm[1] ? MRET : ECALL) : CSRW;
 
 ysyx_24110006_ALU malu(
   .i_a(alu_a),

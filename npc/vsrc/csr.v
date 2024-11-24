@@ -49,6 +49,6 @@ always@(posedge i_clock)begin
 end
 
 assign o_upc = i_csr_t == ECALL ? csr[MTVEC] : i_csr_t == MRET ? csr[MEPC] : 0;
-assign o_rdata = index == MSTATUS ? 32'h18 : csr[index];
+assign o_rdata = csr[index];
 
 endmodule

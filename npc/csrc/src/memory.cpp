@@ -6,7 +6,7 @@
 
 Memory::Memory(){
   base_ = 0x80000000;
-  size_ = 0x1000000;
+  size_ = 0x10000000;
   mem_ = new char[size_];
   init();
 }

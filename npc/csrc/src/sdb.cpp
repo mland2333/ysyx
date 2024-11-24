@@ -66,7 +66,6 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
   init();
   if (is_itrace) itrace = new Itrace;
   if (is_ftrace) ftrace = new Ftrace(args.image);
-  if (is_mtrace) mtrace = new Mtrace();
   if (is_diff) {
     diff = new Diff(mem_, &sim_->cpu);
     diff->init_difftest(diff_file, mem_->image_size, 1234);
@@ -144,7 +143,6 @@ int Sdb::run(){
       break;
     default: 
       Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
-      exit(-1);
       break;
   }
   
@@ -153,5 +151,7 @@ int Sdb::run(){
 
 Sdb::~Sdb(){
   statistic();
-  if (is_itrace) itrace->print_buffer();
+  if (is_ftrace) delete ftrace;
+  if (is_itrace) delete itrace;
+  if (is_diff) delete diff;
 }
