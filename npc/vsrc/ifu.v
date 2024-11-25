@@ -9,9 +9,10 @@ module ysyx_24110006_IFU(
   output reg o_valid
 );
 
+reg [31:0] pc;
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
-  else if(!o_valid && i_valid) begin
+  else if(rvalid && !o_valid) begin
     o_valid <= 1;
   end
   else if(o_valid)begin
@@ -19,27 +20,52 @@ always@(posedge i_clock)begin
   end
 end
 
+always@(posedge i_clock)begin
+  if(!i_reset && !o_valid && i_valid)
+    pc <= i_pc;
+end
 /* always@(posedge i_clock)begin */
 /*   if(!i_reset && !o_valid && i_valid) */
 /*     o_inst <= inst_fetch(i_pc); */
 /* end */
 
-reg ren;
-always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
-    ren <= 1;
-  else 
-    ren <= 0;
+reg arvalid;
+wire arready;
+
+wire rvalid;
+wire rready = 1;
+wire [1:0] rresp;
+
+always@(posedge i_clock) begin
+  if(i_reset) arvalid <= 0;
+  else if(i_valid && !arvalid) arvalid <= 1;
+  else if(arvalid && arready) arvalid <= 0;
 end
 
 ysyx_24110006_SRAM msram(
-  .i_ren(ren),
-  .i_wen(0),
-  .i_raddr(i_pc),
-  .i_waddr(0),
-  .i_wdata(0),
-  .i_wmask(0),
-  .o_rdata(o_inst)
+  .i_clock(i_clock),
+  .i_reset(i_reset),
+  .i_axi_araddr(pc),
+  .i_axi_arvalid(arvalid),
+  .o_axi_arready(arready),
+
+  .o_axi_rdata(o_inst),
+  .o_axi_rvalid(rvalid),
+  .o_axi_rresp(rresp),
+  .i_axi_rready(rready),
+
+  .i_axi_awaddr(0),
+  .i_axi_awvalid(0),
+  .o_axi_awready(),
+
+  .i_axi_wdata(0),
+  .i_axi_wstrb(0),
+  .i_axi_wvalid(0),
+  .o_axi_wready(),
+
+  .o_axi_bresp(),
+  .o_axi_bvalid(),
+  .i_axi_bready(0)
 );
 
 endmodule

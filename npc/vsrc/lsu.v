@@ -25,7 +25,7 @@ reg[2:0] read_t;
 
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
-  else if(!o_valid && i_valid) begin
+  else if(!o_valid && (ren&&rvalid || wen&&bvalid || !i_wen&&!i_ren&&i_valid)) begin
     o_valid <= 1;
   end
   else if(o_valid)begin
@@ -119,15 +119,68 @@ always@(wen or addr or wdata)begin
   end
 end
 
+reg arvalid;
+wire arready;
+
+wire rvalid;
+wire rready = 1;
+wire [1:0] rresp;
+
+reg awvalid;
+wire awready;
+
+reg wvalid;
+wire wready;
+
+wire [1:0] bresp;
+wire bvalid;
+wire bready = 1;
+
+always@(posedge i_clock) begin
+  if(i_reset) arvalid <= 0;
+  else if(i_valid && !arvalid && i_ren) arvalid <= 1;
+  else if(arvalid && arready) arvalid <= 0;
+end
+
+always@(posedge i_clock) begin
+  if(i_reset) awvalid <= 0;
+  else if(i_valid && !awvalid && i_wen) awvalid <= 1;
+  else if(awvalid && arready) awvalid <= 0;
+end
+
+always@(posedge i_clock) begin
+  if(i_reset) wvalid <= 0;
+  else if(i_valid && !wvalid && i_wen) wvalid <= 1;
+  else if(wvalid && arready) wvalid <= 0;
+end
+
+
 ysyx_24110006_SRAM msram(
-  .i_ren(ren),
-  .i_wen(wen),
-  .i_raddr(addr),
-  .i_waddr(addr),
-  .i_wdata(wdata0),
-  .i_wmask(wmask0),
-  .o_rdata(rdata0)
+  .i_clock(i_clock),
+  .i_reset(i_reset),
+  .i_axi_araddr(addr),
+  .i_axi_arvalid(arvalid),
+  .o_axi_arready(arready),
+
+  .o_axi_rdata(rdata0),
+  .o_axi_rvalid(rvalid),
+  .o_axi_rresp(rresp),
+  .i_axi_rready(rready),
+
+  .i_axi_awaddr(addr),
+  .i_axi_awvalid(awvalid),
+  .o_axi_awready(awready),
+
+  .i_axi_wdata(wdata0),
+  .i_axi_wstrb(wmask0),
+  .i_axi_wvalid(wvalid),
+  .o_axi_wready(wready),
+
+  .o_axi_bresp(bresp),
+  .o_axi_bvalid(bvalid),
+  .i_axi_bready(bready)
 );
+
 
 
 endmodule
