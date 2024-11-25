@@ -16,6 +16,35 @@ module ysyx_24110006_LSU(
   input i_valid,
   output reg o_valid
 );
+
+localparam COUNT = 8'h05;
+
+reg[7:0] out;
+always@(is_begin)begin
+  if(i_reset || out==0) begin out <= COUNT;end
+  else if(is_begin)begin
+    out[6:0] <= out[7:1];
+    out[7] <= out[4]^out[3]^out[2]^out[0];
+  end
+end
+
+reg [7:0] count;
+reg is_begin;
+
+always@(posedge i_clock)begin
+  if(i_reset) is_begin <= 0;
+  else if(rvalid && !rready || bvalid && !bready) is_begin <= 1;
+  else if(count == 0) is_begin <= 0;
+end
+
+always@(posedge i_clock)begin
+  if(i_reset) count <= COUNT;
+  else if(is_begin && count != 0)
+    count <= count - 1;
+  else if(count == 0)
+    count <= out;
+end
+
 reg ren;
 reg wen;
 reg[31:0] addr;
@@ -25,7 +54,7 @@ reg[2:0] read_t;
 
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
-  else if(!o_valid && (ren&&rvalid || wen&&bvalid || !i_wen&&!i_ren&&i_valid)) begin
+  else if(!o_valid && (ren&&rvalid&&rready || wen&&bvalid&&bready || !i_wen&&!i_ren&&i_valid)) begin
     o_valid <= 1;
   end
   else if(o_valid)begin
@@ -123,7 +152,7 @@ reg arvalid;
 wire arready;
 
 wire rvalid;
-wire rready = 1;
+reg rready;
 wire [1:0] rresp;
 
 reg awvalid;
@@ -134,7 +163,7 @@ wire wready;
 
 wire [1:0] bresp;
 wire bvalid;
-wire bready = 1;
+reg bready;
 
 always@(posedge i_clock) begin
   if(i_reset) arvalid <= 0;
@@ -142,18 +171,33 @@ always@(posedge i_clock) begin
   else if(arvalid && arready) arvalid <= 0;
 end
 
+always@(posedge i_clock)begin
+  if(i_reset) rready <= 0;
+  else if(rvalid && !rready && count == 0)
+    rready <= 1;
+  else if(rvalid && rready)
+    rready <= 0;
+end
+
 always@(posedge i_clock) begin
   if(i_reset) awvalid <= 0;
   else if(i_valid && !awvalid && i_wen) awvalid <= 1;
-  else if(awvalid && arready) awvalid <= 0;
+  else if(awvalid && awready) awvalid <= 0;
 end
 
 always@(posedge i_clock) begin
   if(i_reset) wvalid <= 0;
   else if(i_valid && !wvalid && i_wen) wvalid <= 1;
-  else if(wvalid && arready) wvalid <= 0;
+  else if(wvalid && wready) wvalid <= 0;
 end
 
+always@(posedge i_clock)begin
+  if(i_reset) bready <= 0;
+  else if(bvalid && !bready && count == 0)
+    bready <= 1;
+  else if(bvalid && bready)
+    bready <= 0;
+end
 
 ysyx_24110006_SRAM msram(
   .i_clock(i_clock),
