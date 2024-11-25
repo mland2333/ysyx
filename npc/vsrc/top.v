@@ -1,4 +1,5 @@
 import "DPI-C" function void quit();
+import "DPI-C" function void difftest();
 module top(
   input clock,
   input reset
@@ -43,6 +44,10 @@ wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
 reg[31:0] npc_upc;
 always@(posedge clock)
   npc_upc <= upc;
+
+always@(posedge clock)begin
+  if(ifu_valid) difftest();
+end
 
 ysyx_24110006_PC mpc(
   .i_clock(clock),

@@ -36,12 +36,9 @@ extern "C" int pmem_read(int raddr){
     sdb->diff_skip_step();
     return sync_update;
   }
-
-  return sdb->mem_read(raddr & ~0x3u);
+  return sdb->mem_read(raddr);
 }
-
 extern "C" void pmem_write(uint32_t waddr, int wdata, char wmask){
-  /* printf("write addr: 0x%x, wdata: %d\n", waddr, wdata); */
   if (waddr == SERIAL_PORT) {
     sdb->diff_skip_step();
     std::cout << (char)wdata << std::flush;
@@ -57,5 +54,8 @@ extern "C" void pmem_write(uint32_t waddr, int wdata, char wmask){
     set_vga_buf(waddr, wdata);
     return;
   }
-  sdb->mem_write(waddr & ~0x3u, wdata, wmask & 0x0f);
+  sdb->mem_write(waddr, wdata, wmask & 0x0f);
+}
+extern "C" void difftest(){
+  sdb->difftest();
 }

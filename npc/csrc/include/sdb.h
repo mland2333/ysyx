@@ -37,6 +37,7 @@ class Sdb{
   Itrace* itrace;
   Ftrace* ftrace;
   Diff* diff;
+  bool is_time_to_diff = false;
   
   uint64_t rtc_begin;
 public:
@@ -54,16 +55,17 @@ public:
   }
   uint32_t mem_read(uint32_t addr){
     if (is_mtrace) printf("pc=0x%x, raddr=0x%x, ", pc_, addr);
-    uint32_t rdata = mem_->read<uint32_t>(addr);
+    uint32_t rdata = mem_->read<uint32_t>(addr & ~0x3u);
     if (is_mtrace) printf("rdata=0x%x\n", rdata);
     return rdata;
   }
   void mem_write(uint32_t addr, uint32_t wdata, char wmask){
     if (is_mtrace) printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc_, addr, wdata);
+    uint32_t waddr = addr & ~0x3u;
     uint8_t* data = (uint8_t*)&wdata;
     for(int i = 0; i<4; i++){
       if(((1<<i)&wmask) != 0)
-        mem_->write<uint8_t>(addr+i, data[i]);
+        mem_->write<uint8_t>(waddr + i, data[i]);
     }
   }
   uint32_t inst_fetch(uint32_t pc){
@@ -77,4 +79,5 @@ public:
   uint64_t get_rtc();
   int run();
   void diff_skip_step(){ if(is_diff) diff->diff_skip_step();}
+  void difftest(){ is_time_to_diff = true; }
 };
