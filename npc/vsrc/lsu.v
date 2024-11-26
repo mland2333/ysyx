@@ -14,43 +14,66 @@ module ysyx_24110006_LSU(
   output reg[31:0] o_rdata,
 
   input i_valid,
-  output reg o_valid
+  output reg o_valid,
+
+  output [31:0] o_axi_araddr,
+  output o_axi_arvalid,
+  input i_axi_arready,
+
+  input [31:0] i_axi_rdata,
+  input i_axi_rvalid,
+  input [1:0] i_axi_rresp,
+  output o_axi_rready,
+
+  output [31:0] o_axi_awaddr,
+  output o_axi_awvalid,
+  input i_axi_awready,
+
+  output [31:0] o_axi_wdata,
+  output [7:0] o_axi_wstrb,
+  output o_axi_wvalid,
+  input i_axi_wready,
+
+  input [1:0] i_axi_bresp,
+  input i_axi_bvalid,
+  output o_axi_bready
+
 );
 
-localparam COUNT = 8'h05;
+/* localparam COUNT = 8'h05; */
 
-reg[7:0] out;
-always@(is_begin)begin
-  if(i_reset || out==0) begin out <= COUNT;end
-  else if(is_begin)begin
-    out[6:0] <= out[7:1];
-    out[7] <= out[4]^out[3]^out[2]^out[0];
-  end
-end
-
-reg [7:0] count;
-reg is_begin;
-
-always@(posedge i_clock)begin
-  if(i_reset) is_begin <= 0;
-  else if(rvalid && !rready || bvalid && !bready) is_begin <= 1;
-  else if(count == 0) is_begin <= 0;
-end
-
-always@(posedge i_clock)begin
-  if(i_reset) count <= COUNT;
-  else if(is_begin && count != 0)
-    count <= count - 1;
-  else if(count == 0)
-    count <= out;
-end
+/* reg[7:0] out; */
+/* always@(is_begin)begin */
+/*   if(i_reset || out==0) begin out <= COUNT;end */
+/*   else if(is_begin)begin */
+/*     out[6:0] <= out[7:1]; */
+/*     out[7] <= out[4]^out[3]^out[2]^out[0]; */
+/*   end */
+/* end */
+/**/
+/* reg [7:0] count; */
+/* reg is_begin; */
+/**/
+/* always@(posedge i_clock)begin */
+/*   if(i_reset) is_begin <= 0; */
+/*   else if(rvalid && !rready || bvalid && !bready) is_begin <= 1; */
+/*   else if(count == 0) is_begin <= 0; */
+/* end */
+/**/
+/* always@(posedge i_clock)begin */
+/*   if(i_reset) count <= COUNT; */
+/*   else if(is_begin && count != 0) */
+/*     count <= count - 1; */
+/*   else if(count == 0) */
+/*     count <= out; */
+/* end */
 
 reg ren;
 reg wen;
-reg[31:0] addr;
-reg[31:0] wdata;
-reg[3:0] wmask;
-reg[2:0] read_t;
+reg [31:0] addr;
+reg [31:0] wdata;
+reg [3:0] wmask;
+reg [2:0] read_t;
 
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
@@ -60,6 +83,11 @@ always@(posedge i_clock)begin
   else if(o_valid)begin
     o_valid <= 0;
   end
+end
+
+always@(posedge i_clock)begin
+  if(i_reset) rdata0 <= 0;
+  else if(rvalid&&rready) rdata0 <= i_axi_rdata;
 end
 
 always@(posedge i_clock)begin
@@ -165,6 +193,27 @@ wire [1:0] bresp;
 wire bvalid;
 reg bready;
 
+assign o_axi_araddr = addr;
+assign o_axi_arvalid = arvalid;
+assign arready = i_axi_arready;
+
+assign rvalid = i_axi_rvalid;
+assign rresp = i_axi_rresp;
+assign o_axi_rready = rready;
+
+assign o_axi_awaddr = addr;
+assign o_axi_awvalid = awvalid;
+assign awready = i_axi_awready;
+
+assign o_axi_wdata = wdata0;
+assign o_axi_wstrb = wmask0;
+assign o_axi_wvalid = wvalid;
+assign wready = i_axi_wready;
+
+assign bresp = i_axi_bresp;
+assign bvalid = i_axi_bvalid;
+assign o_axi_bready = bready;
+
 always@(posedge i_clock) begin
   if(i_reset) arvalid <= 0;
   else if(i_valid && !arvalid && i_ren) arvalid <= 1;
@@ -172,11 +221,12 @@ always@(posedge i_clock) begin
 end
 
 always@(posedge i_clock)begin
-  if(i_reset) rready <= 0;
-  else if(rvalid && !rready && count == 0)
-    rready <= 1;
-  else if(rvalid && rready)
-    rready <= 0;
+  /* if(i_reset) rready <= 0; */
+  /* else if(rvalid && !rready && count == 0) */
+  /*   rready <= 1; */
+  /* else if(rvalid && rready) */
+  /*   rready <= 0; */
+  rready <= 1;
 end
 
 always@(posedge i_clock) begin
@@ -192,39 +242,13 @@ always@(posedge i_clock) begin
 end
 
 always@(posedge i_clock)begin
-  if(i_reset) bready <= 0;
-  else if(bvalid && !bready && count == 0)
-    bready <= 1;
-  else if(bvalid && bready)
-    bready <= 0;
+  /* if(i_reset) bready <= 0; */
+  /* else if(bvalid && !bready && count == 0) */
+  /*   bready <= 1; */
+  /* else if(bvalid && bready) */
+  /*   bready <= 0; */
+  bready <= 1;
 end
-
-ysyx_24110006_SRAM msram(
-  .i_clock(i_clock),
-  .i_reset(i_reset),
-  .i_axi_araddr(addr),
-  .i_axi_arvalid(arvalid),
-  .o_axi_arready(arready),
-
-  .o_axi_rdata(rdata0),
-  .o_axi_rvalid(rvalid),
-  .o_axi_rresp(rresp),
-  .i_axi_rready(rready),
-
-  .i_axi_awaddr(addr),
-  .i_axi_awvalid(awvalid),
-  .o_axi_awready(awready),
-
-  .i_axi_wdata(wdata0),
-  .i_axi_wstrb(wmask0),
-  .i_axi_wvalid(wvalid),
-  .o_axi_wready(wready),
-
-  .o_axi_bresp(bresp),
-  .o_axi_bvalid(bvalid),
-  .i_axi_bready(bready)
-);
-
 
 
 endmodule

@@ -28,34 +28,44 @@ module ysyx_24110006_SRAM(
   output o_axi_bvalid,
   input i_axi_bready
 );
-localparam COUNT = 8'h05;
+/* localparam COUNT = 8'h05; */
 
-reg[7:0] out;
-always@(is_begin)begin
-  if(i_reset || out==0) begin out <= COUNT;end
-  else if(is_begin)begin
-    out[6:0] <= out[7:1];
-    out[7] <= out[4]^out[3]^out[2]^out[0];
-  end
-end
+/* reg[7:0] out; */
+/* always@(is_begin)begin */
+/*   if(i_reset || out==0) begin out <= COUNT;end */
+/*   else if(is_begin)begin */
+/*     out[6:0] <= out[7:1]; */
+/*     out[7] <= out[4]^out[3]^out[2]^out[0]; */
+/*   end */
+/* end */
+/**/
+/* reg [7:0] count; */
+/* reg is_begin; */
+/**/
+/* always@(posedge i_clock)begin */
+/*   if(i_reset) is_begin <= 0; */
+/*   else if(arvalid && !arready || awvalid && !awready) is_begin <= 1; */
+/*   else if(count == 0) is_begin <= 0; */
+/* end */
+/**/
+/* always@(posedge i_clock)begin */
+/*   if(i_reset) count <= COUNT; */
+/*   else if(is_begin && count != 0) */
+/*     count <= count - 1; */
+/*   else if(count == 0) */
+/*     count <= out; */
+/* end */
 
-reg [7:0] count;
-reg is_begin;
 
+//wready
 always@(posedge i_clock)begin
-  if(i_reset) is_begin <= 0;
-  else if(arvalid && !arready || awvalid && !awready) is_begin <= 1;
-  else if(count == 0) is_begin <= 0;
+  /* if(i_reset) wready <= 0; */
+  /* else if(wvalid && count == 0 && !wready) */
+  /*   wready <= 1; */
+  /* else if(wvalid && wready) */
+  /*   wready <= 0; */
+  wready <= 1;
 end
-
-always@(posedge i_clock)begin
-  if(i_reset) count <= COUNT;
-  else if(is_begin && count != 0)
-    count <= count - 1;
-  else if(count == 0)
-    count <= out;
-end
-
 
 reg [31:0] araddr;
 reg arready;
@@ -90,13 +100,14 @@ assign o_axi_bresp = bresp;
 assign o_axi_bvalid = bvalid;
 wire bready = i_axi_bready;
 
-//awready
+//arready
 always@(posedge i_clock)begin
-  if(i_reset) arready <= 0;
-  else if(arvalid && count == 0 && !arready)
-    arready <= 1;
-  else if(arvalid && arready)
-    arready <= 0;
+  /* if(i_reset) arready <= 0; */
+  /* else if(arvalid && count == 0 && !arready) */
+  /*   arready <= 1; */
+  /* else if(arvalid && arready) */
+  /*   arready <= 0; */
+  arready <= 1;
 end
 //araddr
 always@(posedge i_clock)begin
@@ -124,11 +135,12 @@ always@(posedge i_clock)begin
 end
 //awready
 always@(posedge i_clock)begin
-  if(i_reset) awready <= 0;
-  else if(awvalid && count == 0 && !awready)
-    awready <= 1;
-  else if(awvalid && awready)
-    awready <= 0;
+  /* if(i_reset) awready <= 0; */
+  /* else if(awvalid && count == 0 && !awready) */
+  /*   awready <= 1; */
+  /* else if(awvalid && awready) */
+  /*   awready <= 0; */
+  awready <= 1;
 end
 //awaddr
 always@(posedge i_clock)begin
@@ -137,14 +149,7 @@ always@(posedge i_clock)begin
     awaddr <= i_axi_awaddr;
   end
 end
-//wready
-always@(posedge i_clock)begin
-  if(i_reset) wready <= 0;
-  else if(wvalid && count == 0 && !wready)
-    wready <= 1;
-  else if(wvalid && wready)
-    wready <= 0;
-end
+
 //wdata
 always@(posedge i_clock)begin
   if(i_reset) wdata <= 0;
