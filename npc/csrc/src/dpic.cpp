@@ -59,3 +59,7 @@ extern "C" void pmem_write(uint32_t waddr, int wdata, char wmask){
 extern "C" void difftest(){
   sdb->difftest();
 }
+
+extern "C" void diff_skip(){
+  sdb->diff_skip_step();
+}
