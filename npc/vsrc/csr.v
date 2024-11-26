@@ -8,7 +8,8 @@ module ysyx_24110006_CSR(
   input[31:0] i_wdata,
   input[31:0] i_mcause,
   output[31:0] o_rdata,
-  output[31:0] o_upc
+  output[31:0] o_upc,
+  input i_valid
 );
 localparam MSTATUS = 2'b00;
 localparam MTVEC = 2'b01;
@@ -33,7 +34,7 @@ always@(*)begin
 end
 
 always@(posedge i_clock)begin
-  if(i_wen)begin
+  if(i_valid && i_wen)begin
     case(i_csr_t)
       ECALL:begin
         csr[MEPC] = i_pc;

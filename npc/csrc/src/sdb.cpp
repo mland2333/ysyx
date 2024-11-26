@@ -79,8 +79,10 @@ SIM_STATE Sdb::exec_once(){
   SIM_STATE state = sim_->exec_once();
   if (is_itrace) itrace->trace(pc_, inst_);
   if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
-  if (is_diff) 
+  if (is_diff && is_time_to_diff){
+    is_time_to_diff = false;
     if (!diff->difftest_step()) state = SIM_STATE::DIFF_FAILURE;
+  } 
   if (is_vga) if (device_update() == -1) state = SIM_STATE::QUIT;
   return state;
 }
