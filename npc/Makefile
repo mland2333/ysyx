@@ -5,12 +5,14 @@ export VERILATOR_ROOT
 VERILATOR = $(VERILATOR_ROOT)/bin/verilator
 endif
 
-TOPNAME = top
+TOPNAME = ysyxSoCFull
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --autoflush
+				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --autoflush --timescale "1ns/1ns" --notiming
 
+INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
+INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl
 
 LIBS += -lcapstone
 ARGS ?=
@@ -29,7 +31,9 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 
 # project source
-VSRCS = $(shell find $(abspath ./vsrc) -name "*.v")
+VSRCS += $(YSYX_HOME)/ysyxSoC/build/ysyxSoCFull.v
+VSRCS += $(shell find $(abspath ./vsrc) -name "*.v")
+VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
 
 CDIRS := $(shell find $(abspath ./csrc) -mindepth 1 -type d)
 CSRCS = $(SRC_AUTO_BIND)
@@ -43,14 +47,16 @@ include $(NVBOARD_HOME)/scripts/nvboard.mk
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g -fsanitize=address
 LDFLAGS += $(LIBS) -fsanitize=address
-
+OBJCACHE = ccache
+CC = ccache gcc
+CXX = ccache g++
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	@rm -rf $(OBJ_DIR)
 	$(VERILATOR) $(VERILATOR_CFLAGS) \
-		--top-module $(TOPNAME) $^ \
+		--top-module ysyxSoCFull $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
-		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
+		$(INCFLAGS) --Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
 
 all: default
 

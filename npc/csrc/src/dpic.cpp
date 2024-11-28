@@ -5,9 +5,6 @@
 #include <device/device.h>
 extern Sdb* sdb;
 
-extern "C" int inst_fetch(int pc){
-  return sdb->inst_fetch(pc);
-}
 extern "C" void quit(){
   sdb->quit();
 }
@@ -59,3 +56,9 @@ extern "C" void pmem_write(uint32_t waddr, int wdata, char wmask){
 extern "C" void difftest(){
   sdb->difftest();
 }
+
+extern "C" void diff_skip(){
+  sdb->diff_skip_step();
+}
+extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
+extern "C" void mrom_read(int32_t addr, int32_t *data) { *data = sdb->mem_read(addr); }

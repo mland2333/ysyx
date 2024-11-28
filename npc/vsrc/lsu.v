@@ -19,24 +19,36 @@ module ysyx_24110006_LSU(
   output [31:0] o_axi_araddr,
   output o_axi_arvalid,
   input i_axi_arready,
+  output [3:0] o_axi_arid,
+  output [7:0] o_axi_arlen,
+  output [2:0] o_axi_arsize,
+  output [1:0] o_axi_arburst,
 
   input [31:0] i_axi_rdata,
   input i_axi_rvalid,
   input [1:0] i_axi_rresp,
   output o_axi_rready,
+  input o_axi_rlast,
+  input [3:0] o_axi_rid,
 
   output [31:0] o_axi_awaddr,
   output o_axi_awvalid,
   input i_axi_awready,
+  output [3:0] o_axi_awid,
+  output [7:0] o_axi_awlen,
+  output [2:0] o_axi_awsize,
+  output [1:0] o_axi_awburst,
 
   output [31:0] o_axi_wdata,
-  output [7:0] o_axi_wstrb,
+  output [3:0] o_axi_wstrb,
   output o_axi_wvalid,
   input i_axi_wready,
+  output o_axi_wlast,
 
   input [1:0] i_axi_bresp,
   input i_axi_bvalid,
-  output o_axi_bready
+  output o_axi_bready,
+  input [3:0] i_axi_bid
 
 );
 
@@ -122,7 +134,7 @@ end
 
 reg[31:0] rdata, rdata0;
 reg[31:0] wdata0;
-reg[7:0] wmask0;
+reg[3:0] wmask0;
 
 always@(*)begin
   case(addr[1:0])
@@ -158,19 +170,19 @@ always@(wen or addr or wdata)begin
     case(addr[1:0])
       2'b00:begin
         wdata0 = wdata;
-        wmask0 = {4'b0, wmask};
+        wmask0 = {wmask};
       end
       2'b01:begin
         wdata0 = {wdata[23:0], wdata[31:24]};
-        wmask0 = {4'b0, wmask[2:0], 1'b0};
+        wmask0 = {wmask[2:0], 1'b0};
       end
       2'b10:begin
         wdata0 = {wdata[15:0], wdata[31:16]};
-        wmask0 = {4'b0, wmask[1:0], 2'b0};
+        wmask0 = {wmask[1:0], 2'b0};
       end
       2'b11:begin
         wdata0 = {wdata[7:0], wdata[31:8]};
-        wmask0 = {4'b0, wmask[0], 3'b0};
+        wmask0 = {wmask[0], 3'b0};
       end
     endcase
   end
@@ -196,6 +208,10 @@ reg bready;
 assign o_axi_araddr = addr;
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
+assign o_axi_arid = 0;
+assign o_axi_arlen = 0;
+assign o_axi_arsize = i_read_t[1] ? 3'b010 : i_read_t[0] ? 3'b001 : 3'b000;
+assign o_axi_arburst = 0;
 
 assign rvalid = i_axi_rvalid;
 assign rresp = i_axi_rresp;
@@ -204,11 +220,16 @@ assign o_axi_rready = rready;
 assign o_axi_awaddr = addr;
 assign o_axi_awvalid = awvalid;
 assign awready = i_axi_awready;
+assign o_axi_awid = 0;
+assign o_axi_awlen = 0;
+assign o_axi_awsize = wmask == 4'b0011 ? 3'b001 : wmask == 4'b1111 ? 3'b010 : 3'b000;
+assign o_axi_awburst = 0;
 
 assign o_axi_wdata = wdata0;
 assign o_axi_wstrb = wmask0;
 assign o_axi_wvalid = wvalid;
 assign wready = i_axi_wready;
+assign o_axi_wlast = 1;
 
 assign bresp = i_axi_bresp;
 assign bvalid = i_axi_bvalid;

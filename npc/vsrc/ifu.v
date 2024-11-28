@@ -11,10 +11,17 @@ module ysyx_24110006_IFU(
   output [31:0] o_axi_araddr,
   output o_axi_arvalid,
   input i_axi_arready,
+  output [3:0] o_axi_arid,
+  output [7:0] o_axi_arlen,
+  output [2:0] o_axi_arsize,
+  output [1:0] o_axi_arburst,
+
   input [31:0] i_axi_rdata,
   input i_axi_rvalid,
   output o_axi_rready,
-  input [1:0] i_axi_rresp
+  input [1:0] i_axi_rresp,
+  input [3:0] i_axi_rid,
+  input i_axi_rlast
 );
 
 reg [31:0] pc;
@@ -55,6 +62,10 @@ wire [1:0] rresp;
 assign o_axi_araddr = pc;
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
+assign o_axi_arid = 0;
+assign o_axi_arlen = 0;
+assign o_axi_arsize = 3'b010;
+assign o_axi_arburst = 0;
 
 assign rvalid = i_axi_rvalid;
 assign rresp = i_axi_rresp;

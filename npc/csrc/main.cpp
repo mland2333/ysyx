@@ -1,26 +1,28 @@
-#include <cstdint>
 #include <exception>
 #include <simulator.h>
-#include <memory.hpp>
+#include <area.hpp>
+#include <memory.h>
 #include <args.h>
 #include <sdb.h>
 Sdb* sdb;
 
 int main(int argc, char **argv) {
+  Verilated::commandArgs(argc, argv);
   Args args(argc, argv);
-  Memory* mem = new Memory();
-  auto sim = std::make_unique<Simulator>(args);
-  if(mem->load_img(args.image) == 0) return 0;
-  sdb = new Sdb(args, sim.get(), mem);
-  sim->reset(10);
-  sdb->welcome();
+  Area sram("sram", 0x80000000, 0x10000000);
+  Area mrom("mrom", 0x20000000, 0x10000, args.image);
+
+  Memory mem({&sram, &mrom});
+  Simulator sim(args);
+  sim.reset(10);
   try{
+    sdb = new Sdb(args, &sim, &mem);
+    sdb->welcome();
     sdb->run();
   } catch (const std::exception& e){
     std::cerr << "Caught exception: " << e.what() << std::endl;
   }
   delete sdb;
-  delete mem;
   /* sim->~Simulator(); */
   return 0;
 }

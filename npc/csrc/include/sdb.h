@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <simulator.h>
-#include <memory.hpp>
+#include <memory.h>
 #include <args.h>
 #include <cpu.h>
 #include <debug/itrace.h>
@@ -55,23 +55,13 @@ public:
   }
   uint32_t mem_read(uint32_t addr){
     if (is_mtrace) printf("pc=0x%x, raddr=0x%x, ", pc_, addr);
-    uint32_t rdata = mem_->read<uint32_t>(addr & ~0x3u);
+    uint32_t rdata = mem_->read(addr & ~0x3u);
     if (is_mtrace) printf("rdata=0x%x\n", rdata);
     return rdata;
   }
   void mem_write(uint32_t addr, uint32_t wdata, char wmask){
     if (is_mtrace) printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc_, addr, wdata);
-    uint32_t waddr = addr & ~0x3u;
-    uint8_t* data = (uint8_t*)&wdata;
-    for(int i = 0; i<4; i++){
-      if(((1<<i)&wmask) != 0)
-        mem_->write<uint8_t>(waddr + i, data[i]);
-    }
-  }
-  uint32_t inst_fetch(uint32_t pc){
-    inst_ = mem_->read<uint32_t>(pc);
-    pc_ = pc;
-    return inst_;
+    mem_->write(addr, wdata, wmask);
   }
   void quit(){
     sim_->quit();
