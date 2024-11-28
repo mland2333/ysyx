@@ -8,7 +8,7 @@ void (*ref_difftest_memcpy)(uint64_t addr, void *buf, size_t n, bool direction) 
 void (*ref_difftest_regcpy)(void *dut, bool direction) = nullptr;
 void (*ref_difftest_exec)(uint64_t n) = nullptr;
 
-void Diff::init_difftest(const char *ref_so_file, long img_size, int port){
+void Diff::init_difftest(const char *ref_so_file, int port){
   assert(ref_so_file != nullptr);
 
   void *handle;
@@ -34,7 +34,7 @@ void Diff::init_difftest(const char *ref_so_file, long img_size, int port){
       "If it is not necessary, you can turn it off in menuconfig.", ref_so_file);
 
   ref_difftest_init(port);
-  ref_difftest_memcpy(0x80000000, (void*)mem_->mem_, img_size, DIFFTEST_TO_REF);
+  ref_difftest_memcpy(0x80000000, (void*)area_->mem_, area_->img_size, DIFFTEST_TO_REF);
   ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
 }
 

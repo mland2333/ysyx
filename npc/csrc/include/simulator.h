@@ -1,12 +1,13 @@
 #pragma once
-
-#include "Vtop.h"
+#include "VysyxSoCFull.h"
+#include "VysyxSoCFull___024root.h"
+/* #include "Vtop.h" */
 #include "verilated_fst_c.h"
 #include <iostream>
 #include <verilated.h>
 #include <cpu.h>
 #include <args.h>
-#include <Vtop___024root.h>
+/* #include <Vtop___024root.h> */
 enum class SIM_STATE{
   NORMAL,
   QUIT,
@@ -24,9 +25,9 @@ private:
   void args_init(int argc, char *argv[]);
   void cpu_update(){
     for (int i = 0; i < cpu.nums; i++) {
-      cpu.gpr[i] = top->rootp->top__DOT__mreg__DOT__rf[i];
+      cpu.gpr[i] = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__mreg__DOT__rf[i];
     }
-    cpu.pc = top->rootp->top__DOT__mpc__DOT__pc;
+    cpu.pc = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__mpc__DOT__pc;
   }
   SIM_STATE state = SIM_STATE::NORMAL;
 public:
@@ -45,10 +46,10 @@ public:
   }
   SIM_STATE exec_once();
   bool is_jump(){
-    return top->rootp->top__DOT__jump;
+    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__jump;
   }
   uint32_t get_upc(){
-    return top->rootp->top__DOT__upc;
+    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__upc;
   }
   void quit(){
     state = SIM_STATE::QUIT;
