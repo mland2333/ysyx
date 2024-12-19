@@ -1,16 +1,16 @@
-AM_SRCS := riscv/npc/start.S \
-           riscv/npc/trm.c \
-           riscv/npc/ioe.c \
-           riscv/npc/timer.c \
-           riscv/npc/input.c \
-           riscv/npc/cte.c \
-           riscv/npc/trap.S \
-					 riscv/npc/gpu.c \
+AM_SRCS := riscv/ysyxsoc/start.S \
+           riscv/ysyxsoc/trm.c \
+           riscv/ysyxsoc/ioe.c \
+           riscv/ysyxsoc/timer.c \
+           riscv/ysyxsoc/input.c \
+           riscv/ysyxsoc/cte.c \
+           riscv/ysyxsoc/trap.S \
+					 riscv/ysyxsoc/gpu.c \
            platform/dummy/vme.c \
            platform/dummy/mpe.c
 
 CFLAGS    += -fdata-sections -ffunction-sections
-CFLAGS    += -I$(AM_HOME)/am/src/riscv/npc/include
+CFLAGS    += -I$(AM_HOME)/am/src/riscv/ysyxsoc/include
 LDSCRIPTS += $(AM_HOME)/scripts/ysyxsoc.ld
 LDFLAGS   += --defsym=_sram_start=0x0f000000 --defsym=_mrom_start=0x20000000
 LDFLAGS   += --gc-sections -e _start
