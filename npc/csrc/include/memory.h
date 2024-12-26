@@ -12,4 +12,5 @@ public:
   uint32_t read(uint32_t raddr);
   void write(uint32_t waddr, uint32_t wdata, char wmask);
   Area* find_area_by_name(const std::string name);
+  Area* find_area_has_image();
 };

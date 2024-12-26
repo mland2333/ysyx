@@ -12,6 +12,7 @@ public:
   const uint32_t size_;
   std::string name_;
   long img_size;
+  bool has_image = false;
   uint64_t translate(uint32_t vaddr) const{
     if(!(vaddr >= base_ && vaddr < base_ + size_)){
       std::cout << "vaddr = " << std::hex << vaddr << '\n';
@@ -53,6 +54,7 @@ inline Area::Area(std::string&& name, uint32_t base, uint32_t size) : name_(std:
 inline Area::Area(std::string&& name, uint32_t base, uint32_t size, const char* image) : name_(std::move(name)), base_(base), size_(size){
   mem_ = new char[size_];
   img_size = Utils::load_img(mem_, image);
+  has_image = true;
 }
 
 inline Area::~Area(){

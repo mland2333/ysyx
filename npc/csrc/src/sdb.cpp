@@ -67,7 +67,7 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
   if (is_itrace) itrace = new Itrace;
   if (is_ftrace) ftrace = new Ftrace(args.image);
   if (is_diff) {
-    Area* area = mem_->find_area_by_name("mrom");
+    Area* area = mem_->find_area_has_image();
     diff = new Diff(area, &sim_->cpu);
     diff->init_difftest(diff_file, 1234);
   }
