@@ -5,7 +5,6 @@
 #include <args.h>
 #include <sdb.h>
 Sdb* sdb;
-
 int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
   Args args(argc, argv);
