@@ -26,9 +26,14 @@
 #define MROM_SIZE 0x1000
 #define SRAM_RADDR 0x0f000000
 #define SRAM_SIZE 0x2000
+#define FLASH_RADDR 0x30000000
+#define FLASH_SIZE 0x10000000
 
 uint8_t* mrom_guest_to_host(paddr_t paddr);
 paddr_t mrom_host_to_guest(uint8_t *haddr);
+
+uint8_t* flash_guest_to_host(paddr_t paddr);
+paddr_t flash_host_to_guest(uint8_t *haddr);
 
 uint8_t* sram_guest_to_host(paddr_t paddr);
 paddr_t sram_host_to_guest(uint8_t *haddr);
@@ -44,6 +49,10 @@ static inline bool in_pmem(paddr_t addr) {
 
 static inline bool in_mrom(paddr_t addr) {
   return addr - MROM_RADDR < MROM_SIZE;
+}
+
+static inline bool in_flash(paddr_t addr) {
+  return addr - FLASH_RADDR < FLASH_SIZE;
 }
 
 static inline bool in_sram(paddr_t addr) {

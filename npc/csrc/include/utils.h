@@ -23,7 +23,7 @@ inline long load_img(char* mem_, const char* image){
     std::cout << "Cannot open '" << img_file << "'\n";
     return 0;
   }
-  std::cout << "打开文件" << img_file << '\n';
+  /* std::cout << "打开文件" << img_file << '\n'; */
   image_size = std::filesystem::file_size(img_path);
   std::ifstream file(image, std::ios::binary);
 
