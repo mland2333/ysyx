@@ -11,7 +11,7 @@ extern char _pmem_start;
 extern char _data_start[];
 extern char _data_end[];
 extern char _data_load_start[];
-extern char _data_load_end[];
+
 void load_data(){
   char* src = _data_load_start;
   char* dst = _data_start;
@@ -19,7 +19,7 @@ void load_data(){
   /* printf("_data_load_end = 0x%x\n", _data_load_end); */
   /* printf("_data_start = 0x%x\n", _data_start); */
   /* printf("_data_end = 0x%x\n", _data_end); */
-  while(src != _data_load_end){
+  while(dst != _data_end){
     *dst = *src;
     src++;
     dst++;
@@ -47,8 +47,17 @@ void uart_init(){
 }
 
 void _trm_init() {
-  uart_init();
   load_data();
+  uart_init();
+  unsigned int mvendorid, marchid;
+  asm volatile("csrr %0, mvendorid" : "=r"(mvendorid));
+  asm volatile("csrr %0, marchid" : "=r"(marchid));
+  for(int i = 0; i<4; i++){
+    putch(*((char*)&mvendorid + 3 - i));
+  }
+  putch('_');
+  printf("%d\n", marchid);
+  
   int ret = main(mainargs);
   halt(ret);
 }
