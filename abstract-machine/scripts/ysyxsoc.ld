@@ -6,29 +6,41 @@ MEMORY {
 SECTIONS {
   /* _pmem_start and _entry_offset are defined in LDFLAGS */
   . = ORIGIN(mrom);
-  .text : {
+  .text : 
+  ALIGN(8)
+  {
     *(entry)
     *(.text*)
   } > mrom AT> mrom
+
   . = ALIGN(8);
   etext = .;
   _etext = .;
-  .rodata : {
+
+  .rodata : 
+  ALIGN(4)
+  {
     . = ALIGN(8);
     *(.rodata*)
+    . = ALIGN(8);
   } > mrom AT> mrom
-  . = ALIGN(8);
+
   _data_load_start = .;
-  .data : {
+  .data : 
+  ALIGN(8)
+  {
     . = ALIGN(8);
     _data_start = .;
-    *(.data)
-    . = ALIGN(8);
+    *(.data*)
+    *(.sdata*)
     _data_end = .;
+    . = ALIGN(8);
   } > sram AT> mrom
-  . = ALIGN(8);
+  _data_load_end = LOADADDR(.data) + SIZEOF(.data);
+  /* _data_load_end = .; */
   edata = .;
   _data = .;
+
   .bss : {
     . = ALIGN(8);
 	_bss_start = .;
@@ -37,6 +49,8 @@ SECTIONS {
     *(.scommon)
     _bss_end = .;
   } > sram AT> mrom
+
+  . = ALIGN(8);
   _stack_top = _bss_end;
   . = _stack_top + 0x1000;
   _stack_pointer = .;

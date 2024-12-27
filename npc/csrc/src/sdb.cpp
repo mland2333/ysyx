@@ -67,7 +67,7 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
   if (is_itrace) itrace = new Itrace;
   if (is_ftrace) ftrace = new Ftrace(args.image);
   if (is_diff) {
-    Area* area = mem_->find_area_by_name("mrom");
+    Area* area = mem_->find_area_has_image();
     diff = new Diff(area, &sim_->cpu);
     diff->init_difftest(diff_file, 1234);
   }
@@ -76,10 +76,13 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
 }
 
 SIM_STATE Sdb::exec_once(){
-  inst_nums++;
+  clk_nums++;
   SIM_STATE state = sim_->exec_once();
-  if (is_itrace) itrace->trace(pc_, inst_);
-  if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
+  if (is_time_to_trace){
+    if (is_itrace && is_time_to_trace) itrace->trace(sim_->cpu.pc, sim_->get_inst());
+    if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
+    is_time_to_trace = false;
+  }
   if (is_diff && is_time_to_diff){
     is_time_to_diff = false;
     if (!diff->difftest_step()) state = SIM_STATE::DIFF_FAILURE;
@@ -108,7 +111,9 @@ uint64_t Sdb::get_rtc(){
 }
 void Sdb::statistic(){
   Log("host time spent = %lu us", timer);
+  Log("total host clk = %lu", clk_nums);
   Log("total host instructions = %lu", inst_nums);
+  if (is_diff) Log("total diff instructions = %lu", diff->diff_nums);
 }
 
 int Sdb::run(){
@@ -142,7 +147,10 @@ int Sdb::run(){
   }
   switch (result) {
     case SIM_STATE::QUIT :
-      Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
+      if (sim_->cpu.gpr[10] == 0)
+        Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
+      else 
+        Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
       break;
     default: 
       Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);

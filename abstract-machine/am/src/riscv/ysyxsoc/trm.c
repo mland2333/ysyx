@@ -1,5 +1,6 @@
 #include <am.h>
 #include <klib-macros.h>
+#include <klib.h>
 #include <ysyxsoc.h>
 extern char _heap_start;
 int main(const char *args);
@@ -10,12 +11,15 @@ extern char _pmem_start;
 extern char _data_start[];
 extern char _data_end[];
 extern char _data_load_start[];
-
+extern char _data_load_end[];
 void load_data(){
   char* src = _data_load_start;
   char* dst = _data_start;
-  //printf("%x, %x\n", (int)_data_end , (int)dst);
-  while(dst != _data_end){
+  /* printf("_data_load_start = 0x%x\n", _data_load_start); */
+  /* printf("_data_load_end = 0x%x\n", _data_load_end); */
+  /* printf("_data_start = 0x%x\n", _data_start); */
+  /* printf("_data_end = 0x%x\n", _data_end); */
+  while(src != _data_load_end){
     *dst = *src;
     src++;
     dst++;
@@ -31,7 +35,7 @@ void putch(char ch) {
 }
 
 void halt(int code) {
-  asm volatile ("ebreak" : :);
+  asm volatile("mv a0, %0; ebreak" : :"r"(code));
   __builtin_unreachable();
 }
 
@@ -43,8 +47,8 @@ void uart_init(){
 }
 
 void _trm_init() {
-  load_data();
   uart_init();
+  load_data();
   int ret = main(mainargs);
   halt(ret);
 }

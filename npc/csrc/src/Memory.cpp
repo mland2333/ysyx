@@ -35,3 +35,11 @@ Area* Memory::find_area_by_name(const std::string name){
   throw std::runtime_error("No Area\n");
   return nullptr;
 }
+
+Area* Memory::find_area_has_image(){
+  for (auto& area : areas_) {
+    if (area->has_image) return area;
+  }
+  throw std::runtime_error("No Area\n");
+  return nullptr;
+}

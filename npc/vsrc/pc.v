@@ -8,8 +8,9 @@ module ysyx_24110006_PC(
   input i_valid,
   output reg o_valid
 );
-`define PC 32'h20000000
-
+localparam MROM = 32'h20000000;
+localparam FLASH = 32'h30000000;
+localparam PC = MROM;
 reg[31:0] pc;
 reg reset;
 
@@ -28,7 +29,7 @@ always@(posedge i_clock)begin
 end
 
 always@(posedge i_clock)begin
-  if(reset) pc <= `PC;
+  if(reset) pc <= PC;
   else if(!o_valid && i_valid) begin
     if(i_jump) pc <= i_upc;
     else pc <= pc + 4;

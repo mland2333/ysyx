@@ -30,6 +30,39 @@ __EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction)
       }
     }
   }
+  else if (addr >= MROM_RADDR && addr < MROM_RADDR + MROM_SIZE) {
+    if (direction == DIFFTEST_TO_DUT) {
+      for (int i = 0; i < n; i++) {
+        *((uint8_t *)(buf) + i) = *mrom_guest_to_host(addr + i);
+      }
+    } else {
+      for (int i = 0; i < n; i++) {
+        *mrom_guest_to_host(addr + i) = *((uint8_t *)(buf) + i);
+      }
+    }
+  }
+  else if (addr >= SRAM_RADDR && addr < SRAM_RADDR + SRAM_SIZE) {
+    if (direction == DIFFTEST_TO_DUT) {
+      for (int i = 0; i < n; i++) {
+        *((uint8_t *)(buf) + i) = *sram_guest_to_host(addr + i);
+      }
+    } else {
+      for (int i = 0; i < n; i++) {
+        *sram_guest_to_host(addr + i) = *((uint8_t *)(buf) + i);
+      }
+    }
+  }
+  else if (addr >= FLASH_RADDR && addr < FLASH_RADDR + FLASH_SIZE) {
+    if (direction == DIFFTEST_TO_DUT) {
+      for (int i = 0; i < n; i++) {
+        *((uint8_t *)(buf) + i) = *flash_guest_to_host(addr + i);
+      }
+    } else {
+      for (int i = 0; i < n; i++) {
+        *flash_guest_to_host(addr + i) = *((uint8_t *)(buf) + i);
+      }
+    }
+  }
 }
 
 __EXPORT void difftest_regcpy(void *dut, bool direction) {

@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <cstdint>
 #include <assert.h>
+#include <iostream>
 void (*ref_difftest_memcpy)(uint64_t addr, void *buf, size_t n, bool direction) = nullptr;
 void (*ref_difftest_regcpy)(void *dut, bool direction) = nullptr;
 void (*ref_difftest_exec)(uint64_t n) = nullptr;
@@ -34,7 +35,7 @@ void Diff::init_difftest(const char *ref_so_file, int port){
       "If it is not necessary, you can turn it off in menuconfig.", ref_so_file);
 
   ref_difftest_init(port);
-  ref_difftest_memcpy(0x80000000, (void*)area_->mem_, area_->img_size, DIFFTEST_TO_REF);
+  ref_difftest_memcpy(0x20000000, (void*)area_->mem_, area_->img_size, DIFFTEST_TO_REF);
   ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
 }
 
@@ -54,6 +55,8 @@ bool Diff::difftest_step() {
     diff_skip_buf = false;
     return true;
   }
+  diff_nums ++;
+  /* std::cout << "diff\n"; */
   ref_difftest_exec(1);
   ref_difftest_regcpy((void*)ref_cpu, DIFFTEST_TO_DUT);
   int i;

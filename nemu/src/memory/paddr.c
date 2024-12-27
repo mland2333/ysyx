@@ -25,6 +25,7 @@ static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 #endif
 
 static uint8_t mrom[MROM_SIZE] PG_ALIGN = {};
+static uint8_t flash[FLASH_SIZE] PG_ALIGN = {};
 static uint8_t sram[SRAM_SIZE] PG_ALIGN = {};
 
 uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
@@ -32,6 +33,9 @@ paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
 
 uint8_t* mrom_guest_to_host(paddr_t paddr) { return mrom + paddr - MROM_RADDR; }
 paddr_t mrom_host_to_guest(uint8_t *haddr) { return haddr - mrom + MROM_RADDR; }
+
+uint8_t* flash_guest_to_host(paddr_t paddr) { return flash + paddr - FLASH_RADDR; }
+paddr_t flash_host_to_guest(uint8_t *haddr) { return haddr - flash + FLASH_RADDR; }
 
 uint8_t* sram_guest_to_host(paddr_t paddr) { return sram + paddr - SRAM_RADDR; }
 paddr_t sram_host_to_guest(uint8_t *haddr) { return haddr - sram + SRAM_RADDR; }
@@ -63,6 +67,20 @@ void mrom_write(paddr_t addr, int len, word_t data) {
     printf("mrom_write, address: 0x%x, len: %d\n", addr, len);
   #endif
   host_write(mrom_guest_to_host(addr), len, data);
+}
+
+word_t flash_read(paddr_t addr, int len){
+  #ifdef CONFIG_MTRACE
+    printf("flash_read , address: 0x%x, len: %d\n", addr, len);
+  #endif
+  word_t ret = host_read(flash_guest_to_host(addr), len);
+  return ret;
+}
+void flash_write(paddr_t addr, int len, word_t data) {
+  #ifdef CONFIG_MTRACE
+    printf("flash_write, address: 0x%x, len: %d\n", addr, len);
+  #endif
+  host_write(flash_guest_to_host(addr), len, data);
 }
 
 word_t sram_read(paddr_t addr, int len){
@@ -98,6 +116,7 @@ word_t paddr_read(paddr_t addr, int len) {
   if(in_pmem(addr)) return pmem_read(addr, len);
 #if defined(CONFIG_TARGET_SHARE)
   else if(in_mrom(addr)) return mrom_read(addr, len);
+  else if(in_flash(addr)) return flash_read(addr, len);
   else if(in_sram(addr)) return sram_read(addr, len);
 #endif
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));

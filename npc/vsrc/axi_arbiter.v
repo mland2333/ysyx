@@ -140,7 +140,7 @@ always@(posedge i_clock)begin
         if(i_axi_awvalid1) write_state <= MEM1_WRITE;
       end
       MEM1_WRITE:begin
-        if(i_axi_bvalid && o_axi_bready) read_state <= IDLE_WRITE;
+        if(i_axi_bvalid && o_axi_bready) write_state <= IDLE_WRITE;
       end
       default: begin
         write_state <= IDLE_WRITE;

@@ -29,6 +29,7 @@ class Sdb{
   const char* diff_file = "/home/mland/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so";
   uint64_t timer = 0;
   uint64_t inst_nums = 0;
+  uint64_t clk_nums = 0;
   uint32_t inst_ = 0;
   uint32_t pc_ = 0;
   void statistic();
@@ -38,7 +39,7 @@ class Sdb{
   Ftrace* ftrace;
   Diff* diff;
   bool is_time_to_diff = false;
-  
+  bool is_time_to_trace = false;
   uint64_t rtc_begin;
 public:
   Sdb(Args& args, Simulator* sim, Memory* mem);
@@ -70,4 +71,5 @@ public:
   int run();
   void diff_skip_step(){ if(is_diff) diff->diff_skip_step();}
   void difftest(){ is_time_to_diff = true; }
+  void fetch_inst() { inst_nums++; is_time_to_trace = true; }
 };
