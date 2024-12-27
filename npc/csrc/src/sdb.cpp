@@ -76,7 +76,7 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
 }
 
 SIM_STATE Sdb::exec_once(){
-  inst_nums++;
+  clk_nums++;
   SIM_STATE state = sim_->exec_once();
   if (is_itrace) itrace->trace(pc_, inst_);
   if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
@@ -108,7 +108,9 @@ uint64_t Sdb::get_rtc(){
 }
 void Sdb::statistic(){
   Log("host time spent = %lu us", timer);
+  Log("total host clk = %lu", clk_nums);
   Log("total host instructions = %lu", inst_nums);
+  if (is_diff) Log("total diff instructions = %lu", diff->diff_nums);
 }
 
 int Sdb::run(){

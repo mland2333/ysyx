@@ -6,7 +6,7 @@
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
-static char print_buffer[6553500];
+static char print_buffer[256];
 int printf(const char *fmt, ...) {
   va_list ap;
   int count;

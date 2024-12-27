@@ -65,3 +65,5 @@ extern "C" void flash_read(int32_t addr, int32_t *data) {
   *data = sdb->mem_read(addr + 0x30000000); 
 }
 extern "C" void mrom_read(int32_t addr, int32_t *data) { *data = sdb->mem_read(addr); }
+
+extern "C" void add_inst_nums() { sdb->add_inst_nums();}

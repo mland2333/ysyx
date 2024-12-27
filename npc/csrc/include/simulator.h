@@ -15,7 +15,7 @@ enum class SIM_STATE{
 };
 class Simulator {
 private:
-  TOP_NAME *top;
+  
   VerilatedContext *contextp;
   VerilatedFstC *tfp;
   bool is_gtk = false;
@@ -31,6 +31,7 @@ private:
   }
   SIM_STATE state = SIM_STATE::NORMAL;
 public:
+  TOP_NAME *top;
   Cpu<32> cpu;
   
   Simulator(Args& args);
