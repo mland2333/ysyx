@@ -39,7 +39,7 @@ class Sdb{
   Ftrace* ftrace;
   Diff* diff;
   bool is_time_to_diff = false;
-  
+  bool is_time_to_trace = false;
   uint64_t rtc_begin;
 public:
   Sdb(Args& args, Simulator* sim, Memory* mem);
@@ -71,5 +71,5 @@ public:
   int run();
   void diff_skip_step(){ if(is_diff) diff->diff_skip_step();}
   void difftest(){ is_time_to_diff = true; }
-  void add_inst_nums() { inst_nums++; }
+  void fetch_inst() { inst_nums++; is_time_to_trace = true; }
 };

@@ -55,4 +55,7 @@ public:
   void quit(){
     state = SIM_STATE::QUIT;
   }
+  int get_inst(){
+    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__mifu__DOT__inst;
+  }
 };

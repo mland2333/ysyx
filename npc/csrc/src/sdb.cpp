@@ -78,8 +78,11 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
 SIM_STATE Sdb::exec_once(){
   clk_nums++;
   SIM_STATE state = sim_->exec_once();
-  if (is_itrace) itrace->trace(pc_, inst_);
-  if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
+  if (is_time_to_trace){
+    if (is_itrace && is_time_to_trace) itrace->trace(sim_->cpu.pc, sim_->get_inst());
+    if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
+    is_time_to_trace = false;
+  }
   if (is_diff && is_time_to_diff){
     is_time_to_diff = false;
     if (!diff->difftest_step()) state = SIM_STATE::DIFF_FAILURE;
