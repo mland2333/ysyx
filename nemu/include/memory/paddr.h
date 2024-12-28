@@ -28,12 +28,14 @@
 #define SRAM_SIZE 0x2000
 #define FLASH_RADDR 0x30000000
 #define FLASH_SIZE 0x10000000
-
 uint8_t* mrom_guest_to_host(paddr_t paddr);
 paddr_t mrom_host_to_guest(uint8_t *haddr);
 
 uint8_t* flash_guest_to_host(paddr_t paddr);
 paddr_t flash_host_to_guest(uint8_t *haddr);
+
+uint8_t* psram_guest_to_host(paddr_t paddr);
+paddr_t psram_host_to_guest(uint8_t *haddr);
 
 uint8_t* sram_guest_to_host(paddr_t paddr);
 paddr_t sram_host_to_guest(uint8_t *haddr);

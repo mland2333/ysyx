@@ -2,15 +2,25 @@
 #include <klib-macros.h>
 #include <klib.h>
 #include <ysyxsoc.h>
-extern char _heap_start;
-int main(const char *args);
+extern char _heap_start[];
+extern char _stack_top[];
+extern char _boot_load_start[];
+extern char _boot_start[];
+extern char _boot_end[];
 
-extern char _pmem_start;
-#define PMEM_SIZE (128 * 1024 * 1024)
-#define PMEM_END  ((uintptr_t)&_pmem_start + PMEM_SIZE)
+extern char _text_load_start[];
+extern char _text_start[];
 extern char _data_start[];
 extern char _data_end[];
 extern char _data_load_start[];
+extern char _bss_end[];
+
+int main(const char *args);
+
+/* extern char _pmem_start; */
+/* #define PMEM_SIZE (128 * 1024 * 1024) */
+/* #define PMEM_END  ((uintptr_t)&_pmem_start + PMEM_SIZE) */
+
 
 void load_data(){
   char* src = _data_load_start;
@@ -26,7 +36,7 @@ void load_data(){
   }
 }
 
-Area heap = RANGE(&_heap_start, PMEM_END);
+Area heap = RANGE(&_heap_start, _stack_top);
 static const char mainargs[MAINARGS_MAX_LEN] = MAINARGS_PLACEHOLDER; // defined in CFLAGS
 
 void putch(char ch) {
@@ -47,7 +57,7 @@ void uart_init(){
 }
 
 void _trm_init() {
-  load_data();
+  /* load_data(); */
   uart_init();
   unsigned int mvendorid, marchid;
   asm volatile("csrr %0, mvendorid" : "=r"(mvendorid));

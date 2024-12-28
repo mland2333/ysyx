@@ -48,8 +48,8 @@ INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g -fsanitize=address
 LDFLAGS += $(LIBS) -fsanitize=address
 OBJCACHE = ccache
-CC = ccache gcc
-CXX = ccache g++
+# CC = ccache gcc
+# CXX = ccache g++
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	@rm -rf $(OBJ_DIR)
