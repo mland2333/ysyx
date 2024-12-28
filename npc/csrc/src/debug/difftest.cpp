@@ -45,13 +45,13 @@ bool Diff::difftest_step() {
     first_inst = false;
     return true;
   }
-  if (diff_skip){
-    ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
-    diff_skip = diff_skip_buf;
-    return true;
-  }
+  /* if (diff_skip){ */
+    /* ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF); */
+    /* diff_skip = diff_skip_buf; */
+    /* return true; */
+  /* } */
   if (diff_skip_buf) {
-    diff_skip = true;
+    ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
     diff_skip_buf = false;
     return true;
   }
