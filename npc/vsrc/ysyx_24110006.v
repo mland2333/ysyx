@@ -117,7 +117,6 @@ always@(posedge clock)begin
   if(ifu_valid) difftest();
 end
 
-reg diff;
 always@(posedge clock)begin
   if(ifu_valid) add_inst_nums();
 end
