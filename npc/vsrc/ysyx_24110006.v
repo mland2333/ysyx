@@ -109,8 +109,10 @@ reg[31:0] npc_upc;
 always@(posedge clock)
   npc_upc <= upc;
 
+
+
 always@(posedge clock)begin
-  if(clint_rvalid || uart_bvalid) diff_skip();
+  if(clint_rvalid || lsu_valid && exu_result >= 32'h10000000 && exu_result < 32'h10001000) diff_skip();
 end
 
 always@(posedge clock)begin
