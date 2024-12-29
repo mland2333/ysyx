@@ -52,7 +52,7 @@ OBJCACHE = ccache
 # CXX = ccache g++
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
-	@rm -rf $(OBJ_DIR)
+	# @rm -rf $(OBJ_DIR)
 	$(VERILATOR) $(VERILATOR_CFLAGS) \
 		--top-module ysyxSoCFull $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \

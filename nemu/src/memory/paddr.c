@@ -27,7 +27,7 @@ static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 static uint8_t mrom[MROM_SIZE] PG_ALIGN = {};
 static uint8_t flash[FLASH_SIZE] PG_ALIGN = {};
 static uint8_t sram[SRAM_SIZE] PG_ALIGN = {};
-
+static uint8_t sdram[SDRAM_SIZE] PG_ALIGN = {};
 uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
 paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
 
@@ -40,6 +40,8 @@ paddr_t flash_host_to_guest(uint8_t *haddr) { return haddr - flash + FLASH_RADDR
 uint8_t* sram_guest_to_host(paddr_t paddr) { return sram + paddr - SRAM_RADDR; }
 paddr_t sram_host_to_guest(uint8_t *haddr) { return haddr - sram + SRAM_RADDR; }
 
+uint8_t* sdram_guest_to_host(paddr_t paddr) { return sdram + paddr - SDRAM_RADDR; }
+paddr_t sdram_host_to_guest(uint8_t *haddr) { return haddr - sdram + SDRAM_RADDR; }
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
   #ifdef CONFIG_MTRACE
@@ -97,6 +99,20 @@ void sram_write(paddr_t addr, int len, word_t data) {
   host_write(sram_guest_to_host(addr), len, data);
 }
 
+word_t sdram_read(paddr_t addr, int len){
+  #ifdef CONFIG_MTRACE
+    printf("sdram_read , address: 0x%x, len: %d\n", addr, len);
+  #endif
+  word_t ret = host_read(sdram_guest_to_host(addr), len);
+  return ret;
+}
+void sdram_write(paddr_t addr, int len, word_t data) {
+  #ifdef CONFIG_MTRACE
+    printf("sdram_write, address: 0x%x, len: %d\n", addr, len);
+  #endif
+  host_write(sdram_guest_to_host(addr), len, data);
+}
+
 
 static void out_of_bound(paddr_t addr) {
   panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
@@ -118,6 +134,7 @@ word_t paddr_read(paddr_t addr, int len) {
   else if(in_mrom(addr)) return mrom_read(addr, len);
   else if(in_flash(addr)) return flash_read(addr, len);
   else if(in_sram(addr)) return sram_read(addr, len);
+  else if(in_sdram(addr)) return sdram_read(addr, len);
 #endif
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
   out_of_bound(addr);
@@ -128,6 +145,7 @@ void paddr_write(paddr_t addr, int len, word_t data) {
   if (in_pmem(addr)) { pmem_write(addr, len, data); return; }
 #if defined(CONFIG_TARGET_SHARE)
   else if (in_sram(addr)) { sram_write(addr, len, data); return; }
+  else if (in_sdram(addr)) { sdram_write(addr, len, data); return; }
 #endif
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
   out_of_bound(addr);

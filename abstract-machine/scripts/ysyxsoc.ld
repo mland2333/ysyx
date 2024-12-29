@@ -4,6 +4,7 @@ MEMORY {
   sram : ORIGIN = 0x0f000000, LENGTH = 8K
   flash : ORIGIN = 0x30000000, LENGTH = 16M
   psram : ORIGIN = 0x80000000, LENGTH = 4M
+  sdram : ORIGIN = 0xa0000000, LENGTH = 32M
 }
 SECTIONS {
   /* _pmem_start and _entry_offset are defined in LDFLAGS */
@@ -36,7 +37,7 @@ SECTIONS {
     _text_start = .;
     EXCLUDE_FILE (start.* bootloader.*) *(.text*)
     . = ALIGN(8);
-  } > psram AT> flash
+  } > sdram AT> flash
 
   . = ALIGN(8);
   etext = .;
@@ -48,7 +49,7 @@ SECTIONS {
     . = ALIGN(8);
     *(.rodata*)
     . = ALIGN(8);
-  } > psram AT> flash
+  } > sdram AT> flash
   
   .data.extra : 
   ALIGN(8)
@@ -82,7 +83,7 @@ SECTIONS {
     *(__am_apps.sdata*)
     __am_apps_data_end = .;
     . = ALIGN(8);
-  } >psram AT> flash
+  } >sdram AT> flash
 
   _data_load_start = .;
   .data : 
@@ -94,7 +95,7 @@ SECTIONS {
     *(.sdata*)
     _data_end = .;
     . = ALIGN(8);
-  } > psram AT> flash
+  } > sdram AT> flash
   /* _data_load_end = LOADADDR(.data) + SIZEOF(.data); */
   /* _data_load_end = .; */
   edata = .;
@@ -107,7 +108,7 @@ SECTIONS {
     *(__am_apps.scommon*)
     __am_apps_bss_end = .;
     . = ALIGN(8);
-  } >psram AT> flash
+  } >sdram AT> flash
 
   .bss : {
     . = ALIGN(8);
@@ -116,11 +117,11 @@ SECTIONS {
     *(.sbss*)
     *(.scommon*)
     _bss_end = .;
-  } > psram AT> flash
+  } > sdram AT> flash
   . = _bss_end;
   . = ALIGN(8);
   _heap_start = .;
-  _stack_top = 0x80400000;
+  _stack_top = 0xa1000000;
   . = 0x0f002000;
   _stack_pointer = .;
   end = .;
