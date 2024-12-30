@@ -37,7 +37,7 @@ SECTIONS {
     _text_start = .;
     EXCLUDE_FILE (start.* bootloader.*) *(.text*)
     . = ALIGN(8);
-  } > sdram AT> flash
+  } > psram AT> flash
 
   . = ALIGN(8);
   etext = .;
@@ -49,7 +49,7 @@ SECTIONS {
     . = ALIGN(8);
     *(.rodata*)
     . = ALIGN(8);
-  } > sdram AT> flash
+  } > psram AT> flash
   
   .data.extra : 
   ALIGN(8)
@@ -83,7 +83,7 @@ SECTIONS {
     *(__am_apps.sdata*)
     __am_apps_data_end = .;
     . = ALIGN(8);
-  } >sdram AT> flash
+  } >psram AT> flash
 
   _data_load_start = .;
   .data : 
@@ -95,7 +95,7 @@ SECTIONS {
     *(.sdata*)
     _data_end = .;
     . = ALIGN(8);
-  } > sdram AT> flash
+  } > psram AT> flash
   /* _data_load_end = LOADADDR(.data) + SIZEOF(.data); */
   /* _data_load_end = .; */
   edata = .;
@@ -108,7 +108,7 @@ SECTIONS {
     *(__am_apps.scommon*)
     __am_apps_bss_end = .;
     . = ALIGN(8);
-  } >sdram AT> flash
+  } >psram AT> flash
 
   .bss : {
     . = ALIGN(8);
@@ -117,7 +117,7 @@ SECTIONS {
     *(.sbss*)
     *(.scommon*)
     _bss_end = .;
-  } > sdram AT> flash
+  } > psram AT> flash
   . = _bss_end;
   . = ALIGN(8);
   _heap_start = .;

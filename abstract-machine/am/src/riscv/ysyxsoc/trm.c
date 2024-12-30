@@ -43,7 +43,16 @@ void putch(char ch) {
   while((UartReadReg(LSR) & LSR_TX_IDLE) == 0);
   UartWriteReg(THR, ch);
 }
-
+char getch() {
+  if(UartReadReg(LSR) & 0x01){
+    // input data is ready.
+    char a = UartReadReg(RBR);
+    /* putch(a); */
+    return a;
+  } else {
+    return 0xff;
+  }
+}
 void halt(int code) {
   asm volatile("mv a0, %0; ebreak" : :"r"(code));
   __builtin_unreachable();
@@ -67,7 +76,6 @@ void _trm_init() {
   }
   putch('_');
   printf("%d\n", marchid);
-  
   int ret = main(mainargs);
   halt(ret);
 }
