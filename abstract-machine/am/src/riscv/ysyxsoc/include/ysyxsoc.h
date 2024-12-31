@@ -9,12 +9,12 @@
 #define UART_TX   0
 
 #define SERIAL_PORT     (UART_BASE+UART_TX) //(DEVICE_BASE + 0x00003f8)
-#define KBD_ADDR        (DEVICE_BASE + 0x0000060)
-#define RTC_ADDR        (DEVICE_BASE + 0x0000048)
-#define VGACTL_ADDR     (DEVICE_BASE + 0x0000100)
+#define KBD_ADDR        0x10011000
+#define RTC_ADDR        0x02000000
+#define VGACTL_ADDR     0xa1000000
 #define AUDIO_ADDR      (DEVICE_BASE + 0x0000200)
 #define DISK_ADDR       (DEVICE_BASE + 0x0000300)
-#define FB_ADDR         (MMIO_BASE   + 0x1000000)
+#define FB_ADDR         0x21000000
 #define AUDIO_SBUF_ADDR (MMIO_BASE   + 0x1200000)
 
 #define REG(reg) ((volatile uint8_t *)(UART_BASE + reg))

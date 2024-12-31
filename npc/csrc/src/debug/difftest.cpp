@@ -35,13 +35,13 @@ void Diff::init_difftest(const char *ref_so_file, int port){
       "If it is not necessary, you can turn it off in menuconfig.", ref_so_file);
 
   ref_difftest_init(port);
-  ref_difftest_memcpy(0x30000000, (void*)area_->mem_, area_->img_size, DIFFTEST_TO_REF);
-  ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
+  ref_difftest_memcpy(0x30000000, (void*)area->mem, area->img_size, DIFFTEST_TO_REF);
+  ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
 }
 
 bool Diff::difftest_step() {
   if (first_inst) {
-    ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
+    ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
     first_inst = false;
     return true;
   }
@@ -51,7 +51,7 @@ bool Diff::difftest_step() {
     /* return true; */
   /* } */
   if (diff_skip_buf) {
-    ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
+    ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
     diff_skip_buf = false;
     return true;
   }
@@ -60,14 +60,14 @@ bool Diff::difftest_step() {
   ref_difftest_exec(1);
   ref_difftest_regcpy((void*)ref_cpu, DIFFTEST_TO_DUT);
   int i;
-  if((i = cpu_->check(ref_cpu)) != 0){
+  if((i = cpu->check(ref_cpu)) != 0){
     if (i == -1) {
       printf("difftest失败, 寄存器为：pc, 地址：0x%x\ncpu.pc = 0x%x\nref_gpr.pc = 0x%x\n",
-          cpu_->pc, cpu_->pc, ref_cpu->pc);
+          cpu->pc, cpu->pc, ref_cpu->pc);
     }
     else {
       printf("difftest失败, 寄存器为：%s, 地址：0x%x\ncpu.gpr[%d] = 0x%x\nref_gpr[%d] = 0x%x\n",
-           RegName::regs[i], cpu_->pc, i, cpu_->gpr[i], i, ref_cpu->gpr[i]);
+           RegName::regs[i], cpu->pc, i, cpu->gpr[i], i, ref_cpu->gpr[i]);
     }
     return false;
   }

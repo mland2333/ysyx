@@ -9,7 +9,8 @@ TOPNAME = ysyxSoCFull
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --autoflush --timescale "1ns/1ns" --notiming
+				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --autoflush --timescale "1ns/1ns" --notiming -j 8 \
+				-Wno-WIDTHEXPAND
 
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl

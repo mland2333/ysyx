@@ -30,11 +30,11 @@ class Sdb{
   uint64_t timer = 0;
   uint64_t inst_nums = 0;
   uint64_t clk_nums = 0;
-  uint32_t inst_ = 0;
-  uint32_t pc_ = 0;
+  uint32_t inst = 0;
+  uint32_t pc = 0;
   void statistic();
-  Simulator* sim_;
-  Memory* mem_;
+  Simulator* sim;
+  Memory* mem;
   Itrace* itrace;
   Ftrace* ftrace;
   Diff* diff;
@@ -52,20 +52,20 @@ public:
   SIM_STATE exec_once();
   SIM_STATE exec(int n);
   void cpu_display(){
-    sim_->cpu.display();
+    sim->cpu.display();
   }
   uint32_t mem_read(uint32_t addr){
-    if (is_mtrace) printf("pc=0x%x, raddr=0x%x, ", pc_, addr);
-    uint32_t rdata = mem_->read(addr & ~0x3u);
+    if (is_mtrace) printf("pc=0x%x, raddr=0x%x, ", pc, addr);
+    uint32_t rdata = mem->read(addr & ~0x3u);
     if (is_mtrace) printf("rdata=0x%x\n", rdata);
     return rdata;
   }
   void mem_write(uint32_t addr, uint32_t wdata, char wmask){
-    if (is_mtrace) printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc_, addr, wdata);
-    mem_->write(addr, wdata, wmask);
+    if (is_mtrace) printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc, addr, wdata);
+    mem->write(addr, wdata, wmask);
   }
   void quit(){
-    sim_->quit();
+    sim->quit();
   }
   uint64_t get_rtc();
   int run();

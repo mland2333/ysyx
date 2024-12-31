@@ -59,16 +59,16 @@ void Sdb::init(){
   /* }; */
 }
 
-Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) : 
+Sdb::Sdb(Args& args, Simulator* sim_, Memory* mem_) : 
   is_batch(args.is_batch), is_itrace(args.is_itrace), is_ftrace(args.is_ftrace), 
   is_mtrace(args.is_mtrace), is_diff(args.is_diff), is_vga(args.is_vga), 
-  sim_(sim), mem_(mem){
+  sim(sim_), mem(mem_){
   init();
   if (is_itrace) itrace = new Itrace;
   if (is_ftrace) ftrace = new Ftrace(args.image);
   if (is_diff) {
-    Area* area = mem_->find_area_has_image();
-    diff = new Diff(area, &sim_->cpu);
+    const Area* area = mem_->find_area_has_image();
+    diff = new Diff(area, &sim->cpu);
     diff->init_difftest(diff_file, 1234);
   }
   if (is_vga) init_vga();
@@ -77,10 +77,10 @@ Sdb::Sdb(Args& args, Simulator* sim, Memory* mem) :
 
 SIM_STATE Sdb::exec_once(){
   clk_nums++;
-  SIM_STATE state = sim_->exec_once();
+  SIM_STATE state = sim->exec_once();
   if (is_time_to_trace){
-    if (is_itrace && is_time_to_trace) itrace->trace(sim_->cpu.pc, sim_->get_inst());
-    if (is_ftrace) ftrace->trace(pc_, sim_->get_upc(), sim_->is_jump());
+    if (is_itrace && is_time_to_trace) itrace->trace(sim->cpu.pc, sim->get_inst());
+    if (is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump());
     is_time_to_trace = false;
   }
   if (is_diff && is_time_to_diff){
@@ -147,13 +147,13 @@ int Sdb::run(){
   }
   switch (result) {
     case SIM_STATE::QUIT :
-      if (sim_->cpu.gpr[10] == 0)
-        Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim_->cpu.pc);
+      if (sim->cpu.gpr[10] == 0)
+        Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN), sim->cpu.pc);
       else 
-        Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
+        Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim->cpu.pc);
       break;
     default: 
-      Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim_->cpu.pc);
+      Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED), sim->cpu.pc);
       break;
   }
   

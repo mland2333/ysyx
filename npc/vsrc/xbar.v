@@ -139,6 +139,7 @@ assign o_axi_awsize0 = i_axi_awsize;
 assign o_axi_awburst0 = i_axi_awburst;
 assign o_axi_wdata0 = i_axi_wdata;
 assign o_axi_wstrb0 = i_axi_wstrb;
+assign o_axi_wlast0 = i_axi_wlast;
 assign o_axi_wvalid0 = i_axi_wvalid;
 assign o_axi_bready0 = i_axi_bready;
 /* assign o_axi_awaddr0 = is_write_uart ? 0 : i_axi_awaddr; */

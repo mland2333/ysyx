@@ -253,13 +253,13 @@ end
 always@(posedge i_clock) begin
   if(i_reset) awvalid <= 0;
   else if(i_valid && !awvalid && i_wen) awvalid <= 1;
-  else if(awvalid && awready) awvalid <= 0;
+  else if(awvalid && awready && wvalid && wready) awvalid <= 0;
 end
 
 always@(posedge i_clock) begin
   if(i_reset) wvalid <= 0;
   else if(i_valid && !wvalid && i_wen) wvalid <= 1;
-  else if(wvalid && wready) wvalid <= 0;
+  else if(awvalid && awready && wvalid && wready) wvalid <= 0;
 end
 
 always@(posedge i_clock)begin
