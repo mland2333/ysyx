@@ -29,7 +29,7 @@
 #define FLASH_RADDR 0x30000000
 #define FLASH_SIZE 0x10000000
 #define SDRAM_RADDR 0xa0000000
-#define SDRAM_SIZE 0x01000000
+#define SDRAM_SIZE  0x20000000
 
 uint8_t* mrom_guest_to_host(paddr_t paddr);
 paddr_t mrom_host_to_guest(uint8_t *haddr);

@@ -4,7 +4,7 @@ MEMORY {
   sram : ORIGIN = 0x0f000000, LENGTH = 8K
   flash : ORIGIN = 0x30000000, LENGTH = 16M
   psram : ORIGIN = 0x80000000, LENGTH = 4M
-  sdram : ORIGIN = 0xa0000000, LENGTH = 32M
+  sdram : ORIGIN = 0xa0000000, LENGTH = 128M
 }
 SECTIONS {
   /* _pmem_start and _entry_offset are defined in LDFLAGS */
