@@ -36,11 +36,11 @@ always@(posedge i_clock)begin
   wready <= 1;
 end
 
-always@(posedge i_clock)begin
-  if(awvalid && awready && wvalid && wready && !bvalid)begin
-    $write("%c", i_axi_wdata[7:0]);
-  end
-end
+/* always@(posedge i_clock)begin */
+/*   if(awvalid && awready && wvalid && wready && !bvalid)begin */
+/*     $write("%c", i_axi_wdata[7:0]); */
+/*   end */
+/* end */
 
 always@(posedge i_clock)begin
   if(i_reset) bvalid <= 0;

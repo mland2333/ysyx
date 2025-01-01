@@ -1,3 +1,4 @@
+#include "cpu.h"
 #include "simulator.h"
 #include <cstdio>
 #include <cstdlib>
@@ -49,45 +50,35 @@ void Sdb::init(){
   sdb_map_["x"] = cmd_x;
   sdb_map_["p"] = cmd_p;
   sdb_map_["info"] = cmd_info;
-  /* sdb_map_["c"] = [this](char*args) -> NPC_STATE { */
-  /*   while (true) { */
-  /*     if (sim_.exec_once() != SIM_STATE::NORMAL) { */
-  /*       return NPC_STATE::ABORT; */
-  /*     } */
-  /*   } */
-  /*   return NPC_STATE::QUIT; */
-  /* }; */
 }
 
-Sdb::Sdb(Args& args, Simulator* sim_, Memory* mem_) : 
-  is_batch(args.is_batch), is_itrace(args.is_itrace), is_ftrace(args.is_ftrace), 
-  is_mtrace(args.is_mtrace), is_diff(args.is_diff), is_vga(args.is_vga), 
+Sdb::Sdb(Args& args_, Simulator* sim_, Memory* mem_) : args(args_),
   sim(sim_), mem(mem_){
   init();
-  if (is_itrace) itrace = new Itrace;
-  if (is_ftrace) ftrace = new Ftrace(args.image);
-  if (is_diff) {
+  if (args.is_itrace) itrace = new Itrace;
+  if (args.is_ftrace) ftrace = new Ftrace(args.image);
+  if (args.is_diff) {
     const Area* area = mem_->find_area_has_image();
     diff = new Diff(area, &sim->cpu);
     diff->init_difftest(diff_file, 1234);
   }
-  if (is_vga) init_vga();
+  if (args.is_vga) init_vga();
   rtc_begin = Utils::get_time();
 }
 
 SIM_STATE Sdb::exec_once(){
-  clk_nums++;
+  perf.clk_nums++;
   SIM_STATE state = sim->exec_once();
   if (is_time_to_trace){
-    if (is_itrace && is_time_to_trace) itrace->trace(sim->cpu.pc, sim->get_inst());
-    if (is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump());
+    if (args.is_itrace) itrace->trace(sim->cpu.pc, sim->cpu.inst);
+    if (args.is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump());
     is_time_to_trace = false;
   }
-  if (is_diff && is_time_to_diff){
+  if (args.is_diff && is_time_to_diff){
     is_time_to_diff = false;
     if (!diff->difftest_step()) state = SIM_STATE::DIFF_FAILURE;
   } 
-  if (is_vga) if (device_update() == -1) state = SIM_STATE::QUIT;
+  if (args.is_vga) if (device_update() == -1) state = SIM_STATE::QUIT;
   return state;
 }
 
@@ -110,35 +101,35 @@ uint64_t Sdb::get_rtc(){
   return Utils::get_time() - rtc_begin;
 }
 void Sdb::statistic(){
-  Log("host time spent = %lu us", timer);
-  Log("total host clk = %lu", clk_nums);
-  Log("total host instructions = %lu", inst_nums);
-  if (is_diff) Log("total diff instructions = %lu", diff->diff_nums);
+  Log("host time spent = %lu us", perf.timer);
+  Log("total host clk = %lu", perf.clk_nums);
+  Log("total host instructions = %lu", perf.inst_nums);
+  if (args.is_diff) Log("total diff instructions = %lu", diff->diff_nums);
 }
 
 int Sdb::run(){
-  char args[32];
+  char args_[32];
   char *cmd;
   char *strend;
   std::string line;
   SIM_STATE result;
-  if (is_batch) {
+  if (args.is_batch) {
     uint64_t now = Utils::get_time();
     result = cmd_c(this, nullptr);
-    timer += Utils::get_time() - now;
+    perf.timer += Utils::get_time() - now;
   }
   else {
     std::cout << "(npc) ";
     while (getline(std::cin, line)) {
-      strcpy(args, line.c_str());
-      strend = args + strlen(args);
-      cmd = strtok(args, " ");
+      strcpy(args_, line.c_str());
+      strend = args_ + strlen(args_);
+      cmd = strtok(args_, " ");
       char *sdb_args = cmd + strlen(cmd) + 1;
       if (sdb_args >= strend)
         sdb_args = nullptr;
       uint64_t now = Utils::get_time();
       result = sdb_map_[cmd](this, sdb_args);
-      timer += Utils::get_time() - now;
+      perf.timer += Utils::get_time() - now;
       if (result != SIM_STATE::NORMAL) {
         break;
       }
@@ -162,7 +153,7 @@ int Sdb::run(){
 
 Sdb::~Sdb(){
   statistic();
-  if (is_ftrace) delete ftrace;
-  if (is_itrace) delete itrace;
-  if (is_diff) delete diff;
+  if (args.is_ftrace) delete ftrace;
+  if (args.is_itrace) delete itrace;
+  if (args.is_diff) delete diff;
 }

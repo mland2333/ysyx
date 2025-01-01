@@ -3,6 +3,7 @@ module ysyx_24110006_PC(
   input i_reset,
   input i_jump,
   input [31:0] i_upc,
+  input i_upc_valid,
   output [31:0] o_pc,
   
   input i_valid,
@@ -13,7 +14,7 @@ localparam FLASH = 32'h30000000;
 localparam PC = FLASH;
 reg[31:0] pc;
 reg reset;
-
+reg jump;
 always@(posedge i_clock)
   reset <= i_reset;
 
@@ -28,10 +29,15 @@ always@(posedge i_clock)begin
   end
 end
 
+always@(posedge i_clock)
+  if(reset) jump <= 0;
+  else if(i_upc_valid) jump <= i_jump;
+  else if(i_valid && jump) jump <= 0;
+
 always@(posedge i_clock)begin
   if(reset) pc <= PC;
   else if(!o_valid && i_valid) begin
-    if(i_jump) pc <= i_upc;
+    if(jump) pc <= i_upc;
     else pc <= pc + 4;
   end
 end

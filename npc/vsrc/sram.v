@@ -1,6 +1,6 @@
-import "DPI-C" function int pmem_read(input int raddr);
-import "DPI-C" function void pmem_write(
-  input int waddr, input int wdata, input byte wmask);
+/* import "DPI-C" function int pmem_read(input int raddr); */
+/* import "DPI-C" function void pmem_write( */
+/*   input int waddr, input int wdata, input byte wmask); */
 
 module ysyx_24110006_SRAM(
   input i_clock,
@@ -105,12 +105,12 @@ always@(posedge i_clock)begin
   end
 end
 //rdata
-always@(posedge i_clock)begin
-  if(i_reset) rdata <= 0;
-  else if(arvalid && arready)begin
-    rdata <= pmem_read(i_axi_araddr);
-  end
-end
+/* always@(posedge i_clock)begin */
+/*   if(i_reset) rdata <= 0; */
+/*   else if(arvalid && arready)begin */
+/*     rdata <= pmem_read(i_axi_araddr); */
+/*   end */
+/* end */
 //rvalid
 always@(posedge i_clock)begin
   if(i_reset) rvalid <= 0;
@@ -161,11 +161,11 @@ always@(posedge i_clock)begin
   end
 end
 
-always@(posedge i_clock)begin
-  if(awvalid && awready && wvalid && wready && !bvalid)begin
-    pmem_write(i_axi_awaddr, i_axi_wdata, i_axi_wstrb);
-  end
-end
+/* always@(posedge i_clock)begin */
+/*   if(awvalid && awready && wvalid && wready && !bvalid)begin */
+/*     pmem_write(i_axi_awaddr, i_axi_wdata, i_axi_wstrb); */
+/*   end */
+/* end */
 //bvlid
 always@(posedge i_clock)begin
   if(i_reset) bvalid <= 0;

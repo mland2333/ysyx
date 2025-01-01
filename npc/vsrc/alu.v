@@ -26,7 +26,7 @@ module ysyx_24110006_ALU(
 
   wire signed [31:0] a, b;
   assign a = i_a;
-  assign b = i_sub ? ~i_b : i_b;
+  assign b = i_b;
 
   wire CF, OF, ZF;
   wire [31:0] results[8];

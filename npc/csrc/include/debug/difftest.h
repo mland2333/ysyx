@@ -1,4 +1,5 @@
 #pragma once
+#include "regs.h"
 #include <area.hpp>
 #include <cpu.h>
 #include <cstdint>
@@ -7,14 +8,15 @@
 enum { DIFFTEST_TO_DUT, DIFFTEST_TO_REF };
 class Diff{
   const Area* area;
-  Cpu<32>* cpu;
+  Cpu<REG_NUMS>* cpu;
   Cpu<32>* ref_cpu;
   bool first_inst = true;
   bool diff_skip = false, diff_skip_buf = false;
   
 public:
   uint64_t diff_nums = 0;
-  Diff(const Area* area_, Cpu<32>* cpu_) : area(area_), cpu(cpu_){
+  
+  Diff(const Area* area_, Cpu<REG_NUMS>* cpu_) : area(area_), cpu(cpu_){
     ref_cpu = new Cpu<32>();
   }
   ~Diff(){ delete ref_cpu;}

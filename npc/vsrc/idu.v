@@ -35,12 +35,12 @@ assign o_func = inst[14:12];
 assign o_reg_rd = inst[11:7];
 assign o_reg_rs1 = inst[19:15];
 assign o_reg_rs2 = inst[24:20];
-wire is_i = o_op == 7'b0010011 || o_op == 7'b1100111 || o_op == 7'b0000011 || o_op == 7'b1110011;
-wire is_u = o_op == 7'b0110111 || o_op == 7'b0010111;
-wire is_j = o_op == 7'b1101111;
-wire is_s = o_op == 7'b0100011;
-wire is_b = o_op == 7'b1100011;
-wire is_r = o_op == 7'b0110011;
+wire is_i = inst[6:0] == 7'b0010011 || inst[6:0] == 7'b1100111 || inst[6:0] == 7'b0000011 || inst[6:0] == 7'b1110011;
+wire is_u = inst[6:0] == 7'b0110111 || inst[6:0] == 7'b0010111;
+wire is_j = inst[6:0] == 7'b1101111;
+wire is_s = inst[6:0] == 7'b0100011;
+wire is_b = inst[6:0] == 7'b1100011;
+wire is_r = inst[6:0] == 7'b0110011;
 
 wire [31:0] immi = {{20{inst[31]}}, inst[31:20]};
 wire [31:0] immu = {inst[31:12], 12'b0};

@@ -1,7 +1,12 @@
 module ysyx_24110006_EXU(
   input i_clock,
   input i_reset,
-
+  input [31:0] i_alu_a,
+  input [31:0] i_alu_b,
+  input i_alu_sub,
+  input i_alu_sign,
+  input [3:0] i_alu_t,
+  input i_alu_sra,
   input [6:0] i_op,
   input [2:0] i_func,
   input [31:0] i_reg_src1,
@@ -35,7 +40,9 @@ reg [31:0] csr_src;
 reg [31:0] imm;
 reg [31:0] pc;
 reg [31:0] csr_upc;
-
+reg [31:0] alu_a, alu_b;
+reg [3:0] alu_t;
+reg alu_sign, alu_sub, alu_sra;
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
   else if(!o_valid && i_valid) begin
@@ -87,11 +94,40 @@ always@(posedge i_clock)begin
 end
 
 always@(posedge i_clock)begin
-  if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR)) begin
-    $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", i_op, i_pc);
-    quit();
-  end
+  if(!i_reset && !o_valid && i_valid)
+    alu_a <= i_alu_a;
 end
+
+always@(posedge i_clock)begin
+  if(!i_reset && !o_valid && i_valid)
+    alu_b <= i_alu_b;
+end
+
+always@(posedge i_clock)begin
+  if(!i_reset && !o_valid && i_valid)
+    alu_t <= i_alu_t;
+end
+
+always@(posedge i_clock)begin
+  if(!i_reset && !o_valid && i_valid)
+    alu_sign <= i_alu_sign;
+end
+
+always@(posedge i_clock)begin
+  if(!i_reset && !o_valid && i_valid)
+    alu_sub <= i_alu_sub;
+end
+
+always@(posedge i_clock)begin
+  if(!i_reset && !o_valid && i_valid)
+    alu_sra <= i_alu_sra;
+end
+/* always@(posedge i_clock)begin */
+/*   if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR)) begin */
+/*     $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", i_op, i_pc); */
+/*     quit(); */
+/*   end */
+/* end */
 
 wire I = op == 7'b0010011;
 wire R = op == 7'b0110011;
@@ -119,20 +155,7 @@ assign o_mem_ren = L;
 assign o_mem_wmask = S ? (f000 ? 4'b0001 : f001 ? 4'b0011 : 4'b1111) : 0;
 assign o_mem_read_t = L ? func : 0;
 
-wire [31:0] alu_a, alu_b;
-wire alu_sub;
-wire alu_sign;
-wire alu_sra;
-wire [3:0] alu_t;
 wire branch;
-assign alu_a = JAL || JALR || AUIPC ? pc : LUI ? 0 : reg_src1;
-assign alu_b = I || L || AUIPC || S  || LUI ? imm : JAL || JALR ? 32'b100 : CSR && f001 ? 32'b0 : CSR && f010 ? csr_src : reg_src2;
-assign alu_t = I||R ? {1'b0, func} : B ? {1'b1, func} : CSR && f010 ? 4'b0110 : 0;
-assign alu_sign = R && f010 || B && (f100 || f101);
-assign alu_sub = (I || R) && (f011 || f010) || B || R && f000 && imm[5];
-assign alu_sra = R && imm[5] || I && imm[10];
-
-
 
 ysyx_24110006_ALU malu(
   .i_a(alu_a),

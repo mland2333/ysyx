@@ -1,7 +1,7 @@
-import "DPI-C" function void quit();
-import "DPI-C" function void difftest();
-import "DPI-C" function void diff_skip();
-import "DPI-C" function void add_inst_nums();
+/* import "DPI-C" function void quit(); */
+/* import "DPI-C" function void difftest(); */
+/* import "DPI-C" function void diff_skip(); */
+/* import "DPI-C" function void fetch_inst(); */
 module ysyx_24110006(
   input clock,
   input reset,
@@ -92,6 +92,10 @@ wire[11:0] csr = imm[11:0];
 wire[2:0] csr_t;
 wire[31:0] csr_wdata;
 
+wire [31:0] alu_a, alu_b;
+wire [3:0] alu_t;
+wire alu_sign, alu_sub, alu_sra;
+
 wire mem_ren, mem_wen;
 wire[3:0] mem_wmask;
 wire[2:0] mem_read_t;
@@ -104,28 +108,27 @@ assign reg_wdata = result_t ? mem_rdata : exu_result;
 assign csr_wdata = exu_result;
 
 wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
+wire upc_valid = exu_valid;
 
 reg[31:0] npc_upc;
 always@(posedge clock)
   npc_upc <= upc;
 
-
-
-always@(posedge clock)begin
-  if(clint_rvalid || lsu_valid && exu_result >= 32'h10000000 && exu_result < 32'h10001000) diff_skip();
-end
-
-always@(posedge clock)begin
-  if(ifu_valid) difftest();
-end
-
-always@(posedge clock)begin
-  if(ifu_valid) add_inst_nums();
-end
-
-always@ *
-  if(inst == 32'h100073)
-    quit();
+/* always@(posedge clock)begin */
+/*   if(clint_rvalid || lsu_valid && exu_result >= 32'h10000000 && exu_result < 32'h10001000) diff_skip(); */
+/* end */
+/**/
+/* always@(posedge clock)begin */
+/*   if(ifu_valid) difftest(); */
+/* end */
+/**/
+/* always@(posedge clock)begin */
+/*   if(ifu_valid) fetch_inst(); */
+/* end */
+/**/
+/* always@ * */
+/*   if(inst == 32'h100073) */
+/*     quit(); */
 
 wire [31:0] ifu_araddr;
 wire ifu_arvalid;
@@ -140,6 +143,9 @@ wire ifu_rready;
 wire [1:0] ifu_rresp;
 wire [3:0] ifu_rid;
 wire ifu_rlast;
+
+
+
 
 wire [31:0] lsu_araddr;
 wire lsu_arvalid;
@@ -245,6 +251,7 @@ ysyx_24110006_PC mpc(
   .i_reset(reset),
   .i_jump(jump||branch||trap),
   .i_upc(upc),
+  .i_upc_valid(upc_valid),
   .o_pc(pc),
   .i_valid(lsu_valid),
   .o_valid(pc_valid)
@@ -315,9 +322,32 @@ ysyx_24110006_CSR mcsr(
   .i_valid(exu_valid)
 );
 
+ysyx_24110006_ALUOP maluop(
+  .i_src1(reg_src1),
+  .i_src2(reg_src2),
+  .i_imm(imm),
+  .i_csr_rdata(csr_src),
+  .i_pc(pc),
+  .i_op(op),
+  .i_func(func),
+  .o_alu_a(alu_a),
+  .o_alu_b(alu_b),
+  .o_alu_sub(alu_sub),
+  .o_alu_sign(alu_sign),
+  .o_alu_t(alu_t),
+  .o_alu_sra(alu_sra)
+);
+
+
 ysyx_24110006_EXU mexu(
   .i_clock(clock),
   .i_reset(reset),
+  .i_alu_a(alu_a),
+  .i_alu_b(alu_b),
+  .i_alu_sub(alu_sub),
+  .i_alu_sign(alu_sign),
+  .i_alu_t(alu_t),
+  .i_alu_sra(alu_sra),
   .i_op(op),
   .i_func(func),
   .i_reg_src1(reg_src1),
