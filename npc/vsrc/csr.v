@@ -11,19 +11,19 @@ module ysyx_24110006_CSR(
   output[31:0] o_upc,
   input i_valid
 );
-localparam MSTATUS = 3'b000;
-localparam MTVEC = 3'b001;
-localparam MEPC = 3'b010;
-localparam MCAUSE = 3'b011;
-localparam MVENDORID = 3'b100;
-localparam MARCHID = 3'b101;
+localparam MSTATUS = 2'b00;
+localparam MTVEC = 2'b01;
+localparam MEPC = 2'b10;
+localparam MCAUSE = 2'b11;
+/* localparam MVENDORID = 3'b100; */
+/* localparam MARCHID = 3'b101; */
 
-localparam MRET = 3'b000;
-localparam CSRW = 3'b001;
-localparam ECALL = 3'b011;
+localparam MRET = 2'b00;
+localparam CSRW = 2'b01;
+localparam ECALL = 2'b11;
 
-reg[31:0] csr[8];
-reg[2:0] index;
+reg[31:0] csr[4];
+reg[1:0] index;
 
 always@(*)begin
   case(i_csr)
@@ -31,8 +31,6 @@ always@(*)begin
     12'h305: index = MTVEC;
     12'h341: index = MEPC;
     12'h342: index = MCAUSE;
-    12'hf11: index = MVENDORID;
-    12'hf12: index = MARCHID;
     default: index = 0;
   endcase
 end
@@ -53,13 +51,14 @@ always@(posedge i_clock)begin
   end
 end
 
-always@(posedge i_clock)
-  csr[MVENDORID] = 32'h79737978;
-always@(posedge i_clock)
-  csr[MARCHID] = 32'h16fe3b6;
+/* always@(posedge i_clock) */
+/*   csr[MVENDORID] = 32'h79737978; */
+/* always@(posedge i_clock) */
+/*   csr[MARCHID] = 32'h16fe3b6; */
 
 
 assign o_upc = i_csr_t == ECALL ? csr[MTVEC] : i_csr_t == MRET ? csr[MEPC] : 0;
-assign o_rdata = csr[index];
+
+assign o_rdata = i_csr == 12'hf11 ? 32'h79737978 : i_csr == 12'hf12 ? 32'h16fe3b8 : csr[index];
 
 endmodule

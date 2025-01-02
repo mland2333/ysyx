@@ -27,15 +27,13 @@ always@(posedge i_clock)begin
   end
 end
 always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
+  if(!o_valid && i_valid)
     inst <= i_inst;
 end
 always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
+  if(!o_valid && i_valid)
     imm <= i_imm;
 end
-
-
 
 assign o_op = inst[6:0];
 assign o_func = inst[14:12];

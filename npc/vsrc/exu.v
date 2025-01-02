@@ -10,7 +10,6 @@ module ysyx_24110006_EXU(
   input i_alu_sub,
   input i_alu_sra,
   input [31:0] i_reg_src1,
-  input [31:0] i_reg_src2,
   input [31:0] i_csr_src,
   input [31:0] i_imm,
   input [31:0] i_pc,
@@ -38,7 +37,6 @@ module ysyx_24110006_EXU(
 reg [6:0] op;
 reg [2:0] func;
 reg [31:0] reg_src1;
-reg [31:0] reg_src2;
 reg [31:0] csr_src;
 reg [31:0] imm;
 reg [31:0] pc;
@@ -72,10 +70,6 @@ end
 always@(posedge i_clock)begin
   if(!i_reset && !o_valid && i_valid)
     reg_src1 <= i_reg_src1;
-end
-always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
-    reg_src2 <= i_reg_src2;
 end
 always@(posedge i_clock)begin
   if(!i_reset && !o_valid && i_valid)

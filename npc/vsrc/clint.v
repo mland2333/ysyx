@@ -11,13 +11,21 @@ module ysyx_24110006_CLINT(
   output [1:0] o_axi_rresp,
   input i_axi_rready
 );
-reg [63:0] mtime;
+reg [31:0] lmtime;
+reg [31:0] hmtime;
 
-wire [31:0] lmtime = mtime[31:0];
-wire [31:0] hmtime = mtime[63:32];
+/* wire [31:0] lmtime = mtime[31:0]; */
+/* wire [31:0] hmtime = mtime[63:32]; */
+wire is_full = &lmtime;
 always@(posedge i_clock)begin
- if(i_reset) mtime <= 0;
- else mtime <= mtime + 1;
+  if(i_reset) lmtime <= 0;
+  else if(is_full) lmtime <= 0;
+  else lmtime <= lmtime + 1;
+end
+
+always@(posedge i_clock)begin
+  if(is_full) hmtime <= 0;
+  else if(&lmtime) hmtime <= hmtime + 1;
 end
 
 reg [31:0] araddr;

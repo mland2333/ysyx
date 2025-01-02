@@ -364,7 +364,6 @@ ysyx_24110006_EXU mexu(
   .i_op(op),
   .i_func(func),
   .i_reg_src1(reg_src1),
-  .i_reg_src2(reg_src2),
   .i_csr_src(csr_src),
   .i_imm(imm),
   .i_pc(pc),
