@@ -50,12 +50,12 @@ public:
     cpu_update();
   }
   SIM_STATE exec_once();
-  bool is_jump(){
-    return TOP_MEMBER(mpc__DOT__jump);
-  }
-  uint32_t get_upc(){
-    return TOP_MEMBER(upc);
-  }
+  /* bool is_jump(){ */
+  /*   return TOP_MEMBER(mpc__DOT__jump); */
+  /* } */
+  /* uint32_t get_upc(){ */
+  /*   return TOP_MEMBER(upc); */
+  /* } */
   void quit(){
     state = SIM_STATE::QUIT;
   }

@@ -71,7 +71,7 @@ SIM_STATE Sdb::exec_once(){
   SIM_STATE state = sim->exec_once();
   if (is_time_to_trace){
     if (args.is_itrace) itrace->trace(sim->cpu.pc, sim->cpu.inst);
-    if (args.is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump());
+    /* if (args.is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump()); */
     is_time_to_trace = false;
   }
   if (args.is_diff && is_time_to_diff){

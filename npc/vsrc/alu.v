@@ -5,8 +5,10 @@ module ysyx_24110006_ALU(
   input i_sign,
   input [3:0] i_alu_t,
   input i_alu_sra,
-  output [31:0] o_r,
-  output o_branch
+  output reg [31:0] o_r,
+  output o_cmp,
+  output o_zero,
+  output [31:0] o_add_r
 );
   localparam ADD = 4'b0000;
   localparam SLL = 4'b0001;
@@ -28,25 +30,43 @@ module ysyx_24110006_ALU(
   assign a = i_a;
   assign b = i_b;
 
-  wire CF, OF, ZF;
-  wire [31:0] results[8];
+  wire cout;
   wire [4:0] shift_num = i_b[4:0];
-  wire[31:0] add_result, shift_result, logic_result;
+  wire[31:0] add_r;
   wire cmp;
-  assign cmp = i_sign ? OF ^ add_result[31] : ~CF;
-  assign ZF = ~(|add_result);
-  assign OF = a[31] == b[31] && a[31] != add_result[31];
-  assign {CF, add_result} = a + b + {31'b0, i_sub};
-  assign results[0] = add_result;
-  assign results[1] = a << shift_num;
-  assign results[2] = {31'b0, cmp};
-  assign results[3] = {31'b0, cmp};
-  assign results[4] = a ^ i_b;
-  assign results[5] = i_alu_sra ? a >>> shift_num : a >> shift_num;
-  assign results[6] = a | i_b;
-  assign results[7] = a & i_b;
-  
-  assign o_r = results[i_alu_t[2:0]];
-  assign o_branch = (i_alu_t==BEQ)&&ZF||(i_alu_t==BNE)&&~ZF||(i_alu_t==BLT||i_alu_t==BLTU)&&cmp||(i_alu_t==BGE||i_alu_t==BGEU)&&~cmp;
-
+  assign cmp = i_sign ? (i_a[31]&i_b[31] | add_r[31]&(i_a[31]^i_b[31])) : ~cout;
+  assign {cout, add_r} = i_a + i_b + {31'b0, i_sub};
+  wire [31:0] sr_r  = i_alu_sra ? a >>> shift_num : a >> shift_num;
+  /* wire [31:0] results[8]; */
+  /* wire [31:0] sll_r = 0; */
+  /* wire [31:0] cmp_r = 0; */
+  /* wire [31:0] xor_r = a ^ i_b; */
+  /* wire [31:0] sra_r = a >>> shift_num; */
+  /* wire [31:0] srl_r = a >> shift_num; */
+  /* wire [31:0] or_r  = a | b; */
+  /* wire [31:0] and_r = a & i_b; */
+  /* assign results[0] = add_r; */
+  /* assign results[1] = a << shift_num; */
+  /* assign results[2] = 0; */
+  /* assign results[3] = 0; */
+  /* assign results[4] = a ^ i_b; */
+  /* assign results[5] = sr_r; */
+  /* assign results[6] = a | i_b; */
+  /* assign results[7] = a & i_b; */
+  always@*begin
+    case(i_alu_t[2:0])
+      3'b000: o_r = add_r;
+      3'b001: o_r = i_a << shift_num;
+      3'b010: o_r = {31'b0, cmp};
+      3'b011: o_r = {31'b0, cmp};
+      3'b100: o_r = i_a ^ i_b;
+      3'b101: o_r = sr_r;
+      3'b110: o_r = i_a | i_b;
+      3'b111: o_r = i_a & i_b;
+    endcase
+  end
+  /* assign o_r = results[i_alu_t[2:0]]; */
+  assign o_add_r = add_r;
+  assign o_cmp = cmp;
+  assign o_zero = ~(|add_r);
 endmodule

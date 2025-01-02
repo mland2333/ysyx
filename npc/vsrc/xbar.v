@@ -1,4 +1,7 @@
 module ysyx_24110006_XBAR(
+  input i_clock,
+  input i_reset,
+
   input [31:0] i_axi_araddr,
   input i_axi_arvalid,
   output o_axi_arready,
@@ -105,13 +108,21 @@ module ysyx_24110006_XBAR(
 
 /* wire is_write_uart = i_axi_awaddr == `UART; */
 wire is_read_rtc = i_axi_araddr == `RTC_ADDR || i_axi_araddr == `RTC_ADDR_HIGH;
+reg r_is_read_rtc;
 
-assign o_axi_arready = is_read_rtc ? i_axi_arready2 : i_axi_arready0;
-assign o_axi_rdata = is_read_rtc ? i_axi_rdata2 : i_axi_rdata0;
-assign o_axi_rvalid = is_read_rtc ? i_axi_rvalid2 : i_axi_rvalid0;
-assign o_axi_rresp = is_read_rtc ? i_axi_rresp2 : i_axi_rresp0;
-assign o_axi_rid = is_read_rtc ? 0 : i_axi_rid0;
-assign o_axi_rlast = is_read_rtc ? 0 : i_axi_rlast0;
+always@(posedge i_clock)begin
+  if(i_reset) r_is_read_rtc <= 0;
+  else if(i_axi_arvalid)begin
+    r_is_read_rtc <= is_read_rtc;
+  end
+end
+
+assign o_axi_arready = r_is_read_rtc ? i_axi_arready2 : i_axi_arready0;
+assign o_axi_rdata = r_is_read_rtc ? i_axi_rdata2 : i_axi_rdata0;
+assign o_axi_rvalid = r_is_read_rtc ? i_axi_rvalid2 : i_axi_rvalid0;
+assign o_axi_rresp = r_is_read_rtc ? i_axi_rresp2 : i_axi_rresp0;
+assign o_axi_rid = r_is_read_rtc ? 0 : i_axi_rid0;
+assign o_axi_rlast = r_is_read_rtc ? 0 : i_axi_rlast0;
 
 assign o_axi_awready = i_axi_awready0;
 assign o_axi_wready = i_axi_wready0;

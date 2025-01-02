@@ -109,7 +109,15 @@ wire is_read0 = read_state == MEM0_READ;
 wire is_read1 = read_state == MEM1_READ;
 wire is_write1 = write_state == MEM1_WRITE;
 
-assign o_axi_araddr = is_read0 ? i_axi_araddr0 : is_read1 ? i_axi_araddr1 : 0;
+reg [31:0] raddr;
+always@(posedge i_clock)begin
+  if(i_axi_arvalid0) raddr <= i_axi_araddr0;
+  else if(i_axi_arvalid1) raddr <= i_axi_araddr1;
+  else raddr <= 0;
+end
+
+/* assign o_axi_araddr = is_read0 ? i_axi_araddr0 : is_read1 ? i_axi_araddr1 : 0; */
+assign o_axi_araddr = raddr;
 assign o_axi_arvalid = is_read0 ? i_axi_arvalid0 : is_read1 ? i_axi_arvalid1 : 0;
 assign o_axi_arid = is_read0 ? i_axi_arid0 : is_read1 ? i_axi_arid1 : 0;
 assign o_axi_arlen = is_read0 ? i_axi_arlen0 : is_read1 ? i_axi_arlen1 : 0;

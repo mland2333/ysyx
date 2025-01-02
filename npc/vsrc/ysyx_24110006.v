@@ -68,24 +68,37 @@ module ysyx_24110006(
 
 );
 
+wire exu_cmp;
+wire exu_zero;
+wire exu_jump;
+wire exu_trap;
+wire exu_reg_wen;
+wire exu_csr_wen;
+wire exu_result_t;
+wire [3:0] exu_alu_t;
+wire [31:0] exu_upc;
+wire [31:0] exu_result;
+
+wire [31:0] result;
+wire result_t;
 wire jump;
-wire trap;
-wire branch;
-wire[31:0] upc, pc;
+wire reg_wen;
+wire csr_wen;
+
+wire[31:0] pc, upc;
 
 wire[31:0] inst;
 wire[6:0] op;
 wire[2:0] func;
 wire[4:0] reg_rs1, reg_rs2, reg_rd;
 wire[31:0] imm;
+wire [31:0] ifu_imm;
 
 wire[31:0] reg_src1, reg_src2;
 wire[31:0] reg_wdata;
 wire[31:0] csr_src;
 
-wire reg_wen;
-wire csr_wen;
-wire[31:0] exu_result;
+
 wire[31:0] csr_mcause = 32'd11;
 wire[31:0] csr_upc;
 wire[11:0] csr = imm[11:0];
@@ -99,23 +112,21 @@ wire alu_sign, alu_sub, alu_sra;
 wire mem_ren, mem_wen;
 wire[3:0] mem_wmask;
 wire[2:0] mem_read_t;
-wire[31:0] mem_addr = exu_result;
+wire[31:0] mem_addr;
 wire[31:0] mem_wdata = reg_src2;
 wire[31:0] mem_rdata;
-wire result_t;
 
-assign reg_wdata = result_t ? mem_rdata : exu_result;
-assign csr_wdata = exu_result;
+assign reg_wdata = result_t ? mem_rdata : result;
+assign csr_wdata = result;
 
 wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
-wire upc_valid = exu_valid;
 
 reg[31:0] npc_upc;
 always@(posedge clock)
   npc_upc <= upc;
 
 /* always@(posedge clock)begin */
-/*   if(clint_rvalid || lsu_valid && exu_result >= 32'h10000000 && exu_result < 32'h10001000) diff_skip(); */
+/*   if(clint_rvalid || lsu_valid && result >= 32'h10000000 && result < 32'h10001000) diff_skip(); */
 /* end */
 /**/
 /* always@(posedge clock)begin */
@@ -249,9 +260,8 @@ wire [1:0] clint_rresp;
 ysyx_24110006_PC mpc(
   .i_clock(clock),
   .i_reset(reset),
-  .i_jump(jump||branch||trap),
+  .i_jump(jump),
   .i_upc(upc),
-  .i_upc_valid(upc_valid),
   .o_pc(pc),
   .i_valid(lsu_valid),
   .o_valid(pc_valid)
@@ -279,12 +289,16 @@ ysyx_24110006_IFU mifu(
   .i_axi_rid(ifu_rid)
 );
 
-
+ysyx_24110006_IMM mimm(
+  .i_inst(inst),
+  .o_imm(ifu_imm)
+);
 
 ysyx_24110006_IDU midu(
   .i_clock(clock),
   .i_reset(reset),
   .i_inst(inst),
+  .i_imm(ifu_imm),
   .o_op(op),
   .o_func(func),
   .o_reg_rs1(reg_rs1),
@@ -319,7 +333,7 @@ ysyx_24110006_CSR mcsr(
   .i_wdata(csr_wdata),
   .o_rdata(csr_src),
   .o_upc(csr_upc),
-  .i_valid(exu_valid)
+  .i_valid(lsu_valid)
 );
 
 ysyx_24110006_ALUOP maluop(
@@ -337,7 +351,6 @@ ysyx_24110006_ALUOP maluop(
   .o_alu_t(alu_t),
   .o_alu_sra(alu_sra)
 );
-
 
 ysyx_24110006_EXU mexu(
   .i_clock(clock),
@@ -357,21 +370,47 @@ ysyx_24110006_EXU mexu(
   .i_pc(pc),
   .i_csr_upc(csr_upc),
   .o_result(exu_result),
-  .o_upc(upc),
-  .o_reg_wen(reg_wen),
-  .o_csr_wen(csr_wen),
-  .o_result_t(result_t),
-  .o_jump(jump),
-  .o_trap(trap),
-  .o_branch(branch),
+  .o_upc(exu_upc),
+  .o_reg_wen(exu_reg_wen),
+  .o_csr_wen(exu_csr_wen),
+  .o_result_t(exu_result_t),
+  .o_alu_t(exu_alu_t),
+  .o_cmp(exu_cmp),
+  .o_zero(exu_zero),
+  .o_jump(exu_jump),
+  .o_trap(exu_trap),
   .o_mem_ren(mem_ren),
   .o_mem_wen(mem_wen),
   .o_mem_wmask(mem_wmask),
   .o_mem_read_t(mem_read_t),
+  .o_mem_addr(mem_addr),
   .i_valid(idu_valid),
   .o_valid(exu_valid)
 );
 
+ysyx_24110006_EXU_CTRL mexu_ctrl(
+  .i_clock(clock),
+  .i_reset(reset),
+  .i_alu_t(exu_alu_t),
+  .i_cmp(exu_cmp),
+  .i_zero(exu_zero),
+  .i_result_t(exu_result_t),
+  .i_reg_wen(exu_reg_wen),
+  .i_csr_wen(exu_csr_wen),
+  .i_jump(exu_jump),
+  .i_trap(exu_trap),
+  .i_result(exu_result),
+  .i_upc(exu_upc),
+  
+  .o_upc(upc),
+  .o_result_t(result_t),
+  .o_reg_wen(reg_wen),
+  .o_csr_wen(csr_wen),
+  .o_jump(jump),
+  .o_result(result),
+
+  .i_valid(exu_valid)
+);
 
 ysyx_24110006_LSU mlsu(
   .i_clock(clock),
@@ -493,6 +532,8 @@ ysyx_24110006_ARBITER marbiter(
 );
 
 ysyx_24110006_XBAR mxbar(
+  .i_clock(clock),
+  .i_reset(reset),
   .i_axi_araddr(xbar_araddr),
   .i_axi_arvalid(xbar_arvalid),
   .o_axi_arready(xbar_arready),
