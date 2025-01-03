@@ -1,15 +1,28 @@
 #pragma once
-#include "VysyxSoCFull.h"
-#include "VysyxSoCFull___024root.h"
-/* #include "Vtop.h" */
+
+#define STRING_HELPER(x) #x
+#define STRING(x) STRING_HELPER(x)
+#define CONCAT_HELPER(x, y) x##y
+#define CONCAT(x, y) CONCAT_HELPER(x, y)
+
+#define HEADER_FILE(x) STRING(x.h)
+#define ROOT_HEADER_FILE(x) STRING(CONCAT(x, ___024root.h))
+
+#include HEADER_FILE(TOP_NAME)
+#include ROOT_HEADER_FILE(TOP_NAME)
 #include "regs.h"
 #include "verilated_fst_c.h"
 #include <iostream>
 #include <verilated.h>
 #include <cpu.h>
 #include <args.h>
-/* #include <Vtop___024root.h> */
-#define TOP_MEMBER(member) top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__ ## member
+
+#ifdef CONFIG_YSYXSOC
+  #define TOP_PREFIX top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__
+#else 
+  #define TOP_PREFIX top->rootp->ysyx_24110006__DOT__
+#endif
+#define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
 
 enum class SIM_STATE{
   NORMAL,

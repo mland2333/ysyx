@@ -35,7 +35,7 @@ void Diff::init_difftest(const char *ref_so_file, int port){
       "If it is not necessary, you can turn it off in menuconfig.", ref_so_file);
 
   ref_difftest_init(port);
-  ref_difftest_memcpy(0x30000000, (void*)area->mem, area->img_size, DIFFTEST_TO_REF);
+  ref_difftest_memcpy(area->base, (void*)area->mem, area->img_size, DIFFTEST_TO_REF);
   ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
 }
 

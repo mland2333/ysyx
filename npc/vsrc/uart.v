@@ -1,3 +1,4 @@
+`ifndef CONFIG_YSYXSOC
 module ysyx_24110006_UART(
   input i_clock,
   input i_reset,
@@ -5,7 +6,7 @@ module ysyx_24110006_UART(
   input i_axi_awvalid,
   output o_axi_awready,
   input [31:0] i_axi_wdata,
-  input [7:0] i_axi_wstrb,
+  input [3:0] i_axi_wstrb,
   input i_axi_wvalid,
   output o_axi_wready,
   output [1:0] o_axi_bresp,
@@ -17,7 +18,7 @@ reg [31:0] awaddr;
 reg awready;
 reg [31:0] wdata;
 reg wready;
-reg [7:0] wstrb;
+reg [3:0] wstrb;
 reg bvalid;
 reg [1:0] bresp;
 
@@ -36,11 +37,11 @@ always@(posedge i_clock)begin
   wready <= 1;
 end
 
-/* always@(posedge i_clock)begin */
-/*   if(awvalid && awready && wvalid && wready && !bvalid)begin */
-/*     $write("%c", i_axi_wdata[7:0]); */
-/*   end */
-/* end */
+always@(posedge i_clock)begin
+  if(awvalid && awready && wvalid && wready && !bvalid)begin
+    $write("%c", i_axi_wdata[7:0]);
+  end
+end
 
 always@(posedge i_clock)begin
   if(i_reset) bvalid <= 0;
@@ -53,3 +54,5 @@ always@(posedge i_clock)begin
 end
 
 endmodule
+
+`endif

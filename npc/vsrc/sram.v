@@ -1,32 +1,62 @@
-/* import "DPI-C" function int pmem_read(input int raddr); */
-/* import "DPI-C" function void pmem_write( */
-/*   input int waddr, input int wdata, input byte wmask); */
+`ifndef CONFIG_YSYXSOC
+import "DPI-C" function int pmem_read(input int raddr);
+import "DPI-C" function void pmem_write(
+  input int waddr, input int wdata, input byte wmask);
 
 module ysyx_24110006_SRAM(
   input i_clock,
   input i_reset,
 
-  input [31:0] i_axi_araddr,
-  input i_axi_arvalid,
-  output o_axi_arready,
-
+  /* input [31:0] i_axi_araddr, */
+  /* input i_axi_arvalid, */
+  /* output o_axi_arready, */
+  /**/
+  /* output [31:0] o_axi_rdata, */
+  /* output o_axi_rvalid, */
+  /* output [1:0] o_axi_rresp, */
+  /* input i_axi_rready, */
+  /**/
+  /* input [31:0] i_axi_awaddr, */
+  /* input i_axi_awvalid, */
+  /* output o_axi_awready, */
+  /**/
+  /* input [31:0] i_axi_wdata, */
+  /* input [7:0] i_axi_wstrb, */
+  /* input i_axi_wvalid, */
+  /* output o_axi_wready, */
+  /**/
+  /* output [1:0] o_axi_bresp, */
+  /* output o_axi_bvalid, */
+  /* input i_axi_bready */
+  output        o_axi_awready,
+  input         i_axi_awvalid,
+  input  [31:0] i_axi_awaddr,
+  input  [3:0]  i_axi_awid,
+  input  [7:0]  i_axi_awlen,
+  input  [2:0]  i_axi_awsize,
+  input  [1:0]  i_axi_awburst,
+  output        o_axi_wready,
+  input         i_axi_wvalid,
+  input  [31:0] i_axi_wdata,
+  input  [3:0]  i_axi_wstrb,
+  input         i_axi_wlast,
+  input         i_axi_bready,
+  output        o_axi_bvalid,
+  output [1:0]  o_axi_bresp,
+  output [3:0]  o_axi_bid,
+  output        o_axi_arready,
+  input         i_axi_arvalid,
+  input  [31:0] i_axi_araddr,
+  input  [3:0]  i_axi_arid,
+  input  [7:0]  i_axi_arlen,
+  input  [2:0]  i_axi_arsize,
+  input  [1:0]  i_axi_arburst,
+  input         i_axi_rready,
+  output        o_axi_rvalid,
+  output [1:0]  o_axi_rresp,
   output [31:0] o_axi_rdata,
-  output o_axi_rvalid,
-  output [1:0] o_axi_rresp,
-  input i_axi_rready,
-
-  input [31:0] i_axi_awaddr,
-  input i_axi_awvalid,
-  output o_axi_awready,
-
-  input [31:0] i_axi_wdata,
-  input [7:0] i_axi_wstrb,
-  input i_axi_wvalid,
-  output o_axi_wready,
-
-  output [1:0] o_axi_bresp,
-  output o_axi_bvalid,
-  input i_axi_bready
+  output        o_axi_rlast,
+  output [3:0]  o_axi_rid
 );
 /* localparam COUNT = 8'h05; */
 
@@ -65,25 +95,20 @@ reg [31:0] awaddr;
 reg awready;
 reg [31:0] wdata;
 reg wready;
-reg [7:0] wstrb;
+reg [3:0] wstrb;
 reg bvalid;
 reg [1:0] bresp;
 
-// Read address channel
 wire arvalid = i_axi_arvalid;
 assign o_axi_arready = arready;
-// Read data channel
 assign o_axi_rdata = rdata;
 assign o_axi_rvalid = rvalid;
 assign o_axi_rresp = rresp;
 wire rready = i_axi_rready;
-// Write address channel
 wire awvalid = i_axi_awvalid;
 assign o_axi_awready = awready;
-// Write data channel
 wire wvalid = i_axi_wvalid;
 assign o_axi_wready = wready;
-// Write response channel
 assign o_axi_bresp = bresp;
 assign o_axi_bvalid = bvalid;
 wire bready = i_axi_bready;
@@ -105,12 +130,12 @@ always@(posedge i_clock)begin
   end
 end
 //rdata
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) rdata <= 0; */
-/*   else if(arvalid && arready)begin */
-/*     rdata <= pmem_read(i_axi_araddr); */
-/*   end */
-/* end */
+always@(posedge i_clock)begin
+  if(i_reset) rdata <= 0;
+  else if(arvalid && arready)begin
+    rdata <= pmem_read(i_axi_araddr);
+  end
+end
 //rvalid
 always@(posedge i_clock)begin
   if(i_reset) rvalid <= 0;
@@ -161,11 +186,11 @@ always@(posedge i_clock)begin
   end
 end
 
-/* always@(posedge i_clock)begin */
-/*   if(awvalid && awready && wvalid && wready && !bvalid)begin */
-/*     pmem_write(i_axi_awaddr, i_axi_wdata, i_axi_wstrb); */
-/*   end */
-/* end */
+always@(posedge i_clock)begin
+  if(awvalid && awready && wvalid && wready && !bvalid)begin
+    pmem_write(i_axi_awaddr, i_axi_wdata, {4'b0, i_axi_wstrb});
+  end
+end
 //bvlid
 always@(posedge i_clock)begin
   if(i_reset) bvalid <= 0;
@@ -178,3 +203,4 @@ always@(posedge i_clock)begin
 end
 
 endmodule
+`endif

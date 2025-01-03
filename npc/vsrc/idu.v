@@ -9,7 +9,7 @@ module ysyx_24110006_IDU(
   output [4:0] o_reg_rs2,
   output [4:0] o_reg_rd,
   output [31:0] o_imm,
-  output [2:0] o_csr_t,
+  output [1:0] o_csr_t,
 
   input i_valid,
   output reg o_valid
@@ -70,9 +70,9 @@ assign o_reg_rs2 = inst[24:20];
 
 /* assign o_imm = is_i ? immi : is_j ? immj : is_u ? immu : is_s ? imms : is_b ? immb : immr; */
 assign o_imm = imm;
-localparam MRET = 3'b000;
-localparam CSRW = 3'b001;
-localparam ECALL = 3'b011;
+localparam MRET = 2'b00;
+localparam CSRW = 2'b01;
+localparam ECALL = 2'b11;
 assign o_csr_t = o_func == 3'b0 ? (imm[1] ? MRET : ECALL) : CSRW;
 
 endmodule

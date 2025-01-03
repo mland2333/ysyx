@@ -5,15 +5,20 @@ export VERILATOR_ROOT
 VERILATOR = $(VERILATOR_ROOT)/bin/verilator
 endif
 
+ifdef CONFIG_YSYXSOC
 TOPNAME = ysyxSoCFull
+INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
+INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl
+VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -j 8 -Wno-WIDTHEXPAND -DCONFIG_YSYXSOC
+CXXFLAGS += -DCONFIG_YSYXSOC
+else
+TOPNAME = ysyx_24110006
+endif
+
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --autoflush --timescale "1ns/1ns" --notiming -j 8 \
-				-Wno-WIDTHEXPAND
-
-INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
-INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl
+				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --autoflush
 
 LIBS += -lcapstone
 ARGS ?=
@@ -27,27 +32,30 @@ default: $(BIN)
 $(shell mkdir -p $(BUILD_DIR))
 
 # constraint file
+ifdef CONFIG_YSYXSOC
 SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
 $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
+CSRCS += $(SRC_AUTO_BIND)
+include $(NVBOARD_HOME)/scripts/nvboard.mk
+endif
 
-# project source
+ifdef CONFIG_YSYXSOC
 VSRCS += $(YSYX_HOME)/ysyxSoC/build/ysyxSoCFull.v
 VSRCS += $(shell find $(abspath ./vsrc) -name "*.v")
 VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
+else
+VSRCS += $(shell find $(abspath ./vsrc) -name "*.v")
+endif
 
 CDIRS := $(shell find $(abspath ./csrc) -mindepth 1 -type d)
-CSRCS = $(SRC_AUTO_BIND)
 CSRCS += $(shell find $(abspath $(CDIRS)) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
 CSRCS += $(shell find $(abspath ./csrc) -maxdepth 1 -name "*.c" -or -name "*.cc" -or -name "*.cpp")
-
-# rules for NVBoard
-include $(NVBOARD_HOME)/scripts/nvboard.mk
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g -fsanitize=address
-LDFLAGS += $(LIBS) -fsanitize=address
+LDFLAGS += $(LIBS) -fsanitize=address -lSDL2
 OBJCACHE = ccache
 # CC = ccache gcc
 # CXX = ccache g++
@@ -55,7 +63,7 @@ OBJCACHE = ccache
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	# @rm -rf $(OBJ_DIR)
 	$(VERILATOR) $(VERILATOR_CFLAGS) \
-		--top-module ysyxSoCFull $^ \
+		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
 		$(INCFLAGS) --Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
 

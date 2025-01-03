@@ -106,12 +106,15 @@ end
 always@(posedge i_clock)begin
   if(!i_reset && !o_valid && i_valid) alu_t <= i_alu_t;
 end
-/* always@(posedge i_clock)begin */
-/*   if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR)) begin */
-/*     $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", i_op, i_pc); */
-/*     quit(); */
-/*   end */
-/* end */
+
+`ifndef CONFIG_YOSYS
+always@(posedge i_clock)begin
+  if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR)) begin
+    $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", i_op, i_pc);
+    quit();
+  end
+end
+`endif
 
 wire I = op == 7'b0010011;
 wire R = op == 7'b0110011;

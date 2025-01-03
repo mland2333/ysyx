@@ -1,10 +1,13 @@
-/* import "DPI-C" function void quit(); */
-/* import "DPI-C" function void difftest(); */
-/* import "DPI-C" function void diff_skip(); */
-/* import "DPI-C" function void fetch_inst(); */
+`ifndef CONFIG_YOSYS
+import "DPI-C" function void quit();
+import "DPI-C" function void difftest();
+import "DPI-C" function void diff_skip();
+import "DPI-C" function void fetch_inst();
+`endif
+
 module ysyx_24110006(
   input clock,
-  input reset,
+`ifdef CONFIG_YSYXSOC
   input         io_interrupt,
   input         io_master_awready,
   output        io_master_awvalid,
@@ -64,8 +67,9 @@ module ysyx_24110006(
   output [1:0]  io_slave_rresp,
   output [31:0] io_slave_rdata,
   output        io_slave_rlast,
-  output [3:0]  io_slave_rid
-
+  output [3:0]  io_slave_rid,
+`endif
+  input reset
 );
 
 wire exu_cmp;
@@ -102,7 +106,7 @@ wire[31:0] csr_src;
 wire[31:0] csr_mcause = 32'd11;
 wire[31:0] csr_upc;
 wire[11:0] csr = imm[11:0];
-wire[2:0] csr_t;
+wire[1:0] csr_t;
 wire[31:0] csr_wdata;
 
 wire [31:0] alu_a, alu_b;
@@ -125,21 +129,30 @@ reg[31:0] npc_upc;
 always@(posedge clock)
   npc_upc <= upc;
 
-/* always@(posedge clock)begin */
-/*   if(clint_rvalid || lsu_valid && result >= 32'h10000000 && result < 32'h10001000) diff_skip(); */
-/* end */
-/**/
-/* always@(posedge clock)begin */
-/*   if(ifu_valid) difftest(); */
-/* end */
-/**/
-/* always@(posedge clock)begin */
-/*   if(ifu_valid) fetch_inst(); */
-/* end */
-/**/
-/* always@ * */
-/*   if(inst == 32'h100073) */
-/*     quit(); */
+wire is_diff_skip;
+`ifndef CONFIG_YSYXSOC
+  assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && result >= 32'ha0000000;
+`else
+  assign is_diff_skip = clint_rvalid || lsu_valid && result >= 32'h10000000 && result < 32'h10001000;
+`endif
+
+`ifndef CONFIG_YOSYS
+always@(posedge clock)begin
+  if(is_diff_skip) diff_skip();
+end
+
+always@(posedge clock)begin
+  if(ifu_valid) difftest();
+end
+
+always@(posedge clock)begin
+  if(ifu_valid) fetch_inst();
+end
+
+always@ *
+  if(inst == 32'h100073)
+    quit();
+`endif
 
 wire [31:0] ifu_araddr;
 wire ifu_arvalid;
@@ -218,36 +231,72 @@ wire xbar_bvalid;
 wire xbar_bready;
 wire [3:0] xbar_bid;
 
-
-
+`ifndef CONFIG_YSYXSOC
+/* wire [31:0] sram_araddr; */
+/* wire sram_arvalid; */
+/* wire sram_arready; */
+/* wire [31:0] sram_rdata; */
+/* wire sram_rvalid; */
+/* wire sram_rready; */
+/* wire [1:0] sram_rresp; */
+/* wire [31:0] sram_awaddr; */
+/* wire sram_awvalid; */
+/* wire sram_awready; */
+/* wire [31:0] sram_wdata; */
+/* wire [7:0] sram_wstrb; */
+/* wire sram_wvalid; */
+/* wire sram_wready; */
+/* wire [1:0] sram_bresp; */
+/* wire sram_bvalid; */
+/* wire sram_bready; */
 wire [31:0] sram_araddr;
 wire sram_arvalid;
 wire sram_arready;
+wire [3:0] sram_arid;
+wire [7:0] sram_arlen;
+wire [2:0] sram_arsize;
+wire [1:0] sram_arburst;
 wire [31:0] sram_rdata;
 wire sram_rvalid;
 wire sram_rready;
 wire [1:0] sram_rresp;
+wire [3:0] sram_rid;
+wire sram_rlast;
 wire [31:0] sram_awaddr;
 wire sram_awvalid;
 wire sram_awready;
+wire [3:0] sram_awid;
+wire [7:0] sram_awlen;
+wire [2:0] sram_awsize;
+wire [1:0] sram_awburst;
 wire [31:0] sram_wdata;
-wire [7:0] sram_wstrb;
+wire [3:0] sram_wstrb;
 wire sram_wvalid;
 wire sram_wready;
+wire sram_wlast;
 wire [1:0] sram_bresp;
 wire sram_bvalid;
 wire sram_bready;
+wire [3:0] sram_bid;
 
 wire [31:0] uart_awaddr;
 wire uart_awvalid;
 wire uart_awready;
+wire [3:0] uart_awid;
+wire [7:0] uart_awlen;
+wire [2:0] uart_awsize;
+wire [1:0] uart_awburst;
 wire [31:0] uart_wdata;
-wire [7:0] uart_wstrb;
+wire [3:0] uart_wstrb;
 wire uart_wvalid;
 wire uart_wready;
+wire uart_wlast;
 wire [1:0] uart_bresp;
 wire uart_bvalid;
 wire uart_bready;
+wire [3:0] uart_bid;
+
+`endif
 
 wire [31:0] clint_araddr;
 wire clint_arvalid;
@@ -562,7 +611,7 @@ ysyx_24110006_XBAR mxbar(
   .o_axi_bvalid(xbar_bvalid),
   .i_axi_bready(xbar_bready),
   .o_axi_bid(xbar_bid),
-
+`ifdef CONFIG_YSYXSOC
   .o_axi_araddr0(io_master_araddr),
   .o_axi_arvalid0(io_master_arvalid),
   .i_axi_arready0(io_master_arready),
@@ -592,35 +641,72 @@ ysyx_24110006_XBAR mxbar(
   .i_axi_bvalid0(io_master_bvalid),
   .o_axi_bready0(io_master_bready),
   .i_axi_bid0(io_master_bid),
-  /*
+`endif
+`ifndef CONFIG_YSYXSOC
+  /* .o_axi_araddr0(sram_araddr), */
+  /* .o_axi_arvalid0(sram_arvalid), */
+  /* .i_axi_arready0(sram_arready), */
+  /* .i_axi_rdata0(sram_rdata), */
+  /* .i_axi_rvalid0(sram_rvalid), */
+  /* .o_axi_rready0(sram_rready), */
+  /* .i_axi_rresp0(sram_rresp), */
+  /* .o_axi_awaddr0(sram_awaddr), */
+  /* .o_axi_awvalid0(sram_awvalid), */
+  /* .i_axi_awready0(sram_awready), */
+  /* .o_axi_wdata0(sram_wdata), */
+  /* .o_axi_wstrb0(sram_wstrb), */
+  /* .o_axi_wvalid0(sram_wvalid), */
+  /* .i_axi_wready0(sram_wready), */
+  /* .i_axi_bresp0(sram_bresp), */
+  /* .i_axi_bvalid0(sram_bvalid), */
+  /* .o_axi_bready0(sram_bready), */
   .o_axi_araddr0(sram_araddr),
   .o_axi_arvalid0(sram_arvalid),
   .i_axi_arready0(sram_arready),
+  .o_axi_arid0(sram_arid),
+  .o_axi_arlen0(sram_arlen),
+  .o_axi_arsize0(sram_arsize),
+  .o_axi_arburst0(sram_arburst),
   .i_axi_rdata0(sram_rdata),
   .i_axi_rvalid0(sram_rvalid),
   .o_axi_rready0(sram_rready),
   .i_axi_rresp0(sram_rresp),
+  .i_axi_rlast0(sram_rlast),
+  .i_axi_rid0(sram_rid),
   .o_axi_awaddr0(sram_awaddr),
   .o_axi_awvalid0(sram_awvalid),
   .i_axi_awready0(sram_awready),
+  .o_axi_awid0(sram_awid),
+  .o_axi_awlen0(sram_awlen),
+  .o_axi_awsize0(sram_awsize),
+  .o_axi_awburst0(sram_awburst),
   .o_axi_wdata0(sram_wdata),
   .o_axi_wstrb0(sram_wstrb),
   .o_axi_wvalid0(sram_wvalid),
   .i_axi_wready0(sram_wready),
+  .o_axi_wlast0(sram_wlast),
   .i_axi_bresp0(sram_bresp),
   .i_axi_bvalid0(sram_bvalid),
   .o_axi_bready0(sram_bready),
+  .i_axi_bid0(sram_bid),
+
   .o_axi_awaddr1(uart_awaddr),
   .o_axi_awvalid1(uart_awvalid),
   .i_axi_awready1(uart_awready),
+  .o_axi_awid1(uart_awid),
+  .o_axi_awlen1(uart_awlen),
+  .o_axi_awsize1(uart_awsize),
+  .o_axi_awburst1(uart_awburst),
   .o_axi_wdata1(uart_wdata),
   .o_axi_wstrb1(uart_wstrb),
   .o_axi_wvalid1(uart_wvalid),
   .i_axi_wready1(uart_wready),
+  .o_axi_wlast1(uart_wlast),
   .i_axi_bresp1(uart_bresp),
   .i_axi_bvalid1(uart_bvalid),
   .o_axi_bready1(uart_bready),
-  */
+  .i_axi_bid1(uart_bid),
+`endif
   .o_axi_araddr2(clint_araddr),
   .o_axi_arvalid2(clint_arvalid),
   .i_axi_arready2(clint_arready),
@@ -630,42 +716,73 @@ ysyx_24110006_XBAR mxbar(
   .i_axi_rresp2(clint_rresp)
 );
 
-/* ysyx_24110006_SRAM msram( */
-/*   .i_clock(clock), */
-/*   .i_reset(reset), */
-/*   .i_axi_araddr(sram_araddr), */
-/*   .i_axi_arvalid(sram_arvalid), */
-/*   .o_axi_arready(sram_arready), */
-/*   .o_axi_rdata(sram_rdata), */
-/*   .o_axi_rvalid(sram_rvalid), */
-/*   .o_axi_rresp(sram_rresp), */
-/*   .i_axi_rready(sram_rready), */
-/*   .i_axi_awaddr(sram_awaddr), */
-/*   .i_axi_awvalid(sram_awvalid), */
-/*   .o_axi_awready(sram_awready), */
-/*   .i_axi_wdata(sram_wdata), */
-/*   .i_axi_wstrb(sram_wstrb), */
-/*   .i_axi_wvalid(sram_wvalid), */
-/*   .o_axi_wready(sram_wready), */
-/*   .o_axi_bresp(sram_bresp), */
-/*   .o_axi_bvalid(sram_bvalid), */
-/*   .i_axi_bready(sram_bready) */
-/* ); */
+`ifndef CONFIG_YSYXSOC
+ysyx_24110006_SRAM msram(
+  .i_clock(clock),
+  .i_reset(reset),
+  /* .i_axi_araddr(sram_araddr), */
+  /* .i_axi_arvalid(sram_arvalid), */
+  /* .o_axi_arready(sram_arready), */
+  /* .o_axi_rdata(sram_rdata), */
+  /* .o_axi_rvalid(sram_rvalid), */
+  /* .o_axi_rresp(sram_rresp), */
+  /* .i_axi_rready(sram_rready), */
+  /* .i_axi_awaddr(sram_awaddr), */
+  /* .i_axi_awvalid(sram_awvalid), */
+  /* .o_axi_awready(sram_awready), */
+  /* .i_axi_wdata(sram_wdata), */
+  /* .i_axi_wstrb(sram_wstrb), */
+  /* .i_axi_wvalid(sram_wvalid), */
+  /* .o_axi_wready(sram_wready), */
+  /* .o_axi_bresp(sram_bresp), */
+  /* .o_axi_bvalid(sram_bvalid), */
+  /* .i_axi_bready(sram_bready) */
+  .i_axi_araddr(sram_araddr),
+  .i_axi_arvalid(sram_arvalid),
+  .o_axi_arready(sram_arready),
+  .i_axi_arid(sram_arid),
+  .i_axi_arlen(sram_arlen),
+  .i_axi_arsize(sram_arsize),
+  .i_axi_arburst(sram_arburst),
+  .o_axi_rdata(sram_rdata),
+  .o_axi_rvalid(sram_rvalid),
+  .o_axi_rresp(sram_rresp),
+  .i_axi_rready(sram_rready),
+  .o_axi_rlast(sram_rlast),
+  .o_axi_rid(sram_rid),
+  .i_axi_awaddr(sram_awaddr),
+  .i_axi_awvalid(sram_awvalid),
+  .o_axi_awready(sram_awready),
+  .i_axi_awid(sram_awid),
+  .i_axi_awlen(sram_awlen),
+  .i_axi_awsize(sram_awsize),
+  .i_axi_awburst(sram_awburst),
+  .i_axi_wdata(sram_wdata),
+  .i_axi_wstrb(sram_wstrb),
+  .i_axi_wvalid(sram_wvalid),
+  .o_axi_wready(sram_wready),
+  .i_axi_wlast(sram_wlast),
+  .o_axi_bresp(sram_bresp),
+  .o_axi_bvalid(sram_bvalid),
+  .i_axi_bready(sram_bready),
+  .o_axi_bid(sram_bid)
+);
 
-/* ysyx_24110006_UART muart( */
-/*   .i_clock(clock), */
-/*   .i_reset(reset), */
-/*   .i_axi_awaddr(uart_awaddr), */
-/*   .i_axi_awvalid(uart_awvalid), */
-/*   .o_axi_awready(uart_awready), */
-/*   .i_axi_wdata(uart_wdata), */
-/*   .i_axi_wstrb(uart_wstrb), */
-/*   .i_axi_wvalid(uart_wvalid), */
-/*   .o_axi_wready(uart_wready), */
-/*   .o_axi_bresp(uart_bresp), */
-/*   .o_axi_bvalid(uart_bvalid), */
-/*   .i_axi_bready(uart_bready) */
-/* ); */
+ysyx_24110006_UART muart(
+  .i_clock(clock),
+  .i_reset(reset),
+  .i_axi_awaddr(uart_awaddr),
+  .i_axi_awvalid(uart_awvalid),
+  .o_axi_awready(uart_awready),
+  .i_axi_wdata(uart_wdata),
+  .i_axi_wstrb(uart_wstrb),
+  .i_axi_wvalid(uart_wvalid),
+  .o_axi_wready(uart_wready),
+  .o_axi_bresp(uart_bresp),
+  .o_axi_bvalid(uart_bvalid),
+  .i_axi_bready(uart_bready)
+);
+`endif
 
 ysyx_24110006_CLINT mclint(
   .i_clock(clock),

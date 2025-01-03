@@ -2,7 +2,7 @@ module ysyx_24110006_CSR(
   input i_clock,
   input i_reset,
   input i_wen,
-  input[2:0] i_csr_t,
+  input[1:0] i_csr_t,
   input[11:0] i_csr,
   input[31:0] i_pc,
   input[31:0] i_wdata,
