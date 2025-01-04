@@ -1,13 +1,31 @@
 #pragma once
-#include "VysyxSoCFull.h"
-#include "VysyxSoCFull___024root.h"
-/* #include "Vtop.h" */
+
+#define STRING_HELPER(x) #x
+#define STRING(x) STRING_HELPER(x)
+#define CONCAT_HELPER(x, y) x##y
+#define CONCAT(x, y) CONCAT_HELPER(x, y)
+
+#define HEADER_FILE(x) STRING(x.h)
+#define ROOT_HEADER_FILE(x) STRING(CONCAT(x, ___024root.h))
+
+#include HEADER_FILE(TOP_NAME)
+#include ROOT_HEADER_FILE(TOP_NAME)
+#include "regs.h"
 #include "verilated_fst_c.h"
 #include <iostream>
 #include <verilated.h>
 #include <cpu.h>
 #include <args.h>
-/* #include <Vtop___024root.h> */
+
+#ifdef CONFIG_YSYXSOC
+  #define TOP_PREFIX top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__
+  #define PC_BEGIN 0xa0000000
+#else 
+  #define TOP_PREFIX top->rootp->ysyx_24110006__DOT__
+  #define PC_BEGIN 0x80000000
+#endif
+#define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
+
 enum class SIM_STATE{
   NORMAL,
   QUIT,
@@ -22,17 +40,18 @@ private:
   bool is_nvboard = false;
   void step_and_dump_wave(); 
   void single_cycle();
-  void args_init(int argc, char *argv[]);
   void cpu_update(){
-    for (int i = 0; i < cpu.nums; i++) {
-      cpu.gpr[i] = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__mreg__DOT__rf[i];
+    for (int i = 0; i < 16; i++) {
+      cpu.gpr[i] = TOP_MEMBER(mreg__DOT__rf[i]);
     }
-    cpu.pc = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__mpc__DOT__pc;
+    cpu.pc = TOP_MEMBER(mpc__DOT__pc);
+    if (TOP_MEMBER(ifu_valid))
+      cpu.inst = TOP_MEMBER(mifu__DOT__inst);
   }
   SIM_STATE state = SIM_STATE::NORMAL;
 public:
   TOP_NAME *top;
-  Cpu<32> cpu;
+  Cpu<REG_NUMS> cpu;
   
   Simulator(Args& args);
   ~Simulator();
@@ -46,16 +65,13 @@ public:
     cpu_update();
   }
   SIM_STATE exec_once();
-  bool is_jump(){
-    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__jump;
-  }
-  uint32_t get_upc(){
-    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__upc;
-  }
+  /* bool is_jump(){ */
+  /*   return TOP_MEMBER(mpc__DOT__jump); */
+  /* } */
+  /* uint32_t get_upc(){ */
+  /*   return TOP_MEMBER(upc); */
+  /* } */
   void quit(){
     state = SIM_STATE::QUIT;
-  }
-  int get_inst(){
-    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__mifu__DOT__inst;
   }
 };

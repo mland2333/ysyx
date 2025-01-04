@@ -8,36 +8,39 @@
 #include <utils.h>
 class Area {
 public:
-  const uint32_t base_;
-  const uint32_t size_;
-  std::string name_;
+  const uint32_t base;
+  const uint32_t size;
+  std::string name;
   long img_size;
   bool has_image = false;
   uint64_t translate(uint32_t vaddr) const{
-    if(!(vaddr >= base_ && vaddr < base_ + size_)){
+    if(!(vaddr >= base && vaddr < base + size)){
       std::cout << "vaddr = " << std::hex << vaddr << '\n';
       throw std::runtime_error("Area error\n");
     }
-    return reinterpret_cast<uint64_t>(mem_ + vaddr - base_);
+    return reinterpret_cast<uint64_t>(mem + vaddr - base);
   }
   void init(){
-    write<uint32_t>(base_, 0x00100513);
-    write<uint32_t>(base_ + 4, 0x00150513);
-    write<uint32_t>(base_ + 8, 0x00150513);
-    write<uint32_t>(base_ + 12, 0x00150513);
-    write<uint32_t>(base_ + 16, 0x00150513);
-    write<uint32_t>(base_ + 20, 0x100073);
+    write<uint32_t>(base, 0x00100513);
+    write<uint32_t>(base + 4, 0x00150513);
+    write<uint32_t>(base + 8, 0x00150513);
+    write<uint32_t>(base + 12, 0x00150513);
+    write<uint32_t>(base + 16, 0x00150513);
+    write<uint32_t>(base + 20, 0x100073);
   }
-  char* mem_;
+  char* mem;
   Area(std::string&& name, uint32_t base, uint32_t size);
   Area(std::string&& name, uint32_t base, uint32_t size, const char* image);
-  Area(const Area&) = delete;            
+  Area (Area&& that) noexcept : base(that.base), size(that.base), name(std::move(that.name)),
+  img_size(that.img_size), has_image(that.has_image), mem(that.mem){
+    that.mem = nullptr;
+  };
+
+  Area(const Area&) = delete;
   Area& operator=(const Area&) = delete; 
-  Area(Area&& other) noexcept;           
-  Area& operator=(Area&& other) noexcept;
 
   bool in_mem(uint32_t vaddr){
-    return vaddr >= base_ && vaddr < base_ + size_;
+    return vaddr >= base && vaddr < base + size;
   }
   template<typename T>
   T read(uint32_t vaddr) const;
@@ -46,19 +49,19 @@ public:
   ~Area();
 };
 
-inline Area::Area(std::string&& name, uint32_t base, uint32_t size) : name_(std::move(name)), base_(base), size_(size){
-  mem_ = new char[size_];
+inline Area::Area(std::string&& name_, uint32_t base_, uint32_t size_) : name(std::move(name_)), base(base_), size(size_){
+  mem = new char[size];
   img_size = 4096;
   init();
 }
-inline Area::Area(std::string&& name, uint32_t base, uint32_t size, const char* image) : name_(std::move(name)), base_(base), size_(size){
-  mem_ = new char[size_];
-  img_size = Utils::load_img(mem_, image);
+inline Area::Area(std::string&& name_, uint32_t base_, uint32_t size_, const char* image) : name(std::move(name_)), base(base_), size(size_){
+  mem = new char[size];
+  img_size = Utils::load_img(mem, image);
   has_image = true;
 }
 
 inline Area::~Area(){
-  delete [] mem_;
+  delete [] mem;
 }
 template<typename T>
 T Area::read(uint32_t vaddr) const{

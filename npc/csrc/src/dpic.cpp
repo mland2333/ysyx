@@ -66,4 +66,4 @@ extern "C" void flash_read(int32_t addr, int32_t *data) {
 }
 extern "C" void mrom_read(int32_t addr, int32_t *data) { *data = sdb->mem_read(addr); }
 
-extern "C" void add_inst_nums() { sdb->fetch_inst();}
+extern "C" void fetch_inst() { sdb->fetch_inst();}

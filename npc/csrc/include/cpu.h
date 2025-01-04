@@ -8,14 +8,16 @@ class Cpu{
 public:
   uint32_t gpr[N] = {0};
   uint32_t pc = 0;
-  const uint32_t nums = N;
+  uint32_t inst = 0;
+  constexpr static uint32_t nums = N;
   void display(){
     for (int i = 0; i < N; i++) {
       std::cout << RegName::regs[i] << "=" << gpr[i] << "  ";
     }
     std::cout << '\n';
   }
-  int check(Cpu<N>* ref_cpu){
+  template<uint32_t T>
+  int check(Cpu<T>* ref_cpu){
     for (int i = 1 ; i < N; i++) {
       if (gpr[i] != ref_cpu->gpr[i])
         return i;

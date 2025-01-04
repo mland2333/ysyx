@@ -19,23 +19,17 @@ void signalHandler(int signum) {
 int main(int argc, char **argv) {
   std::signal(SIGINT, signalHandler);
   Verilated::commandArgs(argc, argv);
+
   Args args(argc, argv);
-  Area psram("psram", 0x80000000, 0x400000);
-  /* Area mrom("mrom", 0x20000000, 0x1000, args.image); */
-  Area mrom("mrom", 0x20000000, 0x10000);
-  /* Area flash("flash", 0x30000000, 0x10000000); */
-  Area flash("flash", 0x30000000, 0x10000000, args.image);
-  /* *(int*)flash.mem_ = 0x12345678; */
-  /* Utils::load_img(flash.mem_, "/home/mland/ysyx-workbench/am-kernels/tests/cpu-tests/build/char-test.bin"); */
-  Memory mem({&psram, &mrom, &flash});
+  Memory mem(args);
   auto msim = std::make_unique<Simulator>(args);
   sim = msim.get();
-  Verilated::commandArgs(argc, argv);
-  sim->reset(20);
-  Verilated::commandArgs(argc, argv);
   auto msdb = std::make_unique<Sdb>(args, sim, &mem);
+  sdb = msdb.get();
+
+  Verilated::commandArgs(argc, argv);
   try{
-    sdb = msdb.get();
+    sim->reset(20);
     sdb->welcome();
     sdb->run();
   } catch (const std::exception& e){

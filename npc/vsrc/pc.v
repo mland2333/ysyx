@@ -10,7 +10,11 @@ module ysyx_24110006_PC(
 );
 localparam MROM = 32'h20000000;
 localparam FLASH = 32'h30000000;
-localparam PC = FLASH;
+`ifdef CONFIG_YSYXSOC
+  localparam PC = FLASH;
+`else
+  localparam PC = 32'h80000000;
+`endif
 reg[31:0] pc;
 reg reset;
 

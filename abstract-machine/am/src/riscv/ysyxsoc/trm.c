@@ -68,14 +68,14 @@ void uart_init(){
 void _trm_init() {
   /* load_data(); */
   uart_init();
-  unsigned int mvendorid, marchid;
-  asm volatile("csrr %0, mvendorid" : "=r"(mvendorid));
-  asm volatile("csrr %0, marchid" : "=r"(marchid));
-  for(int i = 0; i<4; i++){
-    putch(*((char*)&mvendorid + 3 - i));
-  }
-  putch('_');
-  printf("%d\n", marchid);
+  /* unsigned int mvendorid, marchid; */
+  /* asm volatile("csrr %0, mvendorid" : "=r"(mvendorid)); */
+  /* asm volatile("csrr %0, marchid" : "=r"(marchid)); */
+  /* for(int i = 0; i<4; i++){ */
+  /*   putch(*((char*)&mvendorid + 3 - i)); */
+  /* } */
+  /* putch('_'); */
+  /* printf("%d\n", marchid); */
   int ret = main(mainargs);
   halt(ret);
 }

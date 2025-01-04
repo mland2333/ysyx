@@ -98,8 +98,8 @@ always@(posedge i_clock)begin
 end
 
 always@(posedge i_clock)begin
-  if(i_reset) rdata0 <= 0;
-  else if(rvalid&&rready) rdata0 <= i_axi_rdata;
+  if(i_reset) rdata <= 0;
+  else if(rvalid&&rready) rdata <= rdata0;
 end
 
 always@(posedge i_clock)begin
@@ -139,16 +139,16 @@ reg[3:0] wmask0;
 always@(*)begin
   case(addr[1:0])
     2'b00:begin
-      rdata = rdata0;
+      rdata0 = i_axi_rdata;
     end
     2'b01:begin
-      rdata = {8'b0, rdata0[31:8]};
+      rdata0 = {8'b0, i_axi_rdata[31:8]};
     end
     2'b10:begin
-      rdata = {16'b0, rdata0[31:16]};
+      rdata0 = {16'b0, i_axi_rdata[31:16]};
     end
     2'b11:begin
-      rdata = {24'b0, rdata0[31:24]};
+      rdata0 = {24'b0, i_axi_rdata[31:24]};
     end
   endcase
 end
