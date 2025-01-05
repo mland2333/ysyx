@@ -55,7 +55,7 @@ public:
   }
   void mem_write(uint32_t addr, uint32_t wdata, char wmask){
     if (args.is_mtrace) printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc, addr, wdata);
-    mem->write(addr, wdata, wmask);
+    mem->write(addr&~3u, wdata, wmask);
   }
   void quit(){
     sim->quit();

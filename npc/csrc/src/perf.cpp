@@ -41,3 +41,4 @@ void Perf::statistic(){
     Log("ifu 平均取指延迟周期为%.2f", (double)ifu_clk / (double)(inst_nums));
     Log("lsu 平均访存延迟周期为%.2f", (double)lsu_clk / (double)(insts[LOAD] + insts[STORE]));
   }
+
