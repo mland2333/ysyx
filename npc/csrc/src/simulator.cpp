@@ -1,7 +1,7 @@
 #include "simulator.h"
 #include <cstdio>
 #include <getopt.h>
-#ifdef CONFIG_YSYXSOC
+#ifdef CONFIG_NVBOARD
 #include <nvboard.h>
 #endif
 
@@ -14,12 +14,10 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
     top->trace(tfp, 0);
     tfp->open("dump.fst");
   }
-#ifdef CONFIG_YSYXSOC
-  if (is_nvboard) {
-    void nvboard_bind_all_pins(TOP_NAME *);
-    nvboard_bind_all_pins(top);
-    nvboard_init();
-  }
+#ifdef CONFIG_NVBOARD
+  void nvboard_bind_all_pins(TOP_NAME *);
+  nvboard_bind_all_pins(top);
+  nvboard_init();
 #endif
 }
 
@@ -39,8 +37,8 @@ void Simulator::single_cycle() {
 }
 
 SIM_STATE Simulator::exec_once(){
-#ifdef CONFIG_YSYXSOC
-  if (is_nvboard) nvboard_update();
+#ifdef CONFIG_NVBOARD
+  nvboard_update();
 #endif
   single_cycle();
   cpu_update();
@@ -50,9 +48,8 @@ SIM_STATE Simulator::exec_once(){
 int Simulator::run() {
 
   while (true) {
-#ifdef CONFIG_YSYXSOC
-    if (is_nvboard)
-      nvboard_update();
+#ifdef CONFIG_NVBOARD
+    nvboard_update();
 #endif
     single_cycle();
   }

@@ -26,7 +26,6 @@ class Sdb{
   Perf perf;
   uint32_t inst = 0;
   uint32_t pc = 0;
-  void statistic();
   Simulator* sim;
   Memory* mem;
   Itrace* itrace;
@@ -44,7 +43,7 @@ public:
     sdb_map_[command] = func;
   }
   SIM_STATE exec_once();
-  SIM_STATE exec(int n);
+  SIM_STATE exec(uint32_t n);
   void cpu_display(){
     sim->cpu.display();
   }
@@ -56,7 +55,7 @@ public:
   }
   void mem_write(uint32_t addr, uint32_t wdata, char wmask){
     if (args.is_mtrace) printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc, addr, wdata);
-    mem->write(addr, wdata, wmask);
+    mem->write(addr&~3u, wdata, wmask);
   }
   void quit(){
     sim->quit();
@@ -65,5 +64,5 @@ public:
   int run();
   void diff_skip_step(){ if(args.is_diff) diff->diff_skip_step();}
   void difftest(){ is_time_to_diff = true; }
-  void fetch_inst() { perf.inst_nums++; is_time_to_trace = true; }
+  void fetch_inst() { is_time_to_trace = true; }
 };

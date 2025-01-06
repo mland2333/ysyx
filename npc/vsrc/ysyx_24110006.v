@@ -131,9 +131,9 @@ always@(posedge clock)
 
 wire is_diff_skip;
 `ifndef CONFIG_YSYXSOC
-  assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && result >= 32'ha0000000;
+  assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && (mem_ren || mem_wen) && result >= 32'ha0000000;
 `else
-  assign is_diff_skip = clint_rvalid || lsu_valid && result >= 32'h10000000 && result < 32'h10001000;
+  assign is_diff_skip = clint_rvalid || lsu_valid && (mem_ren || mem_wen) && result >= 32'h10000000 && result < 32'h10001000;
 `endif
 
 `ifndef CONFIG_YOSYS

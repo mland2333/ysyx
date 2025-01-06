@@ -10,12 +10,7 @@
 #include <utils.h>
 
 SIM_STATE cmd_c(Sdb* sdb, char* args){
-  SIM_STATE sim_state;
-  while (true) {
-    sim_state = sdb->exec_once();
-    if(sim_state == SIM_STATE::NORMAL) continue;
-    else return sim_state;
-  }
+  return sdb->exec(-1);
 }
 SIM_STATE cmd_si(Sdb* sdb, char* args){
   SIM_STATE sim_state;
@@ -67,10 +62,11 @@ Sdb::Sdb(Args& args_, Simulator* sim_, Memory* mem_) : args(args_),
 }
 
 SIM_STATE Sdb::exec_once(){
-  perf.clk_nums++;
   SIM_STATE state = sim->exec_once();
-  if (is_time_to_trace){
-    if (args.is_itrace) itrace->trace(sim->cpu.pc, sim->cpu.inst);
+  if (args.is_perf && sim->cpu.pc >= PC_BEGIN)
+    perf.trace(sim);
+  if (args.is_itrace && is_time_to_trace){
+    itrace->trace(sim->cpu.pc, sim->cpu.inst);
     /* if (args.is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump()); */
     is_time_to_trace = false;
   }
@@ -82,7 +78,7 @@ SIM_STATE Sdb::exec_once(){
   return state;
 }
 
-SIM_STATE Sdb::exec(int n){
+SIM_STATE Sdb::exec(uint32_t n){
   for (int i = 0; i < n; i++) {
     SIM_STATE sim_state = exec_once();
     if(sim_state == SIM_STATE::NORMAL) continue;
@@ -92,6 +88,7 @@ SIM_STATE Sdb::exec(int n){
 }
 
 void Sdb::welcome(){
+
   Log("Build time: %s, %s", __TIME__, __DATE__);
   printf("Welcome to npc\n");
   printf("For help, type \"help\"\n");
@@ -99,12 +96,6 @@ void Sdb::welcome(){
 
 uint64_t Sdb::get_rtc(){
   return Utils::get_time() - rtc_begin;
-}
-void Sdb::statistic(){
-  Log("host time spent = %lu us", perf.timer);
-  Log("total host clk = %lu", perf.clk_nums);
-  Log("total host instructions = %lu", perf.inst_nums);
-  if (args.is_diff) Log("total diff instructions = %lu", diff->diff_nums);
 }
 
 int Sdb::run(){
@@ -152,7 +143,7 @@ int Sdb::run(){
 }
 
 Sdb::~Sdb(){
-  statistic();
+  if (args.is_perf) perf.statistic();
   if (args.is_ftrace) delete ftrace;
   if (args.is_itrace) delete itrace;
   if (args.is_diff) delete diff;

@@ -9,7 +9,7 @@ ifdef CONFIG_YSYXSOC
 TOPNAME = ysyxSoCFull
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl
-VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -j 8 -Wno-WIDTHEXPAND -DCONFIG_YSYXSOC
+VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -Wno-WIDTHEXPAND -DCONFIG_YSYXSOC
 CXXFLAGS += -DCONFIG_YSYXSOC
 else
 TOPNAME = ysyx_24110006
@@ -18,7 +18,7 @@ endif
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --trace-fst --autoflush
+				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-threads 2 
 
 LIBS += -lcapstone
 ARGS ?=
@@ -32,11 +32,13 @@ default: $(BIN)
 $(shell mkdir -p $(BUILD_DIR))
 
 # constraint file
-ifdef CONFIG_YSYXSOC
+ifdef CONFIG_NVBOARD
 SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
 $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 CSRCS += $(SRC_AUTO_BIND)
+CXXFLAGS += -fsanitize=address
+LDFLAGS +=  -fsanitize=address
 include $(NVBOARD_HOME)/scripts/nvboard.mk
 endif
 
@@ -54,9 +56,12 @@ CSRCS += $(shell find $(abspath ./csrc) -maxdepth 1 -name "*.c" -or -name "*.cc"
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
-CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g -fsanitize=address
-LDFLAGS += $(LIBS) -fsanitize=address -lSDL2
-OBJCACHE = ccache
+CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
+LDFLAGS += $(LIBS) -lSDL2
+CXXFLAGS += -flto
+LDFLAGS += -flto
+
+# OBJCACHE = ccache
 # CC = ccache gcc
 # CXX = ccache g++
 

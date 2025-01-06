@@ -19,8 +19,10 @@
 
 #ifdef CONFIG_YSYXSOC
   #define TOP_PREFIX top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__
+  #define PC_BEGIN 0xa0000000
 #else 
   #define TOP_PREFIX top->rootp->ysyx_24110006__DOT__
+  #define PC_BEGIN 0x80000000
 #endif
 #define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
 

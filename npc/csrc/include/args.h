@@ -1,8 +1,10 @@
 #pragma once
+#include <getopt.h>
 #include <cstddef>
 #include <cstdlib>
 #include <getopt.h>
 #include <cstdio>
+
 class Args{
 public:
   char* gtk_file = nullptr;
@@ -15,6 +17,7 @@ public:
   bool is_mtrace = false;
   bool is_diff = false;
   bool is_vga = false;
+  bool is_perf = false;
 
 
   Args(int argc, char* argv[]){
@@ -22,7 +25,7 @@ public:
       {"batch", no_argument, NULL, 'b'},
       {"log", required_argument, NULL, 'l'},
       {"diff", no_argument, NULL, 'd'},
-      {"port", required_argument, NULL, 'p'},
+      {"perf", no_argument, NULL, 'p'},
       {"ftrace", no_argument, NULL, 'f'},
       {"gtktrace", no_argument, NULL, 'g'},
       {"nvboard", no_argument, NULL, 'n'},
@@ -33,7 +36,7 @@ public:
       {0, 0, NULL, 0},
   };
   int o;
-  while ((o = getopt_long(argc, argv, "-bhnigdfmv", table, NULL)) != -1) {
+  while ((o = getopt_long(argc, argv, "-bhnigdfmvp", table, NULL)) != -1) {
     switch (o) {
     case 'g':
       is_gtk = true;
@@ -58,6 +61,9 @@ public:
       break;
     case 'v':
       is_vga = true;
+      break;
+    case 'p':
+      is_perf = true;
       break;
     case 1:
       image = optarg;
