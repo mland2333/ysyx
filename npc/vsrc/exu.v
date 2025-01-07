@@ -85,7 +85,7 @@ always@(posedge i_clock)begin
 end
 always@(posedge i_clock)begin
   if(!i_reset && i_valid && !o_valid)
-    upc <= CSR ? i_csr_upc : (i_op == 7'b1100111 ? i_reg_src1 : i_pc);
+    upc <= i_op == 7'b1110011 ? i_csr_upc : (i_op == 7'b1100111 ? i_reg_src1 : i_pc);
 end
 
 always@(posedge i_clock)begin

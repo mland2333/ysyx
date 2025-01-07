@@ -1,27 +1,31 @@
 #include <perf.h>
 
 void Perf::trace(Simulator* sim){
-    if(timer_begin == 0) timer_begin = Utils::get_time();
-    clk_nums ++;
-    if(sim->TOP_MEMBER(pc_valid)) {
-      if(clk_prev != 0){
-        inst_clk[inst_type] += clk_nums - clk_prev;
-      }
-      clk_prev = clk_nums;
+  if(timer_begin == 0) timer_begin = Utils::get_time();
+  clk_nums ++;
+  if(sim->TOP_MEMBER(pc_valid)) {
+    if(clk_prev != 0){
+      inst_clk[inst_type] += clk_nums - clk_prev;
     }
-    if(sim->TOP_MEMBER(ifu_valid)){
-      inst_nums++;
-      ifu_get_inst++;
-      ifu_clk += clk_nums - clk_prev;
-      idu_decode_inst(sim->TOP_MEMBER(mifu__DOT__inst));
-    }
-    if(sim->TOP_MEMBER(exu_valid)) {
-      exu_finish_cal++;
-      lsu_begin = clk_nums;
-    }
-    if(sim->TOP_MEMBER(mlsu__DOT__rvalid)) lsu_get_data++;
-    if(sim->TOP_MEMBER(lsu_valid) && (sim->TOP_MEMBER(mlsu__DOT__wen) || sim->TOP_MEMBER(mlsu__DOT__ren)))
-       lsu_clk += clk_nums - lsu_begin;
+    clk_prev = clk_nums;
+  }
+  if(sim->TOP_MEMBER(ifu_valid)){
+    inst_nums++;
+    ifu_get_inst++;
+    ifu_clk += clk_nums - clk_prev;
+    idu_decode_inst(sim->TOP_MEMBER(mifu__DOT__micache__DOT__inst));
+  }
+  if(sim->TOP_MEMBER(exu_valid)) {
+    exu_finish_cal++;
+    lsu_begin = clk_nums;
+  }
+  if(sim->TOP_MEMBER(mlsu__DOT__rvalid)) lsu_get_data++;
+  if(sim->TOP_MEMBER(lsu_valid) && (sim->TOP_MEMBER(mlsu__DOT__wen) || sim->TOP_MEMBER(mlsu__DOT__ren)))
+     lsu_clk += clk_nums - lsu_begin;
+  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__hit_counter)) hit_counter++;
+  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_counter)) miss_counter++;
+  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__rvalid)) miss_time += sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_time);
+
   }
 void Perf::statistic(){
     uint64_t timer_end = Utils::get_time();
@@ -40,5 +44,10 @@ void Perf::statistic(){
     Log("execute 指令数量:%lu，占比 %.4f%%，平均执行周期数 %.2f", insts[EXECUTE], (double)insts[EXECUTE] / (double)inst_nums * 100, (double)inst_clk[EXECUTE] / (double)insts[EXECUTE]);
     Log("ifu 平均取指延迟周期为%.2f", (double)ifu_clk / (double)(inst_nums));
     Log("lsu 平均访存延迟周期为%.2f", (double)lsu_clk / (double)(insts[LOAD] + insts[STORE]));
+    Log("hit_counter = %ld", hit_counter);
+    Log("miss_counter = %ld", miss_counter);
+    Log("miss_time = %ld", miss_time);
+    Log("AMAT = %.2f", hit_time + 
+        (double)miss_time / (double) miss_counter *  ((double)miss_counter / (double)(miss_counter + hit_counter)));
   }
 

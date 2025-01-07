@@ -73,6 +73,6 @@ assign o_imm = imm;
 localparam MRET = 2'b00;
 localparam CSRW = 2'b01;
 localparam ECALL = 2'b11;
-assign o_csr_t = o_func == 3'b0 ? (imm[1] ? MRET : ECALL) : CSRW;
+assign o_csr_t = o_func == 3'b0 ? (inst[29] ? MRET : ECALL) : CSRW;
 
 endmodule
