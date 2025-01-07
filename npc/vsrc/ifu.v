@@ -24,6 +24,32 @@ module ysyx_24110006_IFU(
   input i_axi_rlast
 );
 
+
+`ifdef CONFIG_ICACHE
+
+ysyx_24110006_ICACHE micache(
+  .i_clock(i_clock),
+  .i_reset(i_reset),
+  .i_pc(i_pc),
+  .o_inst(o_inst),
+  .i_valid(i_valid),
+  .o_valid(o_valid),
+  .o_axi_araddr(o_axi_araddr),
+  .o_axi_arvalid(o_axi_arvalid),
+  .i_axi_arready(i_axi_arready),
+  .o_axi_arid(o_axi_arid),
+  .o_axi_arlen(o_axi_arlen),
+  .o_axi_arsize(o_axi_arsize),
+  .o_axi_arburst(o_axi_arburst),
+  .i_axi_rdata(i_axi_rdata),
+  .i_axi_rvalid(i_axi_rvalid),
+  .o_axi_rready(o_axi_rready),
+  .i_axi_rresp(i_axi_rresp),
+  .i_axi_rlast(i_axi_rlast),
+  .i_axi_rid(i_axi_rid)
+);
+
+`else
 reg [31:0] pc;
 reg [31:0] inst;
 
@@ -77,5 +103,5 @@ always@(posedge i_clock) begin
   else if(i_valid && !arvalid) arvalid <= 1;
   else if(arvalid && arready) arvalid <= 0;
 end
-
+`endif
 endmodule

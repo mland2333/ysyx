@@ -28,6 +28,10 @@ public:
   uint64_t lsu_begin = 0;
   uint64_t lsu_clk = 0;
   uint64_t ifu_clk = 0;
+  uint64_t miss_counter = 0;
+  uint64_t hit_counter = 0;
+  uint64_t miss_time = 0;
+  uint64_t hit_time = 2;
   int inst_type;
   void idu_decode_inst(int inst){
     int a = inst & 0x7f;
@@ -52,6 +56,7 @@ public:
   double get_ipc(){
     return (double)inst_nums / (double)clk_nums;
   }
+  double get_amat();
   void trace(Simulator* sim);
   void statistic();
 };

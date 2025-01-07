@@ -4,7 +4,7 @@ Memory::Memory(Args args){
 #ifdef CONFIG_YSYXSOC
   areas.emplace_back("flash", 0x30000000, 0x10000000, args.image);
 #else 
-  areas.emplace_back("sram", 0x80000000, 0x1000000, args.image);
+  areas.emplace_back("sram", 0x80000000, 0x10000000, args.image);
 #endif
 }
 
