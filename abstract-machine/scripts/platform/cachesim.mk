@@ -19,7 +19,7 @@ LDFLAGS   += --gc-sections -e _start
 MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = The insert-arg rule in Makefile will insert mainargs here.
 CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\""$(MAINARGS_PLACEHOLDER)"\"
-NEMUFLAGS += -l $(shell dirname $(IMAGE).elf)/nemu-log.txt -b -e $(IMAGE).elf
+NEMUFLAGS += -l /home/mland/ysyx-workbench/cachesim/$(IMAGE).txt -b -e $(IMAGE).elf
 
 
 insert-arg: image
