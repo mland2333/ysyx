@@ -13,6 +13,7 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include <stdio.h>
 #include <utils.h>
 #include <device/map.h>
 
@@ -30,6 +31,7 @@ static void serial_putc(char ch) {
 
 static void serial_io_handler(uint32_t offset, int len, bool is_write) {
   assert(len == 1);
+  printf("offest = %d\n", offset);
   switch (offset) {
     /* We bind the serial port with the host stderr in NEMU. */
     case CH_OFFSET:
