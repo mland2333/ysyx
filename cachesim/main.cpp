@@ -77,12 +77,11 @@ int main(int argc, char* argv[]){
   std::string line;
   Cache mcache(num_blocks, num_ways);
   uint32_t pc;
-
-  do{
-    itrace.read((char*)&pc, sizeof(pc));
-    std::cout << std::format("{}\n", pc);
+  itrace.read((char*)&pc, sizeof(pc));
+  while(!itrace.eof()){
     pcs.push_back(pc);
-  }while(!itrace.eof());
+    itrace.read((char*)&pc, sizeof(pc));
+  }
   itrace.close();
   for (auto pc : pcs) {
     mcache.sim(pc);
