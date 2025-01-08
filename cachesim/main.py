@@ -19,7 +19,7 @@ def run_simulation(num_blocks, num_ways, itrace_file):
         # 执行模拟命令并传递运行时参数
         run_command = [
             "/home/mland/ysyx-workbench/cachesim/main", 
-            itrace_file, 
+            "itrace/" + itrace_file, 
             str(num_blocks), 
             str(num_ways)
         ]
