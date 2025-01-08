@@ -35,7 +35,7 @@ def run_simulation(num_blocks, num_ways, data_width, itrace_file):
                     line.split('=')[2].strip()
                 ])
                 hit_rate = hit / (hit + miss) if (hit + miss) > 0 else 0.0
-                return num_blocks, num_ways, round(hit_rate, 4), hit, miss
+                return num_blocks, num_ways, data_width, round(hit_rate, 4), hit, miss
 
         # 若未找到命中率数据，则返回错误信息
         return num_blocks, num_ways, data_width, "Error: No output", 0, 0
