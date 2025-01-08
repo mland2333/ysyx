@@ -153,7 +153,7 @@ void init_monitor(int argc, char *argv[]) {
   IFDEF(CONFIG_ITRACE, init_disasm());
 #ifdef CONFIG_CACHESIM
   extern FILE* cache_fd;
-  cache_fd = fopen(log_file, "wb");
+  cache_fd = fopen(cache_file, "wb");
 #endif
   /* Display welcome message. */
   welcome();
