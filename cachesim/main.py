@@ -59,7 +59,7 @@ def main():
     # 按顺序排序结果并打印
     result_list.sort(key=lambda x: (x[0], x[1], x[2]))  # 按 num_blocks 和 num_ways 升序排序
     print(" NUM_BLOCKS | NUM_WAYS | DATA_WIDTH | Hit Rate | Hit Counter | Miss Counter")
-    print("------------|----------|------------|----------|-------------|-------------|")
+    print("------------|----------|------------|----------|-------------|-------------")
     for num_blocks, num_ways, data_width, hit_rate, hit, miss in result_list:
         print(f"{num_blocks:^11} | {num_ways:^8} | {data_width:^10} | {hit_rate:^8} | {hit:^11} | {miss:^13}")
 
