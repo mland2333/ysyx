@@ -22,7 +22,7 @@ def run_simulation(num_blocks, num_ways, data_width, itrace_file):
             "itrace/" + itrace_file, 
             str(num_blocks), 
             str(num_ways),
-            str(data_width*8)
+            str(data_width*4)
         ]
         result = subprocess.run(run_command, capture_output=True, text=True)
 
