@@ -220,7 +220,7 @@ wire rvalid;
 wire rready = 1;
 wire [1:0] rresp;
 
-assign o_axi_araddr = pc;
+assign o_axi_araddr = {pc[31:OFFSET_WIDTH], {(OFFSET_WIDTH){1'b0}}};
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
 assign o_axi_arid = 0;
