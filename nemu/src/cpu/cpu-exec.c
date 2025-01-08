@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <locale.h>
 #include "../../monitor/sdb/sdb.h"
+#include "macro.h"
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
  * This is useful when you use the `si' command.
@@ -74,11 +75,21 @@ void print_buffer()
     }
 }
 #endif
+#ifdef CONFIG_CACHESIM
+FILE* cache_fd;
+char* cache_file;
+void cachesim_write(uint32_t pc){
+  fwrite(&pc, sizeof(pc), 1, cache_fd);
+}
+
+#endif
+
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }
 #endif
   IFDEF(CONFIG_ITRACE, insert_buffer(_this->logbuf));
+  IFDEF(CONFIG_CACHESIM, cachesim_write(_this->pc));
   IFDEF(CONFIG_WATCHPOINT, watch_update());
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));

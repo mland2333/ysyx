@@ -25,7 +25,7 @@ static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 #endif
 
 static uint8_t mrom[MROM_SIZE] PG_ALIGN = {};
-static uint8_t flash[FLASH_SIZE] PG_ALIGN = {};
+uint8_t flash[FLASH_SIZE] PG_ALIGN = {};
 static uint8_t sram[SRAM_SIZE] PG_ALIGN = {};
 static uint8_t sdram[SDRAM_SIZE] PG_ALIGN = {};
 uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
@@ -130,7 +130,7 @@ void init_mem() {
 
 word_t paddr_read(paddr_t addr, int len) {
   if(in_pmem(addr)) return pmem_read(addr, len);
-#if defined(CONFIG_TARGET_SHARE)
+#if defined(CONFIG_TARGET_SHARE) || defined (CONFIG_CACHESIM)
   else if(in_mrom(addr)) return mrom_read(addr, len);
   else if(in_flash(addr)) return flash_read(addr, len);
   else if(in_sram(addr)) return sram_read(addr, len);
@@ -143,7 +143,7 @@ word_t paddr_read(paddr_t addr, int len) {
 
 void paddr_write(paddr_t addr, int len, word_t data) {
   if (in_pmem(addr)) { pmem_write(addr, len, data); return; }
-#if defined(CONFIG_TARGET_SHARE)
+#if defined(CONFIG_TARGET_SHARE) || defined (CONFIG_CACHESIM)
   else if (in_sram(addr)) { sram_write(addr, len, data); return; }
   else if (in_sdram(addr)) { sdram_write(addr, len, data); return; }
 #endif

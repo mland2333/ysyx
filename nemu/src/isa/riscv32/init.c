@@ -28,8 +28,11 @@ static const uint32_t img [] = {
 
 static void restart() {
   /* Set the initial program counter. */
+#if defined (CONFIG_CACHESIM)
+  cpu.pc = 0x30000000;
+#else
   cpu.pc = RESET_VECTOR;
-
+#endif
   /* The zero register is always 0. */
   cpu.gpr[0] = 0;
 }

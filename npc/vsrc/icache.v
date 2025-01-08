@@ -1,12 +1,12 @@
 module ysyx_24110006_ICACHE #(
-    parameter BLOCK_SIZE = 8,
+    parameter BLOCK_SIZE = 4,
     parameter NUM_BLOCKS = 8,
-    parameter NUM_WAYS = 1
+    parameter NUM_WAYS = 2
   )(
   input i_clock,
   input i_reset,
   input [31:0] i_pc,
-  output reg [31:0] o_inst,
+  output [31:0] o_inst,
 
   input i_valid,
   output reg o_valid,
@@ -80,44 +80,74 @@ localparam OFFSET_WIDTH = $clog2(BLOCK_SIZE);
 localparam TAG_WIDTH = 32 - INDEX_WIDTH - OFFSET_WIDTH;
 localparam DATA_WIDTH = BLOCK_SIZE*8;
 
-reg [TAG_WIDTH-1:0] tag_array [NUM_BLOCKS];
-reg [NUM_BLOCKS-1:0] valid_array;
-reg [DATA_WIDTH-1:0] cache_array [NUM_BLOCKS];
-reg [NUM_WAYS-1:0] hit_ways;
-reg [NUM_WAYS:0] replace;
-
 wire [TAG_WIDTH-1:0] tag = pc[31 -: TAG_WIDTH];
 wire [INDEX_WIDTH-1:0] index = (INDEX_WIDTH > 0) ? pc[OFFSET_WIDTH +: INDEX_WIDTH] : 0;
 wire [OFFSET_WIDTH-1:0] offset = pc[OFFSET_WIDTH-1:0];
 
+wire [31:0]data_out[NUM_WAYS];
+wire [NUM_WAYS-1:0] hit_ways;
+reg [NUM_WAYS:0] replace[NUM_SETS];
 
-always@(*)begin
-  integer i;
-  for(i = 0; i < NUM_WAYS; i = i + 1)begin
-    integer hit_index;
-    hit_index = index * NUM_WAYS + i;
-    if(valid_array[hit_index] && tag_array[hit_index] == tag)begin
-      hit_ways[i] = 1;
+genvar i;
+generate
+  for(i=0; i<NUM_WAYS; i=i+1)begin:icache
+    reg[TAG_WIDTH-1:0] tag_array[NUM_SETS];
+    reg valid_array[NUM_SETS];
+    reg [DATA_WIDTH-1:0] cache_array[NUM_SETS];
+    always@(posedge i_clock)begin
+      if(i_reset) valid_array[i] <= 0;
     end
-    else
-      hit_ways[i] = 0;
+    always@(posedge i_clock)begin
+      if(i_reset) begin
+        integer j;
+        for(j=0; j<NUM_SETS; j=j+1)begin
+          valid_array[j] <= 0;
+        end
+      end
+      else begin
+        if(state == axi_t && rvalid && replace[index][i])begin
+          cache_array[index][burst_counter*32 +: 32] <= i_axi_rdata;
+          valid_array[index] = 1;
+          tag_array[index] = tag;
+        end
+      end
+    end
+    assign data_out[i] = cache_array[index][offset*8 +: 32];
+    assign hit_ways[i] = valid_array[index] && tag_array[index] == tag;
+
   end
-end
+endgenerate
 
 wire hit = |hit_ways;
 
 always@(posedge i_clock)begin
-  integer i;
-  integer hit_index;
+  if(i_reset) begin
+    integer j;
+    for(j=0; j<NUM_SETS; j=j+1)begin
+      replace[j][NUM_WAYS-1] <= 1;
+    end
+  end
+  else if(!arvalid && state == judge_t && !hit)
+    if(replace[index][NUM_WAYS-1]) replace[index] <= 1;
+    else replace[index] <= {replace[index][NUM_WAYS-1:0],replace[index][NUM_WAYS]};
+end
+
+always@(posedge i_clock)begin
   if(state == judge_t && hit || state == ready_t)begin
-    for(i = 0; i<NUM_WAYS; i=i+1)begin
-      hit_index = index*NUM_WAYS+i;
-      if(hit_ways[i]) inst <= cache_array[hit_index][offset*8+:32];
+    integer j;
+    for(j = 0; j<NUM_WAYS; j=j+1)begin
+      if(hit_ways[j]) inst <= data_out[j];
     end
   end
   else if(state == direct_t && rvalid)
     inst <= i_axi_rdata;
 end
+
+/* reg [TAG_WIDTH-1:0] tag_array [NUM_BLOCKS]; */
+/* reg [NUM_BLOCKS-1:0] valid_array; */
+/* reg [DATA_WIDTH-1:0] cache_array [NUM_BLOCKS]; */
+/* reg [NUM_WAYS-1:0] hit_ways; */
+/* reg [NUM_WAYS:0] replace; */
 
 
 reg [2:0] state;
@@ -164,27 +194,20 @@ always@(posedge i_clock)begin
 end
 
 
-always@(posedge i_clock)begin
-  if(i_reset || replace[NUM_WAYS-1]) replace <= 1;
-  else if(!arvalid && state == judge_t && !hit)
-    replace <= {replace[NUM_WAYS-1:0],replace[NUM_WAYS]};
-end
-
-
-always@(posedge i_clock)begin
-  if(state == axi_t && rvalid)begin
-    integer i;
-    integer replace_index;
-    for(i=0; i<NUM_WAYS; i=i+1)begin
-      replace_index = index * NUM_WAYS + i;
-      if(replace[i]) begin
-        cache_array[replace_index][burst_counter*32+:32] <= i_axi_rdata;
-        valid_array[replace_index] <= 1;
-        tag_array[replace_index] <= tag;
-      end
-    end
-  end
-end
+/* always@(posedge i_clock)begin */
+/*   if(state == axi_t && rvalid)begin */
+/*     integer i; */
+/*     integer replace_index; */
+/*     for(i=0; i<NUM_WAYS; i=i+1)begin */
+/*       replace_index = index * NUM_WAYS + i; */
+/*       if(replace[i]) begin */
+/*         cache_array[replace_index][burst_counter*32+:32] <= i_axi_rdata; */
+/*         valid_array[replace_index] <= 1; */
+/*         tag_array[replace_index] <= tag; */
+/*       end */
+/*     end */
+/*   end */
+/* end */
 
 always@(posedge i_clock)begin
   if(i_reset || i_axi_rlast) burst_counter <= 0;

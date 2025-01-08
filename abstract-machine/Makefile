@@ -147,7 +147,7 @@ image: image-dep
 archive: $(ARCHIVE)
 image-dep: $(LIBS) $(IMAGE).elf
 .NOTPARALLEL: image-dep
-.PHONY: image image-dep archive run $(LIBS)
+.PHONY: image image-dep archive run cachesim $(LIBS)
 
 ### Clean a single project (remove `build/`)
 clean:

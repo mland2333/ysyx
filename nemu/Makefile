@@ -23,7 +23,9 @@ endif
 -include $(NEMU_HOME)/include/config/auto.conf.cmd
 
 remove_quote = $(patsubst "%",%,$(1))
-
+ifdef CONFIG_CACHESIM
+	CFLAGS += -DCONFIG_CACHESIM
+endif
 # Extract variabls from menuconfig
 GUEST_ISA ?= $(call remove_quote,$(CONFIG_ISA))
 ENGINE ?= $(call remove_quote,$(CONFIG_ENGINE))
