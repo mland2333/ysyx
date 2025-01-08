@@ -74,7 +74,7 @@ public:
   }
   void update_lru(int index, int used_way) {
     for(int i = 0; i < num_ways; i++) {
-      if(lru_counter[index][i] < lru_counter[index][used_way]) {
+      if(i!=used_way) {
         lru_counter[index][i]++; // 增加其他的计数
       }
     }
