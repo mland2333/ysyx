@@ -27,31 +27,31 @@ module ysyx_24110006_ICACHE #(
   input i_axi_rlast
 );
 
-reg hit_counter;
-reg miss_counter;
-reg [31:0] miss_time;
-always@(posedge i_clock)begin
-  if(i_reset) begin
-    hit_counter <= 0;
-    miss_counter <= 0;
-  end
-  else begin
-    if(state == judge_t && hit) hit_counter <= 1;
-    else if(state == judge_t && !hit) miss_counter <= 1;
-    else begin
-      hit_counter <= 0;
-      miss_counter <= 0;
-    end
-  end
-end
-
-always@(posedge i_clock)begin
-  if(i_reset) miss_time <= 0;
-  else begin
-    if(state == judge_t && !hit || state == axi_t) miss_time <= miss_time+1;
-    else if(o_valid) miss_time <= 0;
-  end
-end
+/* reg hit_counter; */
+/* reg miss_counter; */
+/* reg [31:0] miss_time; */
+/* always@(posedge i_clock)begin */
+/*   if(i_reset) begin */
+/*     hit_counter <= 0; */
+/*     miss_counter <= 0; */
+/*   end */
+/*   else begin */
+/*     if(state == judge_t && hit) hit_counter <= 1; */
+/*     else if(state == judge_t && !hit) miss_counter <= 1; */
+/*     else begin */
+/*       hit_counter <= 0; */
+/*       miss_counter <= 0; */
+/*     end */
+/*   end */
+/* end */
+/**/
+/* always@(posedge i_clock)begin */
+/*   if(i_reset) miss_time <= 0; */
+/*   else begin */
+/*     if(state == judge_t && !hit || state == axi_t) miss_time <= miss_time+1; */
+/*     else if(o_valid) miss_time <= 0; */
+/*   end */
+/* end */
 
 reg [31:0] pc;
 reg [31:0] inst;
@@ -79,7 +79,7 @@ localparam INDEX_WIDTH = $clog2(NUM_SETS);
 localparam OFFSET_WIDTH = $clog2(BLOCK_SIZE);
 localparam TAG_WIDTH = 32 - INDEX_WIDTH - OFFSET_WIDTH;
 localparam DATA_WIDTH = BLOCK_SIZE*8;
-
+localparam LRU_WIDTH = NUM_WAYS == 1 ? 0 : $clog2(NUM_WAYS) - 1;
 wire [TAG_WIDTH-1:0] tag = pc[31 -: TAG_WIDTH];
 wire [INDEX_WIDTH-1:0] index = (INDEX_WIDTH > 0) ? pc[OFFSET_WIDTH +: INDEX_WIDTH] : 0;
 wire [OFFSET_WIDTH-1:0] offset = pc[OFFSET_WIDTH-1:0];
@@ -87,6 +87,7 @@ wire [OFFSET_WIDTH-1:0] offset = pc[OFFSET_WIDTH-1:0];
 wire [31:0]data_out[NUM_WAYS];
 wire [NUM_WAYS-1:0] hit_ways;
 reg [NUM_WAYS:0] replace[NUM_SETS];
+reg [LRU_WIDTH:0] lru[NUM_BLOCKS];
 
 genvar i;
 generate
@@ -119,6 +120,50 @@ generate
 endgenerate
 
 wire hit = |hit_ways;
+
+always@(posedge i_clock)begin
+  if(i_reset)begin
+    integer i, j;
+    for(i = 0; i < NUM_SETS; i = i + 1)begin
+      for(j = 0; j < NUM_WAYS; j = j + 1)begin
+        lru[i*NUM_SETS][j] <= j;
+      end
+    end
+  end
+  else begin
+    if(state == judge_t && !hit)begin
+      integer i;
+      for(i=0; i<NUM_WAYS; i=i+1)begin
+        integer lru_index = index*NUM_SETS+i;
+        if(hit_ways[i]) begin
+          lru[lru_index] <= 0;
+        end
+        else if(lru[lru_index] != NUM_WAYS-1)begin
+          lru[lru_index] <= lru[lru_index] + 1;
+        end
+      end
+    end
+  end
+end
+
+always@(posedge i_clock)begin
+  if(!arvalid && state == judge_t && !hit) begin
+    integer m;
+    reg [LRU_WIDTH:0] max_count;
+    reg [1:0] lru_index;
+    max_count = 0;
+    lru_index = 0;
+    for(m = 0; m < NUM_WAYS; m = m + 1)begin
+      if(lru_counter[index][m] > max_count)begin
+        max_count = lru_counter[index*NUM_SETS+m];
+        lru_index = m;
+      end
+    end
+    replace[index] = 1 << lru_index; // 将LRU块设置为替换目标
+  end
+end
+
+
 
 always@(posedge i_clock)begin
   if(i_reset) begin
