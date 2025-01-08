@@ -61,7 +61,7 @@ def main():
     print(" NUM_BLOCKS | NUM_WAYS | DATA_WIDTH | Hit Rate | Hit Counter | Miss Counter")
     print("------------|----------|------------|----------|-------------|-------------|")
     for num_blocks, num_ways, data_width, hit_rate, hit, miss in result_list:
-        print(f"{num_blocks:^11} | {num_ways:^8} | {data_width:^11} | {hit_rate:^8} | {hit:^11} | {miss:^13}")
+        print(f"{num_blocks:^11} | {num_ways:^8} | {data_width:^10} | {hit_rate:^8} | {hit:^11} | {miss:^13}")
 
 if __name__ == "__main__":
     main()
