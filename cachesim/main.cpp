@@ -49,7 +49,7 @@ public:
     for(int i = 0; i<num_ways; i++){
       if(valid_array[index*num_ways+i] && tag_array[index*num_ways+i] == tag){
         hit_counter++;
-        update_lru(index, i);
+        /* update_lru(index, i); */
         return;
       }
     }
