@@ -21,8 +21,8 @@ public:
   std::vector<int> tag_array;
   std::vector<char> valid_array;
   std::vector<char> replace_ways;
-  Cache(int num_blocks_, int num_ways_):num_blocks(num_blocks_), num_ways(num_ways_){
-    
+  Cache(int num_blocks_, int num_ways_, int data_width_)
+  :num_blocks(num_blocks_), num_ways(num_ways_), data_width(data_width_){
     num_sets = num_blocks / num_ways;
     tag_array.resize(num_blocks);
     valid_array.resize(num_blocks);
@@ -72,10 +72,11 @@ int main(int argc, char* argv[]){
   char* filename = argv[1];
   int num_blocks = std::stoi(argv[2], nullptr, 10);
   int num_ways = std::stoi(argv[3], nullptr, 10);
+  int data_width = std::stoi(argv[4], nullptr, 10);
   std::ifstream itrace(filename, std::ios::binary);
   std::vector<int> pcs;
   std::string line;
-  Cache mcache(num_blocks, num_ways);
+  Cache mcache(num_blocks, num_ways, data_width);
   uint32_t pc;
   itrace.read((char*)&pc, sizeof(pc));
   while(!itrace.eof()){
