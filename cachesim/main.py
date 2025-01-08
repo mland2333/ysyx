@@ -4,7 +4,7 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # 参数设置
-num_blocks_list = [8, 16, 32]  # NUM_BLOCKS 参数值
+num_blocks_list = [8, 16]  # NUM_BLOCKS 参数值
 num_ways_list = [1, 2, 4, 8]       # NUM_WAYS 参数值
 data_width_list = [1, 2]
 # 获取命令行传入的 ITRACE 参数
