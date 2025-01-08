@@ -49,27 +49,27 @@ public:
     for(int i = 0; i<num_ways; i++){
       if(valid_array[index*num_ways+i] && tag_array[index*num_ways+i] == tag){
         hit_counter++;
-        update_lru(index, i);
+        /* update_lru(index, i); */
         return;
       }
     }
-    int lru_way = find_lru(index); // 找到LRU方式
-    valid_array[index*num_ways + lru_way] = true;
-    tag_array[index*num_ways + lru_way] = tag;
-    update_lru(index, lru_way); // 更新LRU状态
+    /* int lru_way = find_lru(index); // 找到LRU方式 */
+    /* valid_array[index*num_ways + lru_way] = true; */
+    /* tag_array[index*num_ways + lru_way] = tag; */
+    /* update_lru(index, lru_way); // 更新LRU状态 */
 
-    /* for(int i = 0; i < num_ways; i++){ */
-    /*   if(replace_ways[index*num_ways+i]){ */
-    /*     valid_array[index*num_ways+i] = true; */
-    /*     tag_array[index*num_ways+i] = tag; */
-    /*     replace_ways[index*num_ways+i] = false; */
-    /*     if(i == num_ways-1) */
-    /*       replace_ways[index*num_ways] = true; */
-    /*     else  */
-    /*       replace_ways[index*num_ways+i+1] = true; */
-    /*     break; */
-    /*   } */
-    /* } */
+    for(int i = 0; i < num_ways; i++){
+      if(replace_ways[index*num_ways+i]){
+        valid_array[index*num_ways+i] = true;
+        tag_array[index*num_ways+i] = tag;
+        replace_ways[index*num_ways+i] = false;
+        if(i == num_ways-1)
+          replace_ways[index*num_ways] = true;
+        else 
+          replace_ways[index*num_ways+i+1] = true;
+        break;
+      }
+    }
     miss_counter++;
   }
   void update_lru(int index, int used_way) {
