@@ -1,5 +1,5 @@
 module ysyx_24110006_ICACHE #(
-    parameter BLOCK_SIZE = 4,
+    parameter BLOCK_SIZE = 8,
     parameter NUM_BLOCKS = 8,
     parameter NUM_WAYS = 2
   )(
@@ -224,9 +224,9 @@ assign o_axi_araddr = pc;
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
 assign o_axi_arid = 0;
-assign o_axi_arlen = 0;
+assign o_axi_arlen = BLOCK_SIZE/4 - 1;
 assign o_axi_arsize = 3'b010;
-assign o_axi_arburst = 0;
+assign o_axi_arburst = 2'b01;
 
 assign rvalid = i_axi_rvalid;
 assign rresp = i_axi_rresp;

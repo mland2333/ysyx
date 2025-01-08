@@ -93,7 +93,7 @@ always@(posedge i_clock)begin
         else if(i_axi_arvalid1) read_state <= MEM1_READ;
       end
       MEM0_READ:begin
-        if(i_axi_rvalid && o_axi_rready) read_state <= IDLE_READ;
+        if(i_axi_rlast && i_axi_rvalid && o_axi_rready) read_state <= IDLE_READ;
       end
       MEM1_READ:begin
         if(i_axi_rvalid && o_axi_rready) read_state <= IDLE_READ;

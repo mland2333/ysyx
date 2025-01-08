@@ -15,4 +15,5 @@ npc/result/
 /fceux-am
 /nvboard
 /am-kernels
+*.dat
 
