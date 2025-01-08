@@ -37,7 +37,7 @@ run: insert-arg
 
 cachesim: insert-arg
 	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin CONFIG_CACHESIM=1 > /dev/null 2>&1
-	$(MAKE) -C $(NPC_HOME)/../cachesim cachesim ITRACE=$(NAME).txt
+	python3 /home/mland/ysyx-workbench/cachesim/main.py $(NAME).txt
 
 gdb: insert-arg
 	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin CONFIG_CACHESIM=1
