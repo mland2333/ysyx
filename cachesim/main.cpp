@@ -79,6 +79,7 @@ int main(int argc, char* argv[]){
   uint32_t pc;
   while(!itrace.eof()){
     itrace.read((char*)&pc, sizeof(pc));
+    std::cout << std::format("{}\n", pc);
     pcs.push_back(pc);
   }
   itrace.close();
