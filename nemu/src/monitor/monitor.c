@@ -77,11 +77,15 @@ static long load_img() {
 #ifdef CONFIG_FTRACE
 Ftrace* ftrace;
 #endif
+#ifdef CONFIG_CACHESIM
+extern char* cache_file;
+#endif
 bool is_ftrace = false;
 static int parse_args(int argc, char *argv[]) {
   const struct option table[] = {
     {"batch"    , no_argument      , NULL, 'b'},
     {"log"      , required_argument, NULL, 'l'},
+    {"cachesim" , required_argument, NULL, 'c'},
     {"diff"     , required_argument, NULL, 'd'},
     {"port"     , required_argument, NULL, 'p'},
     {"help"     , no_argument      , NULL, 'h'},
@@ -94,6 +98,9 @@ static int parse_args(int argc, char *argv[]) {
       case 'b': sdb_set_batch_mode(); break;
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
       case 'l': log_file = optarg; break;
+      #ifdef CONFIG_CACHESIM
+      case 'c': cache_file = optarg; break;
+      #endif
       case 'd': diff_so_file = optarg; break;
       case 'e': is_ftrace = true; elf_file = optarg; break;
       case 1: img_file = optarg; return 0;
@@ -144,7 +151,10 @@ void init_monitor(int argc, char *argv[]) {
   init_sdb();
 
   IFDEF(CONFIG_ITRACE, init_disasm());
-
+#ifdef CONFIG_CACHESIM
+  extern FILE* cache_fd;
+  cache_fd = fopen(log_file, "wb");
+#endif
   /* Display welcome message. */
   welcome();
 }

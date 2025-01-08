@@ -72,20 +72,16 @@ int main(int argc, char* argv[]){
   char* filename = argv[1];
   int num_blocks = std::stoi(argv[2], nullptr, 10);
   int num_ways = std::stoi(argv[3], nullptr, 10);
-  std::ifstream itrace(filename);
+  std::ifstream itrace(filename, std::ios::binary);
   std::vector<int> pcs;
   std::string line;
   Cache mcache(num_blocks, num_ways);
-  while(std::getline(itrace, line)){
-    if(line[0] != '0') continue;
-    size_t colonPos = line.find(":");
-    if (colonPos != std::string::npos) {
-      line = line.substr(0, colonPos);
-    }
-    /* std::cout << std::format("line = {}\n", line); */
-    int value = std::stoul(line, nullptr, 16);
-    pcs.push_back(value);
+  uint32_t pc;
+  while(!itrace.eof()){
+    itrace.read((char*)&pc, sizeof(pc));
+    pcs.push_back(pc);
   }
+  itrace.close();
   for (auto pc : pcs) {
     mcache.sim(pc);
   }

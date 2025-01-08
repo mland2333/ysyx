@@ -19,7 +19,7 @@ LDFLAGS   += --gc-sections -e _start
 MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = The insert-arg rule in Makefile will insert mainargs here.
 CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\""$(MAINARGS_PLACEHOLDER)"\"
-NEMUFLAGS += -l /home/mland/ysyx-workbench/cachesim/$(NAME).txt -b -e $(IMAGE).elf
+NEMUFLAGS += -c /home/mland/ysyx-workbench/cachesim/$(NAME).dat -b -e $(IMAGE).elf
 
 
 insert-arg: image
@@ -37,7 +37,7 @@ run: insert-arg
 
 cachesim: insert-arg
 	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin CONFIG_CACHESIM=1	
-	cd /home/mland/ysyx-workbench/cachesim && python main.py $(NAME).txt
+	cd /home/mland/ysyx-workbench/cachesim && python main.py $(NAME).dat
 
 gdb: insert-arg
 	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin CONFIG_CACHESIM=1
