@@ -269,9 +269,9 @@ assign o_axi_araddr = is_sram ? pc : {pc[31:OFFSET_WIDTH], {(OFFSET_WIDTH){1'b0}
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
 assign o_axi_arid = 0;
-assign o_axi_arlen = BLOCK_SIZE/4 - 1;
+assign o_axi_arlen = is_sram ? 0 : BLOCK_SIZE/4 - 1;
 assign o_axi_arsize = 3'b010;
-assign o_axi_arburst = 2'b01;
+assign o_axi_arburst = is_sram ? 0 : 2'b01;
 
 assign rvalid = i_axi_rvalid;
 assign rresp = i_axi_rresp;
