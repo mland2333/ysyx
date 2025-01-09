@@ -29,14 +29,14 @@ def run_simulation(num_blocks, num_ways, data_width, itrace_file):
         # 提取命中率数据
         output = result.stdout
         for line in output.splitlines():
-            if "hit_counter" in line and "miss_counter" in line and "ATMT" in line:
+            if "hit_counter" in line and "miss_counter" in line and "amat" in line:
                 parts = line.split(',')
                 hit = int(parts[0].split('=')[1].strip())
                 miss = int(parts[1].split('=')[1].strip())
-                atmt = float(parts[2].split('=')[1].strip())
+                amat = float(parts[2].split('=')[1].strip())
             
                 hit_rate = hit / (hit + miss) if (hit + miss) > 0 else 0.0
-                return num_blocks, num_ways, data_width, round(hit_rate, 4), hit, miss, round(atmt, 4)
+                return num_blocks, num_ways, data_width, round(hit_rate, 4), hit, miss, round(amat, 4)
 
         # 若未找到命中率数据，则返回错误信息
         return num_blocks, num_ways, data_width, "Error: No output", 0, 0, 0
