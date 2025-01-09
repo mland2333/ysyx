@@ -18,6 +18,7 @@ public:
   int data_width = 4;
   uint32_t hit_counter = 0;
   uint32_t miss_counter = 0;
+  float tmts[3] = {0, 54.12, 74.32};
   std::vector<int> tag_array;
   std::vector<char> valid_array;
   std::vector<char> replace_ways;
@@ -94,7 +95,7 @@ public:
   }
 
   void statistic(){
-    std::cout << std::format("hit_counter = {}, miss_counter = {}\n", hit_counter, miss_counter);
+    std::cout << std::format("hit_counter = {}, miss_counter = {}, amat = {}\n", hit_counter, miss_counter, 2+(float)miss_counter/(miss_counter+hit_counter)*tmts[offest_width-2]);
   }
 };
 

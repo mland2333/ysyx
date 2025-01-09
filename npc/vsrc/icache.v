@@ -72,9 +72,9 @@ always@(posedge i_clock)begin
 end
 wire is_sram = i_pc[31:24] == 8'h0f;
 
-wire [25:0] tag = pc[31:6];
-wire [1:0] index = pc[5:4];
-wire [3:0] offset = pc[3:0];
+wire [26:0] tag = pc[31:5];
+wire [1:0] index = pc[4:3];
+wire [2:0] offset = pc[2:0];
 
 reg [26:0] tag_array [4];
 reg [3:0] valid_array;
