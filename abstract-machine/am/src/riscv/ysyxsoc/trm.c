@@ -40,7 +40,7 @@ Area heap = RANGE(&_heap_start, _stack_top);
 static const char mainargs[MAINARGS_MAX_LEN] = MAINARGS_PLACEHOLDER; // defined in CFLAGS
 
 void putch(char ch) {
-  while((UartReadReg(LSR) & LSR_TX_IDLE) == 0);
+  /* while((UartReadReg(LSR) & LSR_TX_IDLE) == 0); */
   UartWriteReg(THR, ch);
 }
 char getch() {
