@@ -159,6 +159,8 @@ always@(posedge i_clock)begin
   else if(i_axi_arvalid)begin
     r_is_read_rtc <= is_read_rtc;
   end
+  else if(r_is_read_rtc && o_axi_rvalid)
+    r_is_read_rtc <= 0;
 end
 
 assign o_axi_arready = r_is_read_rtc ? i_axi_arready2 : i_axi_arready0;

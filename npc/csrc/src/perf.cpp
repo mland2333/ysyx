@@ -24,7 +24,7 @@ void Perf::trace(Simulator* sim){
      lsu_clk += clk_nums - lsu_begin;
   if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__hit_counter)) hit_counter++;
   if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_counter)) miss_counter++;
-  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__rvalid)) miss_time += sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_time);
+  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__rlast)) miss_time += sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_time);
 
   }
 void Perf::statistic(){
@@ -47,6 +47,7 @@ void Perf::statistic(){
     Log("hit_counter = %ld", hit_counter);
     Log("miss_counter = %ld", miss_counter);
     Log("miss_time = %ld", miss_time);
+    Log("缺失代价为 %.2f", (double)miss_time / (double) miss_counter);
     Log("AMAT = %.2f", hit_time + 
         (double)miss_time / (double) miss_counter *  ((double)miss_counter / (double)(miss_counter + hit_counter)));
   }

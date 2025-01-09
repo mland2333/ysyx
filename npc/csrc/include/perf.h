@@ -32,6 +32,7 @@ public:
   uint64_t hit_counter = 0;
   uint64_t miss_time = 0;
   uint64_t hit_time = 2;
+  uint64_t miss_time_counter = 0;
   int inst_type;
   void idu_decode_inst(int inst){
     int a = inst & 0x7f;
