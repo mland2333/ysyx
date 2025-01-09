@@ -47,6 +47,7 @@ void Perf::statistic(){
     Log("hit_counter = %ld", hit_counter);
     Log("miss_counter = %ld", miss_counter);
     Log("miss_time = %ld", miss_time);
+    Log("缺失代价为 %.2f", (double)miss_time / (double) miss_counter);
     Log("AMAT = %.2f", hit_time + 
         (double)miss_time / (double) miss_counter *  ((double)miss_counter / (double)(miss_counter + hit_counter)));
   }

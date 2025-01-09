@@ -18,7 +18,7 @@ public:
   int data_width = 4;
   uint32_t hit_counter = 0;
   uint32_t miss_counter = 0;
-  float tmts[3] = {0, 54.12, 74.32};
+  float tmts[3] = {64.88, 154.67, 413.17};
   std::vector<int> tag_array;
   std::vector<char> valid_array;
   std::vector<char> replace_ways;
