@@ -1,7 +1,7 @@
 module ysyx_24110006_ICACHE #(
-    parameter BLOCK_SIZE = 16,
     parameter NUM_BLOCKS = 4,
-    parameter NUM_WAYS = 1
+    parameter NUM_WAYS = 1,
+    parameter BLOCK_SIZE = 16
   )(
   input i_clock,
   input i_reset,
