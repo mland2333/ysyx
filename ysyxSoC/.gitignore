@@ -1,0 +1,10 @@
+out/
+!perip/
+patch/
+rocket-chip/
+spec/
+src/
+Makefile
+build.sc
+!/*.v
+!/build/*
