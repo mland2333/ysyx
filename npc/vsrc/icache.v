@@ -78,7 +78,7 @@ wire [3:0] offset = pc[3:0];
 
 reg [26:0] tag_array [4];
 reg [3:0] valid_array;
-reg [127:0] cache_array [4];
+reg [63:0] cache_array [4];
 
 always@(posedge i_clock)begin
   if(i_reset) begin
@@ -156,11 +156,11 @@ wire rvalid;
 wire rready = 1;
 wire [1:0] rresp;
 
-assign o_axi_araddr = is_sram ? pc : {pc[31:4], 4'b0};
+assign o_axi_araddr = is_sram ? pc : {pc[31:3], 3'b0};
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
 assign o_axi_arid = 0;
-assign o_axi_arlen = is_sram ? 0 : 3;
+assign o_axi_arlen = is_sram ? 0 : 1;
 assign o_axi_arsize = 3'b010;
 assign o_axi_arburst = is_sram ? 0 : 2'b01;
 
