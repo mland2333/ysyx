@@ -1,4 +1,4 @@
-module ysyx_24110006_ICACHE(
+module ysyx_24110006_ICACHE_PRE(
   input i_clock,
   input i_reset,
   input [31:0] i_pc,

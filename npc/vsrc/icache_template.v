@@ -1,7 +1,7 @@
-module ysyx_24110006_ICACHE_TEMPLATE #(
-    parameter NUM_BLOCKS = 4,
+module ysyx_24110006_ICACHE #(
+    parameter NUM_BLOCKS = 8,
     parameter NUM_WAYS = 1,
-    parameter BLOCK_SIZE = 16
+    parameter BLOCK_SIZE = 4
   )(
   input i_clock,
   input i_reset,
@@ -27,31 +27,33 @@ module ysyx_24110006_ICACHE_TEMPLATE #(
   input i_axi_rlast
 );
 
-/* reg hit_counter; */
-/* reg miss_counter; */
-/* reg [31:0] miss_time; */
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) begin */
-/*     hit_counter <= 0; */
-/*     miss_counter <= 0; */
-/*   end */
-/*   else begin */
-/*     if(state == judge_t && hit) hit_counter <= 1; */
-/*     else if(state == judge_t && !hit) miss_counter <= 1; */
-/*     else begin */
-/*       hit_counter <= 0; */
-/*       miss_counter <= 0; */
-/*     end */
-/*   end */
-/* end */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) miss_time <= 0; */
-/*   else begin */
-/*     if(state == judge_t && !hit || state == axi_t) miss_time <= miss_time+1; */
-/*     else if(o_valid) miss_time <= 0; */
-/*   end */
-/* end */
+`ifndef CONFIG_YOSYS
+reg hit_counter;
+reg miss_counter;
+reg [31:0] miss_time;
+always@(posedge i_clock)begin
+  if(i_reset) begin
+    hit_counter <= 0;
+    miss_counter <= 0;
+  end
+  else begin
+    if(state == judge_t && hit) hit_counter <= 1;
+    else if(state == judge_t && !hit) miss_counter <= 1;
+    else begin
+      hit_counter <= 0;
+      miss_counter <= 0;
+    end
+  end
+end
+
+always@(posedge i_clock)begin
+  if(i_reset) miss_time <= 0;
+  else begin
+    if(state == judge_t && !hit || state == axi_t) miss_time <= miss_time+1;
+    else if(o_valid) miss_time <= 0;
+  end
+end
+`endif
 
 reg [31:0] pc;
 reg [31:0] inst;
