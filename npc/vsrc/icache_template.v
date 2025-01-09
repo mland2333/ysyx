@@ -1,7 +1,7 @@
 module ysyx_24110006_ICACHE #(
-    parameter NUM_BLOCKS = 8,
+    parameter NUM_BLOCKS = 4,
     parameter NUM_WAYS = 1,
-    parameter BLOCK_SIZE = 16
+    parameter BLOCK_SIZE = 4
   )(
   input i_clock,
   input i_reset,
@@ -53,6 +53,10 @@ always@(posedge i_clock)begin
     else if(state == judge_t && !hit || state == axi_t) miss_time <= miss_time+1;
   end
 end
+
+reg rlast;
+always@(posedge i_clock)
+  rlast <= i_axi_rlast;
 `endif
 
 reg [31:0] pc;

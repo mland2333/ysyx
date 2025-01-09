@@ -24,7 +24,7 @@ void Perf::trace(Simulator* sim){
      lsu_clk += clk_nums - lsu_begin;
   if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__hit_counter)) hit_counter++;
   if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_counter)) miss_counter++;
-  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__rvalid)) miss_time += sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_time);
+  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__rlast)) miss_time += sim->TOP_MEMBER(mifu__DOT__micache__DOT__miss_time);
 
   }
 void Perf::statistic(){
