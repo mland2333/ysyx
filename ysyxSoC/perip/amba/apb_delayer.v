@@ -41,8 +41,7 @@ localparam DELAY = 3'b010;
 localparam WAIT = 3'b011;
 
 localparam r = 32'd10;
-localparam s0 = 32'b1;
-localparam s = s0 << 3;
+localparam s = 32'd8;
 localparam COUNT_ADD = s * r;
 
 reg [2:0] state;
@@ -71,7 +70,7 @@ end
 always@(posedge clock)begin
   if(reset) counter <= 0;
   else begin
-    if(state == COUNT) begin
+    if(state == IDLE && in_penable || state == COUNT) begin
       counter <= counter + COUNT_ADD;
       if(out_pready) counter <= {3'b0, counter[15:3]};
     end

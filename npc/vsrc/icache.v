@@ -57,6 +57,7 @@ always@(posedge i_clock)
 
 reg [31:0] pc;
 reg [31:0] inst;
+reg [1:0] burst_counter;
 assign o_inst = inst;
 
 always@(posedge i_clock)begin
@@ -75,13 +76,13 @@ always@(posedge i_clock)begin
 end
 wire is_sram = i_pc[31:24] == 8'h0f;
 
-wire [25:0] tag = pc[31:6];
-wire [3:0] index = pc[5:2];
-wire [1:0] offset = pc[1:0];
+wire [26:0] tag = pc[31:5];
+wire [1:0] index = pc[4:3];
+wire [2:0] offset = pc[2:0];
 
-reg [25:0] tag_array [16];
-reg [15:0] valid_array;
-reg [31:0] cache_array [16];
+reg [26:0] tag_array [4];
+reg [3:0] valid_array;
+reg [63:0] cache_array [4];
 
 always@(posedge i_clock)begin
   if(i_reset) begin
@@ -89,7 +90,7 @@ always@(posedge i_clock)begin
   end
   else begin
     if(state == axi_t && rvalid)begin
-      cache_array[index] <= i_axi_rdata;
+      cache_array[index][burst_counter*32 +: 32] <= i_axi_rdata;
       valid_array[index] <= 1;
       tag_array[index] <= tag;
     end
@@ -100,7 +101,7 @@ wire hit = valid_array[index] && tag_array[index] == tag;
 
 always@(posedge i_clock)begin
   if(state == judge_t && hit || state == ready_t)begin
-    inst <= cache_array[index];
+    inst <= cache_array[index][offset*8 +: 32];
   end
   else if(state == direct_t && rvalid)
     inst <= i_axi_rdata;
@@ -148,19 +149,24 @@ always@(posedge i_clock)begin
   else if(arvalid && arready) arvalid <= 0;
 end
 
+always@(posedge i_clock)begin
+  if(i_reset || i_axi_rlast) burst_counter <= 0;
+  else if(state == axi_t && rvalid) burst_counter <= burst_counter + 1;
+end
+
 reg arvalid;
 wire arready;
 wire rvalid;
 wire rready = 1;
 wire [1:0] rresp;
 
-assign o_axi_araddr = pc;
+assign o_axi_araddr = is_sram ? pc : {pc[31:3], 3'b0};
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
 assign o_axi_arid = 0;
-assign o_axi_arlen = 0;
+assign o_axi_arlen = is_sram ? 0 : 1;
 assign o_axi_arsize = 3'b010;
-assign o_axi_arburst = 0;
+assign o_axi_arburst = is_sram ? 0 : 2'b01;
 
 assign rvalid = i_axi_rvalid;
 assign rresp = i_axi_rresp;
