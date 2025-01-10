@@ -6,9 +6,10 @@ import subprocess
 def run_microbench():
     ysyx_home = os.getenv("YSYX_HOME", "/path/to/ysyx")
     command = (
-        # f"cd {ysyx_home}/am-kernels/benchmarks/microbench && "
-        f"cd {ysyx_home}/am-kernels/tests/cpu-tests && "
-        f"make ARCH=riscv32e-ysyxsoc run NPCFLAGS=\"-b -p\" ALL=quick-sort"
+        f"cd {ysyx_home}/am-kernels/benchmarks/microbench && "
+        f"make ARCH=riscv32e-ysyxsoc run NPCFLAGS=\"-b -p\" mainargs=test"
+        # f"cd {ysyx_home}/am-kernels/tests/cpu-tests && "
+        # f"make ARCH=riscv32e-ysyxsoc run NPCFLAGS=\"-b -p\" ALL=quick-sort"
     )
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     output = result.stdout
@@ -21,8 +22,7 @@ def parse_microbench(output):
         "total_host_clk": r"total host clk = (\d+)",
         "total_host_instructions": r"total host instructions = (\d+)",
         "ipc": r"npc's ipc = ([\d\.]+)",
-        "hit_counter": r"hit_counter = (\d+)",
-        "miss_counter": r"miss_counter = (\d+)",
+        "hit_rate": r"hit_rate = ([\d\.]+)",
         "amat": r"AMAT = ([\d\.]+)"
     }
     for key, pattern in patterns.items():
@@ -85,7 +85,7 @@ def main():
         f"{microbench_stats.get('ipc', 'N/A'):^11}"
         f"{freq}  "
         f"{area}  "
-        f"{round(microbench_stats.get('hit_counter', 'N/A') / (microbench_stats.get('hit_counter', 0) + microbench_stats.get('miss_counter', 1)), 4):^13}"
+        f"{microbench_stats.get('hit_rate', 'N/A'):^13}"
         f"{microbench_stats.get('amat', 'N/A'):^4}"
     )
 

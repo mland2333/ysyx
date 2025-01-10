@@ -47,7 +47,7 @@ private:
     cpu.pc = TOP_MEMBER(mpc__DOT__pc);
     if (TOP_MEMBER(ifu_valid))
       /* cpu.inst = TOP_MEMBER(mifu__DOT__inst); */
-      cpu.inst = TOP_MEMBER(mifu__DOT__micache__DOT__inst);
+      cpu.inst = get_inst();
   }
   SIM_STATE state = SIM_STATE::NORMAL;
 public:
@@ -74,5 +74,12 @@ public:
   /* } */
   void quit(){
     state = SIM_STATE::QUIT;
+  }
+  int get_inst(){
+#ifdef CONFIG_ICACHE
+    return TOP_MEMBER(mifu__DOT__micache__DOT__inst);
+#else
+    return TOP_MEMBER(mifu__DOT__inst);
+#endif
   }
 };

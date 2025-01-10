@@ -28,11 +28,13 @@ public:
   uint64_t lsu_begin = 0;
   uint64_t lsu_clk = 0;
   uint64_t ifu_clk = 0;
+#ifdef CONFIG_ICACHE
   uint64_t miss_counter = 0;
   uint64_t hit_counter = 0;
   uint64_t miss_time = 0;
   uint64_t hit_time = 2;
   uint64_t miss_time_counter = 0;
+#endif
   int inst_type;
   void idu_decode_inst(int inst){
     int a = inst & 0x7f;
