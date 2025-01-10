@@ -34,7 +34,7 @@ def parse_microbench(output):
 
 def run_synthesis():
     yosys_home = os.getenv("YOSYS_HOME", "/path/to/yosys")
-    command = f"cd {yosys_home} && make sta"
+    command = f"cd {yosys_home} && make sta CONFIG_ICACHE=1"
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     return result
 

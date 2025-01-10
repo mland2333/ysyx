@@ -50,8 +50,8 @@
 
 === ysyx_24110006_ALU ===
 
-   Number of wires:               1205
-   Number of wire bits:           1332
+   Number of wires:               1209
+   Number of wire bits:           1336
    Number of public wires:          10
    Number of public wire bits:     137
    Number of ports:                 10
@@ -59,62 +59,57 @@
    Number of memories:               0
    Number of memory bits:            0
    Number of processes:              0
-   Number of cells:               1261
-     AND2_X1                       128
-     AND2_X2                        13
-     AND2_X4                        11
-     AND3_X1                        38
-     AND3_X2                         1
-     AND3_X4                         2
-     AND4_X1                         2
-     AOI211_X2                       2
-     AOI211_X4                      10
-     AOI21_X1                      100
-     AOI21_X4                        2
+   Number of cells:               1265
+     AND2_X1                       118
+     AND2_X2                        15
+     AND2_X4                        19
+     AND3_X1                        32
+     AND3_X4                         1
+     AND4_X1                         3
+     AOI211_X2                       1
+     AOI211_X4                      13
+     AOI21_X1                      102
+     AOI21_X2                        2
      AOI221_X4                       7
      AOI22_X1                        4
      BUF_X1                        136
-     BUF_X2                         14
-     BUF_X4                         19
-     CLKBUF_X2                       6
-     INV_X1                         65
-     INV_X2                          5
-     MUX2_X1                        33
-     NAND2_X1                      104
-     NAND2_X2                        4
-     NAND2_X4                        6
-     NAND3_X1                       93
-     NAND3_X4                        3
+     BUF_X2                         10
+     BUF_X4                         25
+     CLKBUF_X2                       4
+     INV_X1                         71
+     INV_X2                          1
+     MUX2_X1                        31
+     NAND2_X1                       98
+     NAND2_X2                        6
+     NAND2_X4                        3
+     NAND3_X1                       91
+     NAND3_X2                        2
      NAND4_X1                       17
-     NOR2_X1                        80
-     NOR2_X2                        11
-     NOR2_X4                        11
-     NOR3_X1                        27
-     NOR3_X2                         2
+     NOR2_X1                        89
+     NOR2_X2                        17
+     NOR2_X4                        16
+     NOR3_X1                        31
+     NOR3_X2                         3
      NOR3_X4                         3
-     NOR4_X1                        11
-     NOR4_X2                         1
-     NOR4_X4                         1
-     OAI211_X2                      19
+     NOR4_X1                        12
+     NOR4_X2                         2
+     OAI211_X2                      21
      OAI211_X4                       1
-     OAI21_X1                      102
-     OAI21_X2                        1
+     OAI21_X1                      100
      OAI221_X1                       8
-     OAI22_X1                        2
-     OR2_X1                         14
-     OR2_X4                          2
-     OR3_X1                         77
+     OAI22_X1                        5
+     OR2_X1                         15
+     OR3_X1                         73
      OR3_X2                          1
      OR3_X4                          1
      OR4_X1                         17
-     OR4_X2                          1
      OR4_X4                          3
-     XNOR2_X1                       21
-     XNOR2_X2                        4
-     XOR2_X1                        13
-     XOR2_X2                         2
+     XNOR2_X1                       27
+     XNOR2_X2                        2
+     XOR2_X1                         2
+     XOR2_X2                         4
 
-   Chip area for module '\ysyx_24110006_ALU': 1499.442000
+   Chip area for module '\ysyx_24110006_ALU': 1505.560000
      of which used for sequential elements: 0.000000 (0.00%)
 
 === ysyx_24110006_ALUOP ===
@@ -173,26 +168,25 @@
    Number of cells:                800
      AND2_X1                       229
      AND3_X4                         1
-     AOI21_X4                        1
+     AOI21_X1                        1
+     AOI21_X2                        1
      AOI22_X1                        1
      BUF_X1                        486
      BUF_X4                          5
      DFF_X1                          5
-     INV_X1                          4
-     INV_X2                          1
+     INV_X1                          5
      INV_X32                         1
      MUX2_X1                        49
-     NAND2_X1                        5
-     NAND3_X1                        2
-     NAND4_X1                        3
+     NAND2_X1                        4
+     NAND3_X1                        3
+     NAND4_X1                        4
      NOR2_X1                         1
-     NOR3_X1                         1
-     OAI211_X2                       3
+     OAI211_X2                       2
      OAI21_X1                        1
      OR4_X2                          1
 
-   Chip area for module '\ysyx_24110006_ARBITER': 796.138000
-     of which used for sequential elements: 22.610000 (2.84%)
+   Chip area for module '\ysyx_24110006_ARBITER': 793.478000
+     of which used for sequential elements: 22.610000 (2.85%)
 
 === ysyx_24110006_CLINT ===
 
@@ -239,8 +233,8 @@
 
 === ysyx_24110006_CSR ===
 
-   Number of wires:               1321
-   Number of wire bits:           1488
+   Number of wires:               1298
+   Number of wire bits:           1465
    Number of public wires:         139
    Number of public wire bits:     306
    Number of ports:                 11
@@ -248,43 +242,47 @@
    Number of memories:               0
    Number of memory bits:            0
    Number of processes:              0
-   Number of cells:               1246
-     AND2_X1                        15
-     AND2_X2                         4
+   Number of cells:               1223
+     AND2_X1                        13
+     AND2_X2                         6
      AND2_X4                         3
-     AND3_X1                         6
-     AND3_X2                         3
+     AND3_X1                         9
+     AND3_X2                         1
      AND4_X1                         3
      AOI211_X2                       8
-     AOI21_X1                       46
-     AOI21_X4                        1
-     AOI22_X1                       32
+     AOI21_X1                       33
+     AOI22_X1                       30
+     AOI22_X2                        6
      BUF_X1                        432
-     BUF_X4                         54
-     BUF_X8                          2
+     BUF_X4                         49
+     BUF_X8                          7
      DFF_X1                        128
-     INV_X1                         94
+     INV_X1                         90
      INV_X16                         1
-     INV_X2                          1
-     INV_X4                          5
-     MUX2_X1                        71
-     NAND2_X1                       23
-     NAND3_X1                       97
-     NAND4_X1                        1
-     NOR2_X1                        16
+     INV_X2                          2
+     INV_X4                          2
+     INV_X8                          1
+     MUX2_X1                        86
+     NAND2_X1                       17
+     NAND2_X2                        2
+     NAND2_X4                        1
+     NAND3_X1                       81
+     NAND3_X2                        1
+     NOR2_X1                         7
+     NOR2_X2                         1
      NOR2_X4                         8
-     NOR3_X1                         9
-     NOR3_X2                         1
+     NOR3_X1                        13
      NOR4_X4                         1
-     OAI211_X2                      45
-     OAI21_X1                      116
-     OAI221_X1                       1
-     OAI22_X1                       17
+     OAI211_X2                      58
+     OAI21_X1                      101
+     OAI22_X1                       16
+     OR2_X1                          3
      OR2_X2                          1
+     OR2_X4                          1
      OR4_X4                          1
 
-   Chip area for module '\ysyx_24110006_CSR': 1816.514000
-     of which used for sequential elements: 895.356000 (49.29%)
+   Chip area for module '\ysyx_24110006_CSR': 1843.380000
+     of which used for sequential elements: 895.356000 (48.57%)
 
 === ysyx_24110006_EXU ===
 
@@ -368,6 +366,81 @@
    Chip area for module '\ysyx_24110006_EXU_CTRL': 672.182000
      of which used for sequential elements: 1894.718000 (281.88%)
 
+=== ysyx_24110006_ICACHE ===
+
+   Number of wires:               6466
+   Number of wire bits:           6607
+   Number of public wires:         968
+   Number of public wire bits:    1109
+   Number of ports:                 19
+   Number of port bits:            160
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               5512
+     AND2_X1                        47
+     AND2_X2                        18
+     AND2_X4                         2
+     AND3_X1                        13
+     AND3_X2                         6
+     AND4_X1                        15
+     AND4_X2                         1
+     AND4_X4                         1
+     AOI211_X2                      14
+     AOI211_X4                      39
+     AOI21_X1                       34
+     AOI21_X2                        6
+     AOI221_X4                       1
+     AOI22_X1                       12
+     BUF_X1                       2122
+     BUF_X16                         6
+     BUF_X2                          3
+     BUF_X32                         7
+     BUF_X4                        133
+     BUF_X8                          7
+     CLKBUF_X2                       3
+     DFF_X1                       1019
+     INV_X1                         12
+     INV_X2                          1
+     INV_X32                         3
+     INV_X4                          1
+     LOGIC0_X1                       1
+     LOGIC1_X1                       1
+     MUX2_X1                      1606
+     MUX2_X2                         5
+     NAND2_X1                       41
+     NAND2_X2                        1
+     NAND3_X1                       23
+     NAND3_X2                        1
+     NAND4_X1                        3
+     NAND4_X2                        1
+     NAND4_X4                        1
+     NOR2_X1                        29
+     NOR2_X2                         2
+     NOR2_X4                         1
+     NOR3_X1                         7
+     NOR3_X2                         1
+     NOR3_X4                         1
+     NOR4_X1                         1
+     NOR4_X2                         1
+     OAI211_X2                     107
+     OAI21_X1                       33
+     OAI21_X2                        4
+     OAI221_X1                       1
+     OAI221_X2                       3
+     OAI22_X1                        2
+     OR2_X1                         71
+     OR2_X2                         10
+     OR2_X4                          3
+     OR3_X1                         15
+     OR3_X2                          1
+     OR3_X4                          2
+     OR4_X4                          1
+     XNOR2_X1                        6
+
+   Chip area for module '\ysyx_24110006_ICACHE': 10662.876000
+     of which used for sequential elements: 6502.636000 (60.98%)
+
 === ysyx_24110006_IDU ===
 
    Number of wires:                347
@@ -393,12 +466,12 @@
      OR4_X1                          1
 
    Chip area for module '\ysyx_24110006_IDU': 564.984000
-     of which used for sequential elements: 2161.516000 (382.58%)
+     of which used for sequential elements: 6769.434000 (1198.16%)
 
 === ysyx_24110006_IFU ===
 
-   Number of wires:                400
-   Number of wire bits:            541
+   Number of wires:                 19
+   Number of wire bits:            160
    Number of public wires:          19
    Number of public wire bits:     160
    Number of ports:                 19
@@ -406,26 +479,10 @@
    Number of memories:               0
    Number of memory bits:            0
    Number of processes:              0
-   Number of cells:                399
-     AND2_X1                        32
-     AND2_X4                         1
-     AND3_X1                         1
-     AOI211_X4                       1
-     BUF_X1                        218
-     BUF_X8                          6
-     CLKBUF_X2                       3
-     DFF_X1                         66
-     INV_X1                          1
-     INV_X32                         1
-     LOGIC0_X1                       1
-     LOGIC1_X1                       1
-     MUX2_X1                        64
-     NAND2_X4                        1
-     NOR2_X1                         1
-     NOR2_X4                         1
+   Number of cells:                  1
+     ysyx_24110006_ICACHE            1
 
-   Chip area for module '\ysyx_24110006_IFU': 672.182000
-     of which used for sequential elements: 2459.968000 (365.97%)
+   Area for cell type \ysyx_24110006_ICACHE is unknown!
 
 === ysyx_24110006_IMM ===
 
@@ -474,12 +531,12 @@
      OR2_X4                          1
 
    Chip area for module '\ysyx_24110006_IMM': 295.792000
-     of which used for sequential elements: 2459.968000 (831.65%)
+     of which used for sequential elements: 6769.434000 (2288.58%)
 
 === ysyx_24110006_LSU ===
 
-   Number of wires:               1015
-   Number of wire bits:           1274
+   Number of wires:               1024
+   Number of wire bits:           1283
    Number of public wires:         113
    Number of public wire bits:     372
    Number of ports:                 40
@@ -487,51 +544,51 @@
    Number of memories:               0
    Number of memory bits:            0
    Number of processes:              0
-   Number of cells:               1039
-     AND2_X1                        10
-     AND2_X2                         1
+   Number of cells:               1048
+     AND2_X1                         3
      AND2_X4                         1
-     AND3_X1                        11
-     AND4_X1                         6
-     AOI211_X2                      10
+     AND3_X1                        12
+     AND3_X4                         2
+     AND4_X1                        12
+     AOI211_X2                      12
      AOI211_X4                       4
-     AOI21_X1                       39
-     AOI21_X4                        2
-     AOI221_X1                       1
+     AOI21_X1                       49
+     AOI221_X1                       3
      AOI221_X2                       4
-     AOI22_X1                       44
-     AOI22_X2                        4
-     AOI22_X4                        1
+     AOI22_X1                       26
+     AOI22_X2                        3
+     AOI22_X4                       10
      BUF_X1                        467
-     BUF_X16                         3
-     BUF_X2                          1
-     BUF_X4                         15
-     BUF_X8                         12
+     BUF_X16                         6
+     BUF_X32                         3
+     BUF_X4                         13
+     BUF_X8                         11
      DFF_X1                        109
      DLH_X1                         36
-     INV_X1                         32
-     INV_X2                          1
-     INV_X32                         1
-     INV_X4                          1
+     INV_X1                         22
+     INV_X32                         2
+     INV_X4                          2
+     INV_X8                          1
      LOGIC0_X1                       1
      LOGIC1_X1                       1
      MUX2_X1                        73
-     NAND2_X1                       36
+     NAND2_X1                       34
      NAND2_X4                        1
-     NAND3_X1                       43
-     NAND4_X1                        4
+     NAND3_X1                       49
+     NAND3_X2                        3
+     NAND4_X1                       16
      NAND4_X2                        1
-     NOR2_X1                        16
-     NOR2_X4                         3
-     NOR3_X1                         3
-     OAI211_X2                       2
+     NOR2_X1                        15
+     NOR2_X4                         4
+     NOR3_X1                         2
+     OAI211_X2                       6
      OAI21_X1                        7
-     OAI221_X1                      28
+     OAI221_X1                      20
      OAI22_X1                        1
-     OR2_X1                          3
+     OR2_X1                          1
 
-   Chip area for module '\ysyx_24110006_LSU': 1594.404000
-     of which used for sequential elements: 2952.866000 (185.20%)
+   Chip area for module '\ysyx_24110006_LSU': 1707.188000
+     of which used for sequential elements: 7262.332000 (425.40%)
 
 === ysyx_24110006_PC ===
 
@@ -574,12 +631,12 @@
      XOR2_X1                         2
 
    Chip area for module '\ysyx_24110006_PC': 521.360000
-     of which used for sequential elements: 3106.614000 (595.87%)
+     of which used for sequential elements: 7416.080000 (1422.45%)
 
 === ysyx_24110006_RegisterFile ===
 
-   Number of wires:               3765
-   Number of wire bits:           3870
+   Number of wires:               3761
+   Number of wire bits:           3866
    Number of public wires:         521
    Number of public wire bits:     626
    Number of ports:                  9
@@ -587,37 +644,33 @@
    Number of memories:               0
    Number of memory bits:            0
    Number of processes:              0
-   Number of cells:               3308
-     AND2_X2                         1
-     AND2_X4                         6
-     AND3_X4                         2
+   Number of cells:               3304
      AOI21_X1                       64
      AOI22_X1                       64
      BUF_X1                       1136
      BUF_X16                         1
-     BUF_X4                          4
-     BUF_X8                         54
-     CLKBUF_X1                       6
-     CLKBUF_X2                       6
-     CLKBUF_X3                       2
+     BUF_X4                         22
+     BUF_X8                         48
+     CLKBUF_X2                       2
      DFF_X1                        512
-     INV_X32                         5
-     MUX2_X1                      1102
-     MUX2_X2                       178
-     NAND2_X1                        4
-     NAND2_X2                        2
+     INV_X16                         1
+     INV_X32                         2
+     INV_X4                          3
+     MUX2_X1                      1237
+     MUX2_X2                        43
      NAND2_X4                        1
-     NAND4_X2                        2
-     NAND4_X4                        3
-     NOR2_X4                        22
-     NOR3_X4                         1
+     NAND4_X1                        2
+     NAND4_X2                       10
+     NAND4_X4                        4
+     NOR2_X1                         4
+     NOR2_X4                        18
      OAI211_X2                      64
-     OR2_X2                         60
-     OR2_X4                          4
+     OR2_X1                         20
+     OR2_X2                         44
      OR4_X4                          2
 
-   Chip area for module '\ysyx_24110006_RegisterFile': 6466.460000
-     of which used for sequential elements: 5421.878000 (83.85%)
+   Chip area for module '\ysyx_24110006_RegisterFile': 6357.400000
+     of which used for sequential elements: 9731.344000 (153.07%)
 
 === ysyx_24110006_XBAR ===
 
@@ -662,7 +715,7 @@
      OR4_X4                          2
 
    Chip area for module '\ysyx_24110006_XBAR': 514.178000
-     of which used for sequential elements: 5426.400000 (1055.35%)
+     of which used for sequential elements: 9735.866000 (1893.48%)
 
 === design hierarchy ===
 
@@ -676,99 +729,101 @@
      ysyx_24110006_EXU_CTRL          1
      ysyx_24110006_IDU               1
      ysyx_24110006_IFU               1
+       ysyx_24110006_ICACHE          1
      ysyx_24110006_IMM               1
      ysyx_24110006_LSU               1
      ysyx_24110006_PC                1
      ysyx_24110006_RegisterFile      1
      ysyx_24110006_XBAR              1
 
-   Number of wires:              13639
-   Number of wire bits:          16531
-   Number of public wires:        2464
-   Number of public wire bits:    5356
-   Number of ports:                385
-   Number of port bits:           3277
+   Number of wires:              19710
+   Number of wire bits:          22743
+   Number of public wires:        3432
+   Number of public wire bits:    6465
+   Number of ports:                404
+   Number of port bits:           3437
    Number of memories:               0
    Number of memory bits:            0
    Number of processes:              0
-   Number of cells:              12244
-     AND2_X1                       587
-     AND2_X2                        60
-     AND2_X4                        53
-     AND3_X1                       103
-     AND3_X2                         6
-     AND3_X4                        10
-     AND4_X1                        26
-     AND4_X2                         2
-     AND4_X4                         1
-     AOI211_X2                      22
-     AOI211_X4                      18
-     AOI21_X1                      335
-     AOI21_X2                        2
-     AOI21_X4                        7
-     AOI221_X1                       2
+   Number of cells:              17343
+     AND2_X1                       583
+     AND2_X2                        80
+     AND2_X4                        56
+     AND3_X1                       113
+     AND3_X2                         9
+     AND3_X4                         9
+     AND4_X1                        48
+     AND4_X2                         3
+     AND4_X4                         2
+     AOI211_X2                      37
+     AOI211_X4                      59
+     AOI21_X1                      369
+     AOI21_X2                       11
+     AOI21_X4                        1
+     AOI221_X1                       4
      AOI221_X2                       6
-     AOI221_X4                      10
-     AOI22_X1                      146
-     AOI22_X2                        4
-     AOI22_X4                        1
-     BUF_X1                       4968
-     BUF_X16                         4
-     BUF_X2                         18
-     BUF_X4                        160
-     BUF_X8                         84
-     CLKBUF_X1                      36
-     CLKBUF_X2                      21
-     CLKBUF_X3                       2
-     DFF_X1                       1200
+     AOI221_X4                      11
+     AOI22_X1                      138
+     AOI22_X2                        9
+     AOI22_X4                       10
+     BUF_X1                       6872
+     BUF_X16                        13
+     BUF_X2                         16
+     BUF_X32                        10
+     BUF_X4                        310
+     BUF_X8                         83
+     CLKBUF_X1                      30
+     CLKBUF_X2                      15
+     DFF_X1                       2153
      DLH_X1                         36
-     INV_X1                        262
-     INV_X16                         4
-     INV_X2                         18
+     INV_X1                        266
+     INV_X16                         5
+     INV_X2                         14
      INV_X32                        10
-     INV_X4                          8
+     INV_X4                         10
+     INV_X8                          2
      LOGIC0_X1                       4
      LOGIC1_X1                       4
-     MUX2_X1                      1849
-     MUX2_X2                       179
-     NAND2_X1                      303
-     NAND2_X2                       11
-     NAND2_X4                       12
-     NAND3_X1                      299
-     NAND3_X2                        1
-     NAND3_X4                        3
-     NAND4_X1                       57
-     NAND4_X2                        6
-     NAND4_X4                        3
-     NOR2_X1                       176
-     NOR2_X2                        16
-     NOR2_X4                        55
-     NOR3_X1                        73
-     NOR3_X2                         4
+     MUX2_X1                      3539
+     MUX2_X2                        49
+     NAND2_X1                      325
+     NAND2_X2                       14
+     NAND2_X4                        9
+     NAND3_X1                      311
+     NAND3_X2                        8
+     NAND4_X1                       74
+     NAND4_X2                       15
+     NAND4_X4                        5
+     NOR2_X1                       207
+     NOR2_X2                        25
+     NOR2_X4                        57
+     NOR3_X1                        86
+     NOR3_X2                         5
      NOR3_X4                         9
-     NOR4_X1                        16
-     NOR4_X2                         2
-     NOR4_X4                         7
-     OAI211_X2                     171
+     NOR4_X1                        18
+     NOR4_X2                         4
+     NOR4_X4                         6
+     OAI211_X2                     296
      OAI211_X4                       1
-     OAI21_X1                      312
-     OAI21_X2                        1
-     OAI221_X1                      37
-     OAI22_X1                       29
-     OR2_X1                         25
-     OR2_X2                         65
-     OR2_X4                         10
-     OR3_X1                         80
-     OR3_X2                          2
-     OR3_X4                          5
+     OAI21_X1                      328
+     OAI21_X2                        4
+     OAI221_X1                      29
+     OAI221_X2                       3
+     OAI22_X1                       33
+     OR2_X1                        118
+     OR2_X2                         59
+     OR2_X4                          8
+     OR3_X1                         91
+     OR3_X2                          3
+     OR3_X4                          7
      OR4_X1                         18
-     OR4_X2                          3
-     OR4_X4                          8
-     XNOR2_X1                      104
-     XNOR2_X2                        4
-     XOR2_X1                        33
-     XOR2_X2                        15
+     OR4_X2                          2
+     OR4_X4                          9
+     XNOR2_X1                      116
+     XNOR2_X2                        2
+     XOR2_X1                        22
+     XOR2_X2                        17
 
-   Chip area for top module '\ysyx_24110006': 18754.862000
-     of which used for sequential elements: 5426.400000 (28.93%)
+   Chip area for top module '\ysyx_24110006': 28779.604000
+     of which used for sequential elements: 9735.866000 (33.83%)
 
