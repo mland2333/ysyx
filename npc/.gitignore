@@ -4,11 +4,14 @@
 !Makefile
 !*.mk
 !*.[cSh]
-!*.v
+!/vsrc/*.v
 !*.cc
 !*.cpp
 !*.hpp
+!*.py
 !.gitignore
 !README.md
 !*.nxdc
 build/
+!/result/ysyx_24110006-1000MHz/*.rpt
+!/result/ysyx_24110006-1000MHz/synth_stat.txt

@@ -85,4 +85,8 @@ gdb: $(BIN)
 	gdb --args $(BIN) $(IMG) $(ARGS)
 clean:
 	rm -rf $(BUILD_DIR)
+perf:
+	python3 perf.py
+
+
 include ../Makefile
