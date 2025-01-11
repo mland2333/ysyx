@@ -20,7 +20,7 @@ MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = The insert-arg rule in Makefile will insert mainargs here.
 CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\""$(MAINARGS_PLACEHOLDER)"\"
 
-
+IMAGE_PATH = $(shell dirname $(IMAGE))
 
 insert-arg: image
 	@python $(AM_HOME)/tools/insert-arg.py $(IMAGE).bin $(MAINARGS_MAX_LEN) "$(MAINARGS_PLACEHOLDER)" "$(mainargs)"
@@ -32,7 +32,11 @@ image: image-dep
 
 
 run: insert-arg
-	$(MAKE) -C $(NPC_HOME) ISA=$(ISA) run ARGS="$(NPCFLAGS)" IMG=$(IMAGE).bin CONFIG_YSYXSOC=1
+	$(MAKE) -C $(NPC_HOME) run ARGS="$(NPCFLAGS)" IMG=$(IMAGE).bin CONFIG_YSYXSOC=1
 gdb: insert-arg
-	$(MAKE) -C $(NPC_HOME) ISA=$(ISA) gdb ARGS="$(NPCFLAGS)" IMG=$(IMAGE).bin CONFIG_YSYXSOC=1
+	$(MAKE) -C $(NPC_HOME) gdb ARGS="$(NPCFLAGS)" IMG=$(IMAGE).bin CONFIG_YSYXSOC=1
+compile: insert-arg
+
+parallel:
+	$(MAKE) -C $(NPC_HOME) parallel ARGS="$(NPCFLAGS)" CONFIG_YSYXSOC=1
 .PHONY: insert-arg

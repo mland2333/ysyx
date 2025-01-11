@@ -91,5 +91,7 @@ perf:
 	rm -rf $(BUILD_DIR)
 	python3 perf.py
 
+parallel: $(BIN)
+	python3 parallel.py $^ "$(ARGS)"
 
 include ../Makefile
