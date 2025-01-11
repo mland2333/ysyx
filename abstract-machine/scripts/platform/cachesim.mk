@@ -1,12 +1,12 @@
-AM_SRCS := riscv/ysyxsoc/start.S \
-					 riscv/ysyxsoc/bootloader.S \
-           riscv/ysyxsoc/trm.c \
-           riscv/ysyxsoc/ioe.c \
-           riscv/ysyxsoc/timer.c \
-           riscv/ysyxsoc/input.c \
-           riscv/ysyxsoc/cte.c \
-           riscv/ysyxsoc/trap.S \
-					 riscv/ysyxsoc/gpu.c \
+AM_SRCS := riscv/cachesim/start.S \
+					 riscv/cachesim/bootloader.S \
+           riscv/cachesim/trm.c \
+           riscv/cachesim/ioe.c \
+           riscv/cachesim/timer.c \
+           riscv/cachesim/input.c \
+           riscv/cachesim/cte.c \
+           riscv/cachesim/trap.S \
+					 riscv/cachesim/gpu.c \
            platform/dummy/vme.c \
            platform/dummy/mpe.c
 

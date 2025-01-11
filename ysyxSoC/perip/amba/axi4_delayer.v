@@ -1,3 +1,69 @@
+module delayer #(
+  parameter WIDTH = 1
+)(
+  input clock,
+  input reset,
+  input c_en,
+  input d_en,
+  input fin,
+  input [WIDTH-1:0] in_data,
+  output valid,
+  output [WIDTH-1:0] out_data
+);
+localparam r = 32'd10;
+localparam s = 32'd8;
+localparam COUNT_ADD = s * r;
+
+localparam IDLE = 3'b000;
+localparam COUNT = 3'b001;
+localparam DELAY = 3'b010;
+localparam WAIT = 3'b011;
+
+reg [2:0] state;
+reg [31:0] counter;
+reg [WIDTH-1:0] data;
+always@(posedge clock)begin
+  if(reset) state <= IDLE;
+  else begin
+    case(state)
+      IDLE:begin
+        if(c_en) state <= COUNT;
+      end
+      COUNT:begin
+        if(d_en)
+          state <= DELAY;
+      end
+      DELAY:begin
+        if(counter == 0) state <= WAIT;
+      end
+      WAIT:begin
+        if(fin) state <= IDLE;
+      end
+      default: state <= IDLE;
+    endcase
+  end
+end
+always@(posedge clock)begin
+  if(reset) counter <= 0;
+  else begin
+    if(state == IDLE && c_en || state == COUNT) begin
+      counter <= counter + COUNT_ADD;
+      if(d_en) counter <= {3'b0, counter[15:3]};
+    end
+    else if(state == DELAY && counter != 0)
+      counter <= counter - 1;
+  end
+end
+
+always@(posedge clock)
+  if(state == COUNT && d_en) data  <= in_data;
+
+assign valid = state == WAIT;
+assign out_data = data;
+
+endmodule
+
+
 module axi4_delayer(
   input         clock,
   input         reset,
@@ -62,278 +128,116 @@ module axi4_delayer(
   input  [3:0]  out_bid,
   input  [1:0]  out_bresp
 );
-  assign in_arready = out_arready;
-  assign out_arvalid = in_arvalid;
-  assign out_arid = in_arid;
-  assign out_araddr = in_araddr;
-  assign out_arlen = in_arlen;
-  assign out_arsize = in_arsize;
-  assign out_arburst = in_arburst;
-  assign out_rready = in_rready;
-  assign in_rid = out_rid;
-  assign in_rresp = out_rresp;
-  reg[31:0] rdata_buffer[8];
-  localparam IDLE = 3'b0;
-  localparam COUNTER = 3'b001;
-  localparam DELAY = 3'b010;
-  localparam WAIT = 3'b011;
+assign in_arready = out_arready;
+assign out_arvalid = in_arvalid;
+assign out_arid = in_arid; 
+assign out_araddr = in_araddr; 
+assign out_arlen = in_arlen; 
+assign out_arsize = in_arsize; 
+assign out_arburst = in_arburst;  
+assign out_rready = in_rready; 
+assign in_rid = out_rid; 
+assign in_rresp = out_rresp;
 
-  localparam r = 32'd10;
-  localparam s_shift = 3'd3;
-  localparam COUNTER_ADD = r << s_shift;
-
-  reg[31:0] rcounter;
-  reg[31:0] rcounter_delay[8];
-  reg[7:0] tasks;
-  reg[2:0]tasks_end, free_begin;
-  reg[2:0] rstate;
-  reg rlast;
-  always@(posedge clock)begin
-    if(reset)begin
-      rstate <= IDLE;
-      rcounter <= 0;
-      free_begin <= 0;
-    end
-    else begin
-      case(rstate)
-        IDLE:begin
-          free_begin <= 0;
-          tasks_end <= 0;
-          rcounter <= 0;
-          rlast <= 0;
-          if(in_arvalid)begin
-            rstate <= COUNTER;
-          end
-        end
-        COUNTER:begin
-          rcounter <= rcounter + COUNTER_ADD;
-          if(out_rvalid)begin
-            rcounter_delay[free_begin] <= {3'b0, rcounter[31:3]};
-            free_begin <= free_begin + 1;
-            rdata_buffer[free_begin] <= out_rdata;
-            tasks[free_begin] <= 1;
-            tasks_end <= free_begin;
-          end
-          else if(tasks[tasks_end]==1
-            && rcounter_delay[tasks_end]==0)begin
-            rstate <= IDLE;
-            rlast <= 1;
-          end
-        end
-        default:begin
-        end
-      endcase
-    end
+localparam NUMS = 2;
+wire [NUMS-1:0] valid;
+reg [NUMS-1:0] tasks;
+reg [$clog2(NUMS)-1:0] task_index;
+reg [$clog2(NUMS)-1:0] delay_index;
+wire [31:0] rdata_buffer[NUMS];
+reg [31:0] rdata;
+reg rvalid;
+always@(posedge clock)begin
+  if(reset) begin
+    task_index <= 0;
+    delay_index <= 0;
   end
-    integer i;
-    reg rvalid;
-    reg[7:0] ready;
-    always@(posedge clock)begin
-      rvalid <= 0;
-      for(i=0; i<8; i++)begin
-        if(tasks[i]==1 && rcounter_delay[i]==0)begin
-          tasks[i] <= 0;
-          rvalid <= 1;
-          ready[i] <= 1;
-        end
-        else if(tasks[i]==1)begin
-          rcounter_delay[i] = rcounter_delay[i] - 1;
-        end
-        else 
-          ready[i] <= 0;
-      end
+  else begin
+    if(out_rvalid) task_index <= task_index + 1;
+    if(in_rvalid && in_rready) delay_index <= delay_index + 1;
   end
-  assign in_rvalid = rvalid;
-  assign in_rdata =
-         ready[0]==1?rdata_buffer[0]
-        :ready[1]==1?rdata_buffer[1]
-        :ready[2]==1?rdata_buffer[2]
-        :ready[3]==1?rdata_buffer[3]
-        :ready[4]==1?rdata_buffer[4]
-        :ready[5]==1?rdata_buffer[5]
-        :ready[6]==1?rdata_buffer[6]
-        :ready[7]==1?rdata_buffer[7]
-        : 0;
-  assign in_rlast = rlast;
+end
 
-  assign out_awvalid = in_awvalid;
-  assign out_awid = in_awid;
-  assign out_awaddr = in_awaddr;
-  assign out_awlen = in_awlen;
-  assign out_awsize = in_awsize;
-  assign out_awburst = in_awburst;
-  assign out_wvalid = in_wvalid;
-  assign out_wdata = in_wdata;
-  assign out_wstrb = in_wstrb;
-  assign out_wlast = in_wlast;
-  assign out_bready = in_bready;
-  assign in_bid = out_bid;
-  assign in_bresp = out_bresp;
-  assign in_awready = out_awready;
-  assign in_wready = out_wready;
-  reg[31:0] wcounter;
-  reg[2:0] wstate;
-  reg wtask;
-  always@(posedge clock)begin
-    if(reset)begin
-      wstate <= IDLE;
-      wcounter <= 0;
-      wtask <= 0;
-    end
-    else begin
-      case(wstate)
-        IDLE:begin
-          wcounter <= 0;
-          if(in_awvalid)begin
-            wstate <= COUNTER;
-          end
-        end
-        COUNTER:begin
-          wcounter <= wcounter + COUNTER_ADD;
-          if(out_bvalid)begin
-            wcounter <= {3'b0, wcounter[31:3]};
-            wtask <= 1;
-          end
-          else if(wtask == 1 && wcounter==0)begin
-            wstate <= IDLE;
-          end
-        end
-        default:begin
-        end
-      endcase
-    end
+always@(posedge clock)begin
+  if(reset) tasks <= 0;
+  else begin
+    if(out_rvalid) tasks[task_index] <= 1;
+    if(in_rvalid && in_rready) tasks[delay_index] <= 0;
   end
+end
 
-  reg bvalid;
-  always@(posedge clock)begin
-    bvalid <= 0;
-    if(wtask && wcounter == 0)begin
-      wtask <= 0;
-      bvalid <= 1;
-    end
-    else if(wtask)
-      wcounter <= wcounter - 1;
+genvar i;
+generate
+  for(i=0; i<NUMS; i=i+1)begin : m_counter
+    delayer
+    #( .WIDTH(32) )
+    m_delayer(
+      .clock(clock),
+      .reset(reset || in_rlast && in_rvalid && in_rready),
+      .c_en(in_arvalid),
+      .d_en(out_rvalid && task_index == i),
+      .fin(in_rvalid && in_rready),
+      .in_data(out_rdata),
+      .valid(valid[i]),
+      .out_data(rdata_buffer[i])
+    );
   end
-  assign in_bvalid = bvalid;
+endgenerate
 
-/* assign out_araddr = in_araddr; */
-/* assign out_arlen = in_arlen; */
-/* assign out_arsize = in_arsize; */
-/* assign out_arburst = in_arburst; */
-/* assign out_rready = in_rready; */
-/**/
-/* reg [3:0] arid; */
-/* reg [31:0] araddr; */
-/* reg [7:0] arlen; */
-/* reg [2:0] arsize; */
-/* reg [1:0] arburst; */
-/* reg [1:0] arstate; */
-/* always@(posedge clock)begin */
-/*   if(reset)begin */
-/*     arstate <= IDLE; */
-/*   end */
-/*   else begin */
-/*     case(arstate) */
-/*       IDLE:begin */
-/*         if(in_arvalid)begin */
-/*           arid <= in_arid; */
-/*           araddr <= in_araddr; */
-/*           arlen <= in_arlen; */
-/*           arsize <= in_arsize; */
-/*           arburst <= in_arburst; */
-/*           arstate <= COUNTER; */
-/*         end */
-/*       end */
-/*       COUNTER:begin */
-/**/
-/*   if(in_arvalid)begin */
-/*     arid <= in_arid; */
-/*     araddr <= in_araddr; */
-/*     arlen <= in_arlen; */
-/*     arsize <= in_arsize; */
-/*     arburst <= in_arburst; */
-/*     arstate <= IDLE; */
-/*   end */
-/*   else begin */
-/**/
-/**/
-/**/
-/* reg [31:0] araddr_buffer; */
-/**/
-/**/
-/**/
-/**/
-/* reg [31:0] rdata_buffer [8]; */
-/**/
-/* reg [31:0] read_counter [8]; */
-/* reg [7:0] read_task; */
-/* reg [2:0] task_index; */
-/* reg [2:0] delay_index; */
-/* always@(posedge clock)begin */
-/*   if(reset) begin */
-/*     task_index <= 0; */
-/*   end */
-/*   else if(in_arvalid)begin */
-/*     task_index <= 0; */
-/*   end */
-/*   else if(out_rvalid)begin */
-/*     task_index <= task_index + 1; */
-/*   end */
-/* end */
-/**/
-/* always@(posedge clock)begin */
-/*   if(reset) delay_index <= 0; */
-/*   else begin */
-/*     if(state == DELAY && read_counter[delay_index] == 0)begin */
-/*       if(delay_index == task_index)  */
-/*         delay_index <= 0; */
-/*       else */
-/*         delay_index <= delay_index + 1; */
-/*     end */
-/*   end */
-/* end */
-/**/
-/**/
-/* localparam IDLE = 3'd0; */
-/* localparam COUNTER = 3'd1; */
-/* localparam DELAY = 3'd2; */
-/* localparam WAIT = 3'd3; */
-/**/
-/* reg [2:0] state; */
-/* always@(posedge clock)begin */
-/*   if(reset) state <= IDLE; */
-/*   else begin */
-/*     case(state) */
-/*       IDLE:begin */
-/*         if(in_arvalid) state <= COUNTER; */
-/*       end */
-/*       COUNTER:begin */
-/*         if(out_rlast) state <= DELAY; */
-/*       end */
-/*       DELAY:begin */
-/*         if(delay_index == task_index && read_counter[delay_index] == 0) state <= WAIT; */
-/*       end */
-/*       WAIT:begin */
-/*         state <= IDLE; */
-/*       end */
-/*       default: state <= IDLE; */
-/*     endcase */
-/*   end */
-/* end */
-/**/
-/* always@(posedge clock)begin */
-/*   if(reset)begin */
-/*     integer i; */
-/*     for(i=0; i<8; i=i+1) */
-/*       read_counter[i] <= 0; */
-/*   end */
-/*   else begin */
-/*     if(state == COUNTER) */
-/*       read_counter[task_index] <= read_counter[task_index] + 1; */
-/*     else if(state == DELAY) */
-/*       read_counter[delay_index] <= read_counter[delay_index] - 1; */
-/*   end */
-/* end */
+reg [$clog2(NUMS)-1:0] rdata_index;
+always@(*)begin
+  if(valid[0]) rdata_index = 0;
+  /* else if(valid[1]) rdata_index = 1; */
+  /* else if(valid[2]) rdata_index = 2; */
+  /* else if(valid[3]) rdata_index = 3; */
+  /* else if(valid[4]) rdata_index = 4; */
+  /* else if(valid[5]) rdata_index = 5; */
+  /* else if(valid[6]) rdata_index = 6; */
+  else rdata_index = 1;
+end
+
+assign in_rdata = rdata_buffer[rdata_index];
+assign in_rvalid = |valid;
+
+wire rlast_valid;
+delayer m_rlast(
+  .clock(clock),
+  .reset(reset),
+  .c_en(in_arvalid),
+  .d_en(out_rlast && out_rvalid),
+  .fin(in_rvalid && in_rready),
+  .in_data(out_rlast),
+  .valid(in_rlast),
+  .out_data(rlast_valid)
+);
+
+assign out_awvalid = in_awvalid;
+assign out_awid = in_awid;
+assign out_awaddr = in_awaddr;
+assign out_awlen = in_awlen;
+assign out_awsize = in_awsize;
+assign out_awburst = in_awburst;
+assign out_wvalid = in_wvalid;
+assign out_wdata = in_wdata;
+assign out_wstrb = in_wstrb;
+assign out_wlast = in_wlast;
+assign out_bready = in_bready;
+assign in_bid = out_bid;
+assign in_bresp = out_bresp;
+assign in_awready = out_awready;
+assign in_wready = out_wready;
+
+wire bvalid_valid;
+delayer m_bvalid(
+  .clock(clock),
+  .reset(reset),
+  .c_en(in_awvalid),
+  .d_en(out_bvalid),
+  .fin(in_bvalid && in_bready),
+  .in_data(out_bvalid),
+  .valid(in_bvalid),
+  .out_data(bvalid_valid)
+);
 
   /* assign in_arready = state == DELAY && read_counter[delay_index] == 0out_arready; */
   /* assign out_arvalid = in_arvalid; */
