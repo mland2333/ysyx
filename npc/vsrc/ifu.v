@@ -4,6 +4,7 @@ module ysyx_24110006_IFU(
   input i_reset,
   input [31:0] i_pc,
   output reg [31:0] o_inst,
+  input i_fencei,
 
   input i_valid,
   output reg o_valid,
@@ -32,6 +33,7 @@ ysyx_24110006_ICACHE micache(
   .i_reset(i_reset),
   .i_pc(i_pc),
   .o_inst(o_inst),
+  .i_fencei(i_fencei),
   .i_valid(i_valid),
   .o_valid(o_valid),
   .o_axi_araddr(o_axi_araddr),

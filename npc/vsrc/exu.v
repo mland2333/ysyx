@@ -29,6 +29,7 @@ module ysyx_24110006_EXU(
   output [3:0] o_mem_wmask,
   output [2:0] o_mem_read_t,
   output [31:0] o_mem_addr,
+  output o_fencei,
 
   input i_valid,
   output reg o_valid
@@ -109,7 +110,7 @@ end
 
 `ifndef CONFIG_YOSYS
 always@(posedge i_clock)begin
-  if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR)) begin
+  if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE)) begin
     $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", i_op, i_pc);
     quit();
   end
@@ -126,6 +127,7 @@ wire AUIPC = op == 7'b0010111;
 wire LUI = op == 7'b0110111;
 wire B = op == 7'b1100011;
 wire CSR = op == 7'b1110011;
+wire FENCE = op == 7'b0001111;
 
 wire f000 = func == 3'b000;
 wire f001 = func == 3'b001;
@@ -141,6 +143,7 @@ assign o_mem_wen = S;
 assign o_mem_ren = L;
 assign o_mem_wmask = S ? (f000 ? 4'b0001 : f001 ? 4'b0011 : 4'b1111) : 0;
 assign o_mem_read_t = L ? func : 0;
+assign o_fencei = FENCE && f001;
 
 reg [31:0] alu_a, alu_b;
 reg alu_sub;

@@ -97,6 +97,7 @@ wire[2:0] func;
 wire[4:0] reg_rs1, reg_rs2, reg_rd;
 wire[31:0] imm;
 wire [31:0] ifu_imm;
+wire fencei;
 
 wire[31:0] reg_src1, reg_src2;
 wire[31:0] reg_wdata;
@@ -321,6 +322,7 @@ ysyx_24110006_IFU mifu(
   .i_reset(reset),
   .i_pc(pc),
   .o_inst(inst),
+  .i_fencei(fencei),
   .i_valid(pc_valid),
   .o_valid(ifu_valid),
   .o_axi_araddr(ifu_araddr),
@@ -432,6 +434,7 @@ ysyx_24110006_EXU mexu(
   .o_mem_wmask(mem_wmask),
   .o_mem_read_t(mem_read_t),
   .o_mem_addr(mem_addr),
+  .o_fencei(fencei),
   .i_valid(idu_valid),
   .o_valid(exu_valid)
 );
