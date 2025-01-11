@@ -173,7 +173,7 @@ generate
     #( .WIDTH(32) )
     m_delayer(
       .clock(clock),
-      .reset(reset),
+      .reset(reset || in_rlast && in_rvalid && in_rready),
       .c_en(in_arvalid),
       .d_en(out_rvalid && task_index == i),
       .fin(in_rvalid && in_rready),
