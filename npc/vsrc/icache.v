@@ -3,6 +3,7 @@ module ysyx_24110006_ICACHE(
   input i_reset,
   input [31:0] i_pc,
   output [31:0] o_inst,
+  input i_fencei,
 
   input i_valid,
   output reg o_valid,
@@ -85,7 +86,7 @@ reg [3:0] valid_array;
 reg [63:0] cache_array [4];
 
 always@(posedge i_clock)begin
-  if(i_reset) begin
+  if(i_reset || i_valid && i_fencei) begin
     valid_array <= 0;
   end
   else begin
