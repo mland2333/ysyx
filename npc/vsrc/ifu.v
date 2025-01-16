@@ -4,11 +4,19 @@ module ysyx_24110006_IFU(
   input i_reset,
   input [31:0] i_pc,
   output reg [31:0] o_inst,
+  output [31:0] o_pc,
   input i_fencei,
 
   input i_valid,
   output reg o_valid,
-  
+`ifdef CONFIG_ICACHE
+  `ifdef CONFIG_PIPELINE
+    input i_ready,
+    output o_ready,
+    input i_flush,
+    input i_conflict,
+  `endif
+`endif
   output [31:0] o_axi_araddr,
   output o_axi_arvalid,
   input i_axi_arready,
@@ -33,9 +41,16 @@ ysyx_24110006_ICACHE micache(
   .i_reset(i_reset),
   .i_pc(i_pc),
   .o_inst(o_inst),
+  .o_pc(o_pc),
   .i_fencei(i_fencei),
   .i_valid(i_valid),
   .o_valid(o_valid),
+`ifdef CONFIG_PIPELINE
+  .i_ready(i_ready),
+  .o_ready(o_ready),
+  .i_flush(i_flush),
+  .i_conflict(i_conflict),
+`endif
   .o_axi_araddr(o_axi_araddr),
   .o_axi_arvalid(o_axi_arvalid),
   .i_axi_arready(i_axi_arready),
@@ -76,6 +91,7 @@ always@(posedge i_clock)begin
   if(!i_reset && !o_valid && i_valid)
     pc <= i_pc;
 end
+assign o_pc = pc;
 /* always@(posedge i_clock)begin */
 /*   if(!i_reset && !o_valid && i_valid) */
 /*     o_inst <= inst_fetch(i_pc); */

@@ -4,14 +4,14 @@
 #include <cpu.h>
 #include <cstdint>
 #include <memory.h>
-
+#define BUF_NUMS 10
 enum { DIFFTEST_TO_DUT, DIFFTEST_TO_REF };
 class Diff{
   const Area* area;
   Cpu<REG_NUMS>* cpu;
   Cpu<32>* ref_cpu;
-  bool first_inst = true;
-  bool diff_skip = false, diff_skip_buf = false;
+  bool diff_skip_buf[BUF_NUMS] = {};
+  int read_index = 0, write_index = 0;
   
 public:
   uint64_t diff_nums = 0;
@@ -22,7 +22,7 @@ public:
   ~Diff(){ delete ref_cpu;}
   void init_difftest(const char *ref_so_file, int port);
   bool difftest_step();
-  void diff_skip_step(){ diff_skip_buf = true;}
+  void diff_skip_step(){ diff_skip_buf[write_index] = true; write_index = (write_index+1)%BUF_NUMS; }
 
 };
 

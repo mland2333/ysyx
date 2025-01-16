@@ -18,6 +18,7 @@ void signalHandler(int signum) {
 }
 int main(int argc, char **argv) {
   std::signal(SIGINT, signalHandler);
+  std::signal(SIGSEGV, signalHandler);
   Verilated::commandArgs(argc, argv);
 
   Args args(argc, argv);

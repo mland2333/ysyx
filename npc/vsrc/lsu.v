@@ -7,15 +7,40 @@ module ysyx_24110006_LSU(
   input i_reset,
   input i_ren,
   input i_wen,
-  input[31:0] i_addr,
   input[31:0] i_wdata,
   input[3:0] i_wmask,
   input[2:0] i_read_t,
-  output reg[31:0] o_rdata,
+  /* input [3:0] i_alu_t, */
+  input [4:0] i_reg_rd,
+  input [1:0] i_csr_t,
+  /* input i_cmp, */
+  /* input i_zero, */
+  input i_result_t,
+  input i_reg_wen,
+  input i_csr_wen,
+  input i_jump,
+  /* input i_trap, */
+  input [31:0] i_result,
+  input [31:0] i_upc,
+  input [31:0] i_pc,
+
+  output [31:0] o_upc,
+  output [1:0] o_csr_t,
+  output o_reg_wen,
+  output o_csr_wen,
+  output o_jump,
+  output [31:0] o_result,
+  output [4:0] o_reg_rd,
+  output [31:0] o_pc,
 
   input i_valid,
   output reg o_valid,
-
+`ifdef CONFIG_PIPELINE
+  input i_ready,
+  output o_ready,
+  /* input i_flush, */
+  /* output o_flush, */
+`endif
   output [31:0] o_axi_araddr,
   output o_axi_arvalid,
   input i_axi_arready,
@@ -86,16 +111,56 @@ reg [31:0] addr;
 reg [31:0] wdata;
 reg [3:0] wmask;
 reg [2:0] read_t;
+reg [31:0] result;
+reg [31:0] upc;
+/* reg [3:0] alu_t; */
+reg [4:0] reg_rd;
+reg result_t;
+reg csr_wen;
+reg reg_wen;
+reg jump;
+/* reg trap; */
+/* reg cmp; */
+/* reg zero; */
+reg [31:0] pc;
+reg [1:0] csr_t;
+wire mem_valid = ren&&rvalid&&rready || wen&&bvalid&&bready;
+wire [31:0] i_addr = i_result;
+wire update_reg;
+`ifdef CONFIG_PIPELINE
 
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
-  else if(!o_valid && (ren&&rvalid&&rready || wen&&bvalid&&bready || !i_wen&&!i_ren&&i_valid)) begin
+  else if(!(i_wen||i_ren)&&i_valid&&o_ready || mem_valid) begin
     o_valid <= 1;
   end
   else if(o_valid)begin
     o_valid <= 0;
   end
 end
+always@(posedge i_clock)begin
+  if(i_reset) o_ready <= 1;
+  else if(o_ready && !(i_wen||i_ren)) o_ready <= 1;
+  else if(o_ready && i_valid && (i_wen || i_ren)) o_ready <= 0;
+  else if(!o_ready && mem_valid) o_ready <= 1;
+end
+
+assign update_reg = !i_reset && i_valid && o_ready;
+/* assign o_flush = o_valid && o_jump; */
+
+`else
+
+always@(posedge i_clock)begin
+  if(i_reset) o_valid <= 0;
+  else if(!o_valid && (mem_valid||!(i_wen||i_ren)&&i_valid)) begin
+    o_valid <= 1;
+  end
+  else if(o_valid)begin
+    o_valid <= 0;
+  end
+end
+assign update_reg = !i_reset && !o_valid && i_valid;
+`endif
 
 always@(posedge i_clock)begin
   if(i_reset) rdata <= 0;
@@ -103,34 +168,45 @@ always@(posedge i_clock)begin
 end
 
 always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
+  if(update_reg)begin
     ren <= i_ren;
-end
-
-always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
     wen <= i_wen;
-end
-
-always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
     addr <= i_addr;
-end
-
-always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
     wdata <= i_wdata;
-end
-
-always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
     wmask <= i_wmask;
-end
-
-always@(posedge i_clock)begin
-  if(!i_reset && !o_valid && i_valid)
     read_t <= i_read_t;
+    reg_rd <= i_reg_rd;
+    pc <= i_pc;
+    upc <= i_upc;
+    result <= i_result;
+    result_t <= i_result_t;
+    reg_wen <= i_reg_wen;
+    csr_wen <= i_csr_wen;
+    jump <= i_jump;
+    /* trap <= i_trap; */
+    /* alu_t <= i_alu_t; */
+    /* cmp <= i_cmp; */
+    /* zero <= i_zero; */
+    csr_t <= i_csr_t;
+  end
 end
+/* assign o_jump = trap || jump || branch; */
+assign o_upc = upc;
+assign o_reg_wen = reg_wen;
+assign o_csr_wen = csr_wen;
+assign o_reg_rd = reg_rd;
+assign o_pc = pc;
+assign o_csr_t = csr_t;
+assign o_jump = jump;
+/* localparam BEQ = 4'b1000; */
+/* localparam BNE = 4'b1001; */
+/* localparam BLT = 4'b1100; */
+/* localparam BGE = 4'b1101; */
+/* localparam BLTU = 4'b1110; */
+/* localparam BGEU = 4'b1111; */
+/* wire branch = (alu_t==BEQ)&&zero||(alu_t==BNE)&&~zero||(alu_t==BLT||alu_t==BLTU)&&cmp||(alu_t==BGE||alu_t==BGEU)&&~cmp; */
+reg [31:0] o_rdata;
+assign o_result = result_t ? o_rdata : result;
 
 reg[31:0] rdata, rdata0;
 reg[31:0] wdata0;
@@ -165,7 +241,7 @@ always @(*) begin
 end
 
 
-always@(wen or addr or wdata)begin
+always@(*)begin
   if(wen)begin
     case(addr[1:0])
       2'b00:begin
@@ -185,6 +261,10 @@ always@(wen or addr or wdata)begin
         wmask0 = {wmask[0], 3'b0};
       end
     endcase
+  end
+  else begin
+    wdata0 = 0;
+    wmask0 = 0;
   end
 end
 
@@ -237,7 +317,7 @@ assign o_axi_bready = bready;
 
 always@(posedge i_clock) begin
   if(i_reset) arvalid <= 0;
-  else if(i_valid && !arvalid && i_ren) arvalid <= 1;
+  else if(i_valid && !arvalid && i_ren && o_ready) arvalid <= 1;
   else if(arvalid && arready) arvalid <= 0;
 end
 
@@ -252,13 +332,13 @@ end
 
 always@(posedge i_clock) begin
   if(i_reset) awvalid <= 0;
-  else if(i_valid && !awvalid && i_wen) awvalid <= 1;
+  else if(i_valid && !awvalid && i_wen && o_ready) awvalid <= 1;
   else if(awvalid && awready && wvalid && wready) awvalid <= 0;
 end
 
 always@(posedge i_clock) begin
   if(i_reset) wvalid <= 0;
-  else if(i_valid && !wvalid && i_wen) wvalid <= 1;
+  else if(i_valid && !wvalid && i_wen && o_ready) wvalid <= 1;
   else if(awvalid && awready && wvalid && wready) wvalid <= 0;
 end
 

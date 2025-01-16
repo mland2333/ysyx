@@ -40,19 +40,16 @@ void Diff::init_difftest(const char *ref_so_file, int port){
 }
 
 bool Diff::difftest_step() {
-  if (first_inst) {
-    ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
-    first_inst = false;
-    return true;
-  }
   /* if (diff_skip){ */
     /* ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF); */
     /* diff_skip = diff_skip_buf; */
     /* return true; */
   /* } */
-  if (diff_skip_buf) {
+  if (diff_skip_buf[read_index]) {
     ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
-    diff_skip_buf = false;
+    diff_skip_buf[read_index] = false;
+    read_index = (read_index+1)%BUF_NUMS;
+    /* std::cout << "跳过\n"; */
     return true;
   }
   diff_nums ++;
