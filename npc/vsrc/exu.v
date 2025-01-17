@@ -21,14 +21,10 @@ module ysyx_24110006_EXU(
   output [31:0] o_result,
   output [31:0] o_upc,
   output o_result_t,
-  /* output [3:0] o_alu_t, */
   output [1:0] o_csr_t,
-  /* output o_cmp, */
-  /* output o_zero, */
   output o_reg_wen,
   output o_csr_wen,
   output o_jump,
-  /* output o_trap, */
   output o_mem_ren,
   output o_mem_wen,
   output [3:0] o_mem_wmask,
@@ -38,6 +34,7 @@ module ysyx_24110006_EXU(
   output [4:0] o_reg_rd,
   output [31:0] o_pc,
   output o_fencei,
+  output [6:0] o_op,
 
   input i_valid,
   output reg o_valid
@@ -213,6 +210,7 @@ assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
 assign o_pc = pc;
 assign o_mem_wdata = mem_wdata;
+assign o_op = op;
 /* always@(posedge i_clock)begin */
 /*   if(update_reg)  */
 /*     $fwrite(32'h80000002, "`%xh` in pc `%xh` \n", i_op, i_pc); */

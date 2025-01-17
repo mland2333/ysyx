@@ -23,7 +23,7 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
 
 void Simulator::step_and_dump_wave() {
   top->eval();
-  if (is_gtk) {
+  if (is_gtk && cpu.pc >= PC_BEGIN) {
     contextp->timeInc(1);
     tfp->dump(contextp->time());
   }

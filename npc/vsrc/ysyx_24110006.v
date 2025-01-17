@@ -89,7 +89,7 @@ wire [31:0] pc, ifu_pc, idu_pc, exu_pc, lsu_pc;
 wire [31:0] exu_upc, lsu_upc, csr_upc;
 
 wire [31:0] ifu_inst;
-wire [6:0] idu_op;
+wire [6:0] idu_op, exu_op, lsu_op;
 wire [2:0] idu_func;
 wire [4:0] idu_rs1, idu_rs2, idu_rd, exu_rd, lsu_rd;
 wire [31:0] ifu_imm, idu_imm;
@@ -120,36 +120,43 @@ assign csr_wdata = lsu_result;
 
 wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
 `ifdef CONFIG_PIPELINE
-wire ifu_ready, idu_ready, exu_ready, lsu_ready;
+  wire ifu_ready, idu_ready, exu_ready, lsu_ready;
+`endif
+reg [31:0] sim_pc;
+`ifdef CONFIG_SIM
+  wire is_diff_skip;
+  wire lsu_wen, lsu_ren;
+  wire [31:0] lsu_addr;
+  `ifndef CONFIG_YSYXSOC
+    assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
+  `else
+    assign is_diff_skip = clint_rvalid || (lsu_wen||lsu_ren)&&(lsu_addr >= 32'h10000000 && lsu_addr < 32'h10001000 || lsu_addr >= 32'h02000000 && lsu_addr < 32'h03000000);
+  `endif
+
+
+  always@(posedge clock)begin
+    if(reset) sim_pc <= 0;
+    else begin
+      if(lsu_valid) sim_pc <= lsu_jump ? lsu_upc : lsu_pc + 4;
+    end
+  end
+
+  always@(posedge clock)begin
+    if(lsu_valid) begin
+      if(is_diff_skip) diff_skip();
+      difftest();
+    end
+  end
 `endif
 reg[31:0] npc_upc;
 always@(posedge clock)
   npc_upc <= exu_upc;
 
-wire is_diff_skip;
+
 wire reg_valid;
-`ifndef CONFIG_YSYXSOC
-  assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
-`else
-  assign is_diff_skip = clint_rvalid || exu_valid && lsu_ready && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'h10000000 && exu_result < 32'h10001000;
-`endif
+
 
 `ifndef CONFIG_YOSYS
-reg [31:0] diff_pc;
-always@(posedge i_clock)begin
-  if(i_reset) diff_pc <= 0;
-  else begin
-    if(lsu_valid) diff_pc <= lsu_jump ? lsu_upc : lsu_pc + 4;
-  end
-end
-
-always@(posedge clock)begin
-  if(is_diff_skip) diff_skip();
-end
-
-always@(posedge clock)begin
-  if(lsu_valid) difftest();
-end
 
 always@(posedge clock)begin
   if(ifu_valid) fetch_inst();
@@ -398,7 +405,9 @@ ysyx_24110006_IDU midu(
   ,.i_ready(exu_ready||lsu_ready),
   .o_ready(idu_ready),
   .i_flush(flush),
-  .i_conflict(conflict)
+  .i_conflict(conflict),
+  .i_wen(exu_mem_wen),
+  .i_ren(exu_mem_ren)
 `endif
 );
 
@@ -472,11 +481,7 @@ ysyx_24110006_EXU mexu(
   .o_csr_wen(exu_csr_wen),
   .o_result_t(exu_result_t),
   .o_csr_t(exu_csr_t),
-  /* .o_alu_t(exu_alu_t), */
-  /* .o_cmp(exu_cmp), */
-  /* .o_zero(exu_zero), */
   .o_jump(exu_jump),
-  /* .o_trap(exu_trap), */
   .o_reg_rd(exu_rd),
   .o_mem_ren(exu_mem_ren),
   .o_mem_wen(exu_mem_wen),
@@ -485,6 +490,7 @@ ysyx_24110006_EXU mexu(
   .o_mem_addr(exu_mem_addr),
   .o_mem_wdata(mem_wdata),
   .o_fencei(fencei),
+  .o_op(exu_op),
   .i_valid(idu_valid&&!conflict),
   .o_valid(exu_valid)
 `ifdef CONFIG_PIPELINE
@@ -532,36 +538,36 @@ ysyx_24110006_LSU mlsu(
   .i_wdata(mem_wdata),
   .i_wmask(exu_mem_wmask),
   .i_read_t(exu_mem_read_t),
-  /* .i_alu_t(exu_alu_t), */
-  /* .i_cmp(exu_cmp), */
-  /* .i_zero(exu_zero), */
   .i_result_t(exu_result_t),
   .i_reg_wen(exu_reg_wen),
   .i_csr_wen(exu_csr_wen),
-  .i_jump(exu_jump),
-  /* .i_trap(exu_trap), */
   .i_result(exu_result),
-  .i_upc(exu_upc),
   .i_reg_rd(exu_rd),
-  .i_pc(exu_pc),
   .i_csr_t(exu_csr_t),
 
   .o_result(lsu_result),
-  .o_upc(lsu_upc),
   .o_reg_wen(lsu_reg_wen),
   .o_csr_wen(lsu_csr_wen),
   .o_reg_rd(lsu_rd),
-  .o_pc(lsu_pc),
   .o_csr_t(lsu_csr_t),
+`ifdef CONFIG_SIM
+  .i_jump(exu_jump),
   .o_jump(lsu_jump),
-
+  .i_pc(exu_pc),
+  .o_pc(lsu_pc),
+  .i_upc(exu_upc),
+  .o_upc(lsu_upc),
+  .i_op(exu_op),
+  .o_op(lsu_op),
+  .o_wen(lsu_wen),
+  .o_ren(lsu_ren),
+  .o_addr(lsu_addr),
+`endif
   .i_valid(exu_valid),
   .o_valid(lsu_valid),
 `ifdef CONFIG_PIPELINE
   .i_ready(1),
   .o_ready(lsu_ready),
-  /* .i_flush(flush), */
-  /* .o_flush(flush), */
 `endif
   .o_axi_araddr(lsu_araddr),
   .o_axi_arvalid(lsu_arvalid),

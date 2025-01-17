@@ -44,7 +44,7 @@ private:
     for (int i = 0; i < 16; i++) {
       cpu.gpr[i] = TOP_MEMBER(mreg__DOT__rf[i]);
     }
-    cpu.pc = TOP_MEMBER(mlsu__DOT__pc);
+    cpu.pc = TOP_MEMBER(sim_pc);
     if (TOP_MEMBER(ifu_valid))
       /* cpu.inst = TOP_MEMBER(mifu__DOT__inst); */
       cpu.inst = get_inst();
@@ -66,13 +66,7 @@ public:
     cpu_update();
   }
   SIM_STATE exec_once();
-  /* bool is_jump(){ */
-  /*   return TOP_MEMBER(mpc__DOT__jump); */
-  /* } */
-  /* uint32_t get_upc(){ */
-  /*   return TOP_MEMBER(upc); */
-  /* } */
-  void quit(){
+    void quit(){
     state = SIM_STATE::QUIT;
   }
   int get_inst(){

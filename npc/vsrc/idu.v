@@ -20,7 +20,9 @@ module ysyx_24110006_IDU(
   ,input i_ready,
   output o_ready,
   input i_flush,
-  input i_conflict
+  input i_conflict,
+  input i_wen,
+  input i_ren
 `endif
 );
 
@@ -43,6 +45,7 @@ end
 always@(posedge i_clock)begin
   if(i_reset || i_flush) o_ready <= 1;
   else if(i_conflict) o_ready <= 0;
+  else if(i_valid && o_valid && (i_wen || i_ren)) o_ready <= 0;
   else if(i_ready) o_ready <= 1;
   else if(i_valid) o_ready <= 0;
 end
