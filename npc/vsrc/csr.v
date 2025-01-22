@@ -1,14 +1,16 @@
 module ysyx_24110006_CSR(
   input i_clock,
   input i_reset,
-  input i_wen,
-  input[1:0] i_csr_t,
-  input[11:0] i_csr,
-  input[31:0] i_pc,
-  input[31:0] i_wdata,
-  input[31:0] i_mcause,
-  output[31:0] o_rdata,
-  output[31:0] o_upc,
+  input i_exception,
+  input [1:0] i_csr_t,
+  input [11:0] i_csr_r,
+  input [11:0] i_csr_w,
+  input [31:0] i_pc,
+  input [31:0] i_wdata,
+  input [31:0] i_mcause,
+  input i_mret,
+  output [31:0] o_rdata,
+  output [31:0] o_upc,
   input i_valid
 );
 localparam MSTATUS = 2'b00;
@@ -23,33 +25,60 @@ localparam CSRW = 2'b01;
 localparam ECALL = 2'b11;
 
 reg[31:0] csr[4];
-reg[1:0] index;
+reg[1:0] index_r, index_w;
 
 always@(*)begin
-  case(i_csr)
-    12'h300: index = MSTATUS;
-    12'h305: index = MTVEC;
-    12'h341: index = MEPC;
-    12'h342: index = MCAUSE;
-    default: index = 0;
+  case(i_csr_r)
+    12'h300: index_r = MSTATUS;
+    12'h305: index_r = MTVEC;
+    12'h341: index_r = MEPC;
+    12'h342: index_r = MCAUSE;
+    default: index_r = 0;
   endcase
 end
-
+always@(*)begin
+  case(i_csr_w)
+    12'h300: index_w = MSTATUS;
+    12'h305: index_w = MTVEC;
+    12'h341: index_w = MEPC;
+    12'h342: index_w = MCAUSE;
+    default: index_w = 0;
+  endcase
+end
 always@(posedge i_clock)begin
-  if(i_valid && i_wen)begin
-    case(i_csr_t)
-      ECALL:begin
-        csr[MEPC] = i_pc;
-        csr[MCAUSE] = i_mcause;
-      end
-      CSRW:begin
-        csr[index] = i_wdata;
-      end
-      default:begin
-      end
-    endcase
+  if(i_valid)begin
+    if(i_exception)begin
+      csr[MCAUSE] <= i_mcause;
+      csr[MEPC] <= i_pc;
+    end
+    else if(i_csr_t[0])begin
+      csr[index_w] <= i_wdata;
+    end
   end
 end
+
+assign o_upc = i_exception ? csr[MTVEC] : i_mret ? csr[MEPC] : 0;
+assign o_rdata = i_csr_r == 12'hf11 ? 32'h79737978 : i_csr_r == 12'hf12 ? 32'h16fe3b8 : csr[index_r];
+
+/* always@(posedge i_clock)begin */
+/*   if(i_valid && i_wen)begin */
+/*     case(i_csr_t) */
+/*       ECALL:begin */
+/*         csr[MEPC] = i_pc; */
+/*         csr[MCAUSE] = i_mcause; */
+/*       end */
+/*       CSRW:begin */
+/*         csr[index] = i_wdata; */
+/*       end */
+/*       default:begin */
+/*       end */
+/*     endcase */
+/*   end */
+/*   else if(i_exception)begin */
+/*     csr[MCAUSE] = i_mcause; */
+/*     csr[MEPC] = csr[MEPC]; */
+/*   end */
+/* end */
 
 /* always@(posedge i_clock) */
 /*   csr[MVENDORID] = 32'h79737978; */
@@ -57,8 +86,8 @@ end
 /*   csr[MARCHID] = 32'h16fe3b6; */
 
 
-assign o_upc = i_csr_t == ECALL ? csr[MTVEC] : i_csr_t == MRET ? csr[MEPC] : 0;
+/* assign o_upc = i_csr_t == ECALL ? csr[MTVEC] : i_csr_t == MRET ? csr[MEPC] : 0; */
 
-assign o_rdata = i_csr == 12'hf11 ? 32'h79737978 : i_csr == 12'hf12 ? 32'h16fe3b8 : csr[index];
+/* assign o_rdata = i_csr == 12'hf11 ? 32'h79737978 : i_csr == 12'hf12 ? 32'h16fe3b8 : csr[index]; */
 
 endmodule

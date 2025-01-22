@@ -13,6 +13,8 @@ module ysyx_24110006_IDU(
   output [31:0] o_imm,
   output [31:0] o_pc,
   output [1:0] o_csr_t,
+  output [11:0] o_csr,
+  output o_mret,
 
   input i_valid,
   output reg o_valid
@@ -21,6 +23,10 @@ module ysyx_24110006_IDU(
   output o_ready,
   input i_flush,
   input i_conflict,
+  input i_exception,
+  output o_exception,
+  input [3:0] i_mcause,
+  output [3:0] o_mcause,
   input i_wen,
   input i_ren
 `endif
@@ -51,7 +57,38 @@ always@(posedge i_clock)begin
 end
 
 assign update_reg = i_valid && (o_ready || i_ready&&!i_conflict) && !i_flush;
+reg exception;
+always@(posedge i_clock)begin
+  if(update_reg)
+    exception <= i_exception;
+end
+assign o_exception = exception | my_exception;
+reg [3:0] mcause;
+always@(posedge i_clock)begin
+  if(update_reg)
+    mcause <= i_mcause;
+end
+assign o_mcause = exception ? mcause : my_mcause;
 
+wire I = o_op == 7'b0010011;
+wire R = o_op == 7'b0110011;
+wire L = o_op == 7'b0000011;
+wire S = o_op == 7'b0100011;
+wire JAL = o_op == 7'b1101111;
+wire JALR = o_op == 7'b1100111;
+wire AUIPC = o_op == 7'b0010111;
+wire LUI = o_op == 7'b0110111;
+wire B = o_op == 7'b1100011;
+wire CSR = o_op == 7'b1110011;
+wire FENCE = o_op == 7'b0001111;
+
+wire illegal_inst = !(I|R|L|S|JAL|JALR|AUIPC|LUI|B|CSR|FENCE);
+wire breakpoint = inst == 32'h00100073;
+wire ecall_m = inst == 32'h00000073;
+wire my_exception = illegal_inst | breakpoint | ecall_m;
+wire [3:0] my_mcause = ({4{illegal_inst}} & 4'd2) |
+                       ({4{breakpoint}} & 4'd3)   |
+                       ({4{ecall_m}} & 4'd11);
 `else
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
@@ -84,7 +121,17 @@ assign o_reg_rs1 = inst[19:15];
 assign o_reg_rs2 = inst[24:20];
 assign o_pc = pc;
 assign o_imm = imm;
-assign o_reg_wen = o_op != 7'b0100011 && o_op != 7'b1100011;
+assign o_reg_wen = I|R|L|JAL|JALR|AUIPC|LUI;
+assign o_csr = inst[31:20];
+assign o_mret = inst == 32'h30200073;
+`ifndef CONFIG_YOSYS
+always@(posedge i_clock)begin
+  if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE)) begin
+    $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", o_op, o_pc);
+    quit();
+  end
+end
+`endif
 /* wire is_i = inst[6:0] == 7'b0010011 || inst[6:0] == 7'b1100111 || inst[6:0] == 7'b0000011 || inst[6:0] == 7'b1110011; */
 /* wire is_u = inst[6:0] == 7'b0110111 || inst[6:0] == 7'b0010111; */
 /* wire is_j = inst[6:0] == 7'b1101111; */
@@ -114,9 +161,7 @@ assign o_reg_wen = o_op != 7'b0100011 && o_op != 7'b1100011;
 /* assign o_imm = is_irjb ? irjbi : su0i; */
 
 /* assign o_imm = is_i ? immi : is_j ? immj : is_u ? immu : is_s ? imms : is_b ? immb : immr; */
-localparam MRET = 2'b00;
-localparam CSRW = 2'b01;
-localparam ECALL = 2'b11;
-assign o_csr_t = o_func == 3'b0 ? (inst[29] ? MRET : ECALL) : CSRW;
+assign o_csr_t[0] = CSR & (o_func != 0);
+assign o_csr_t[1] = o_mret;
 
 endmodule

@@ -11,6 +11,7 @@ module ysyx_24110006_EXU(
   input i_alu_sra,
   input [4:0] i_reg_rd,
   input [1:0] i_csr_t,
+  input [11:0] i_csr,
   input [31:0] i_reg_src1,
   input [31:0] i_reg_src2,
   input [31:0] i_csr_src,
@@ -23,7 +24,6 @@ module ysyx_24110006_EXU(
   output o_result_t,
   output [1:0] o_csr_t,
   output o_reg_wen,
-  output o_csr_wen,
   output o_jump,
   output o_mem_ren,
   output o_mem_wen,
@@ -35,6 +35,7 @@ module ysyx_24110006_EXU(
   output [31:0] o_pc,
   output o_fencei,
   output [6:0] o_op,
+  output [11:0] o_csr,
 
   input i_valid,
   output reg o_valid
@@ -42,7 +43,11 @@ module ysyx_24110006_EXU(
   ,input i_ready,
   output o_ready,
   input i_flush,
-  output o_flush
+  output o_flush,
+  input i_exception,
+  output o_exception,
+  input [3:0] i_mcause,
+  output [3:0] o_mcause
 `endif
 );
 
@@ -91,6 +96,18 @@ always@(posedge i_clock)begin
 end
 assign o_flush = o_jump && flush_valid;
 
+reg exception;
+always@(posedge i_clock)begin
+  if(update_reg)
+    exception <= i_exception;
+end
+assign o_exception = exception;
+reg [3:0] mcause;
+always@(posedge i_clock)begin
+  if(update_reg)
+    mcause <= i_mcause;
+end
+assign o_mcause = mcause;
 `else
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
@@ -104,6 +121,13 @@ end
 
 assign update_reg = !i_reset && !o_valid && i_valid;
 `endif
+
+reg [11:0] csr;
+always@(posedge i_clock)begin
+  if(update_reg)
+    csr <= i_csr;
+end
+assign o_csr = csr;
 
 always@(posedge i_clock)begin
   if(update_reg)
@@ -165,14 +189,7 @@ always@(posedge i_clock)begin
   if(update_reg) alu_t <= i_alu_t;
 end
 
-`ifndef CONFIG_YOSYS
-always@(posedge i_clock)begin
-  if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE)) begin
-    $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", i_op, i_pc);
-    quit();
-  end
-end
-`endif
+
 
 wire I = op == 7'b0010011;
 wire R = op == 7'b0110011;
@@ -271,9 +288,7 @@ ysyx_24110006_ALU malu(
 reg [31:0] upc;
 
 assign o_upc = upc + imm;
-assign o_jump = JAL || JALR || branch || trap;
-wire trap = CSR && f000;
+assign o_jump = JAL || JALR || branch || csr_t[1];
 assign o_reg_wen = !(S || B);
-assign o_csr_wen = CSR;
 /* assign o_alu_t = alu_t; */
 endmodule

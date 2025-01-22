@@ -13,6 +13,8 @@ module ysyx_24110006_ICACHE(
   output o_ready,
   input i_flush,
   input i_conflict,
+  output o_exception,
+  output [3:0] o_mcause,
 `endif
 
   output [31:0] o_axi_araddr,
@@ -92,6 +94,8 @@ always@(posedge i_clock)begin
   else if((inst_valid || !o_ready && o_valid) && i_ready) o_ready <= 1;
 end
 assign update_reg = !i_reset && i_valid && o_ready && !i_flush;
+assign o_exception = pc[1:0] != 2'b00 || rresp != 0;
+assign o_mcause = rresp != 0 ? 1 : 0;
 `else
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
