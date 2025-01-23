@@ -59,10 +59,12 @@ void halt(int code) {
 }
 
 void uart_init(){
-  UartWriteReg(3, (1 << 7));
+  int a = 1 << 7;
+  int b = 3 << 0;
+  UartWriteReg(LCR, a);
   UartWriteReg(DLL, 0x06);
   UartWriteReg(DLM, 0x00);
-  UartWriteReg(LCR, (3 << 0));
+  UartWriteReg(LCR, b);
 }
 
 void _trm_init() {

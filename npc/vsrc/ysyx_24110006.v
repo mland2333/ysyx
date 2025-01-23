@@ -73,7 +73,14 @@ module ysyx_24110006(
 );
 wire flush;
 wire conflict;
+wire exception;
+wire [31:0] upc;
+assign exception = lsu_valid & lsu_exception;
+assign flush = exu_flush | exception;
+assign upc = exception ? csr_upc : exu_upc;
 
+wire idu_mret;
+wire exu_flush;
 wire exu_cmp;
 wire exu_zero;
 wire exu_jump;
@@ -83,13 +90,12 @@ wire [3:0] exu_alu_t;
 
 wire [31:0] exu_result, lsu_result;
 wire idu_reg_wen, exu_reg_wen, lsu_reg_wen;
-wire exu_csr_wen, lsu_csr_wen;
 
 wire [31:0] pc, ifu_pc, idu_pc, exu_pc, lsu_pc;
 wire [31:0] exu_upc, lsu_upc, csr_upc;
 
 wire [31:0] ifu_inst;
-wire [6:0] idu_op;
+wire [6:0] idu_op, exu_op, lsu_op;
 wire [2:0] idu_func;
 wire [4:0] idu_rs1, idu_rs2, idu_rd, exu_rd, lsu_rd;
 wire [31:0] ifu_imm, idu_imm;
@@ -100,11 +106,11 @@ wire [31:0] reg_wdata;
 wire [31:0] csr_src;
 
 
-wire [31:0] csr_mcause = 32'd11;
-wire [11:0] csr = idu_imm[11:0];
+wire [11:0] idu_csr, exu_csr, lsu_csr;
 wire [1:0] idu_csr_t, exu_csr_t, lsu_csr_t;
 wire [31:0] csr_wdata;
-
+wire ifu_exception, idu_exception, exu_exception, lsu_exception;
+wire [3:0] ifu_mcause, idu_mcause, exu_mcause, lsu_mcause;
 wire [31:0] alu_a, alu_b;
 wire [3:0] alu_t;
 wire alu_sign, alu_sub, alu_sra;
@@ -113,35 +119,53 @@ wire exu_mem_ren, exu_mem_wen;
 wire [3:0] exu_mem_wmask;
 wire [2:0] exu_mem_read_t;
 wire [31:0] exu_mem_addr;
-wire [31:0] mem_wdata = reg_src2;
+wire [31:0] mem_wdata;
 wire [31:0] mem_rdata;
+
 wire lsu_jump;
+wire mret = lsu_csr_t[1];
+wire jump = lsu_jump | lsu_exception | mret;
 assign csr_wdata = lsu_result;
 
 wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
 `ifdef CONFIG_PIPELINE
-wire ifu_ready, idu_ready, exu_ready, lsu_ready;
+  wire ifu_ready, idu_ready, exu_ready, lsu_ready;
+`endif
+reg [31:0] sim_pc;
+`ifdef CONFIG_SIM
+  wire is_diff_skip;
+  wire lsu_wen, lsu_ren;
+  wire [31:0] lsu_addr;
+  `ifndef CONFIG_YSYXSOC
+    assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
+  `else
+    assign is_diff_skip = clint_rvalid || (lsu_wen||lsu_ren)&&(lsu_addr >= 32'h10000000 && lsu_addr < 32'h10001000 || lsu_addr >= 32'h02000000 && lsu_addr < 32'h03000000);
+  `endif
+
+
+  always@(posedge clock)begin
+    if(reset) sim_pc <= 0;
+    else begin
+      if(lsu_valid) sim_pc <= lsu_jump ? lsu_upc : lsu_pc + 4;
+    end
+  end
+
+  always@(posedge clock)begin
+    if(lsu_valid) begin
+      if(is_diff_skip) diff_skip();
+      difftest();
+    end
+  end
 `endif
 reg[31:0] npc_upc;
 always@(posedge clock)
   npc_upc <= exu_upc;
 
-wire is_diff_skip;
+
 wire reg_valid;
-`ifndef CONFIG_YSYXSOC
-  assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
-`else
-  assign is_diff_skip = clint_rvalid || exu_valid && lsu_ready && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'h10000000 && exu_result < 32'h10001000;
-`endif
+
 
 `ifndef CONFIG_YOSYS
-always@(posedge clock)begin
-  if(is_diff_skip) diff_skip();
-end
-
-always@(posedge clock)begin
-  if(reg_valid) difftest();
-end
 
 always@(posedge clock)begin
   if(ifu_valid) fetch_inst();
@@ -307,8 +331,8 @@ wire [1:0] clint_rresp;
 ysyx_24110006_PC mpc(
   .i_clock(clock),
   .i_reset(reset),
-  .i_jump(lsu_jump),
-  .i_upc(lsu_upc),
+  .i_jump(jump),
+  .i_upc(upc),
   .o_pc(pc),
   .i_valid(lsu_valid),
   .o_valid(pc_valid)
@@ -325,12 +349,15 @@ ysyx_24110006_IFU mifu(
   .o_inst(ifu_inst),
   .i_fencei(fencei),
   .o_pc(ifu_pc),
+  .o_exception(ifu_exception),
+  .o_mcause(ifu_mcause),
   .i_valid(pc_valid),
   .o_valid(ifu_valid),
 `ifdef CONFIG_PIPELINE
-  .i_ready(idu_ready||exu_ready||lsu_ready),
+  .i_ready((idu_ready||exu_ready||lsu_ready)&&!conflict),
   .o_ready(ifu_ready),
   .i_flush(flush),
+  .i_conflict(conflict),
 `endif
   .o_axi_araddr(ifu_araddr),
   .o_axi_arvalid(ifu_arvalid),
@@ -354,14 +381,14 @@ ysyx_24110006_IMM mimm(
 
 `ifdef CONFIG_PIPELINE
 ysyx_24110006_CONFLICT mconflict(
-  .i_inst(ifu_inst),
-  .i_exu_rd(idu_rd),
+  .i_valid(idu_valid),
+  .i_op(idu_op),
+  .i_rs1(idu_rs1),
+  .i_rs2(idu_rs2),
   .i_lsu_rd(exu_rd),
   .i_wbu_rd(lsu_rd),
-  .i_exu_wen(idu_reg_wen),
   .i_lsu_wen(exu_reg_wen),
   .i_wbu_wen(lsu_reg_wen),
-  .i_exu_busy(idu_valid),
   .i_lsu_busy(exu_valid),
   .i_wbu_busy(lsu_valid||!lsu_ready),
   .o_conflict(conflict)
@@ -383,13 +410,21 @@ ysyx_24110006_IDU midu(
   .o_imm(idu_imm),
   .o_pc(idu_pc),
   .o_csr_t(idu_csr_t),
+  .i_exception(ifu_exception),
+  .o_exception(idu_exception),
+  .i_mcause(ifu_mcause),
+  .o_mcause(idu_mcause),
+  .o_csr(idu_csr),
+  .o_mret(idu_mret),
   .i_valid(ifu_valid),
   .o_valid(idu_valid)
 `ifdef CONFIG_PIPELINE
   ,.i_ready(exu_ready||lsu_ready),
   .o_ready(idu_ready),
   .i_flush(flush),
-  .i_conflict(conflict)
+  .i_conflict(conflict),
+  .i_wen(exu_mem_wen),
+  .i_ren(exu_mem_ren)
 `endif
 );
 
@@ -410,12 +445,14 @@ ysyx_24110006_RegisterFile mreg(
 ysyx_24110006_CSR mcsr(
   .i_clock(clock),
   .i_reset(reset),
-  .i_wen(lsu_csr_wen),
-  .i_csr_t(idu_csr_t),
-  .i_csr(csr),
+  .i_csr_t(lsu_csr_t),
+  .i_csr_r(idu_csr),
+  .i_mret(idu_mret),
+  .i_csr_w(lsu_csr),
   .i_pc(lsu_pc),
-  .i_mcause(csr_mcause),
-  .i_wdata(csr_wdata),
+  .i_exception(exception),
+  .i_mcause(lsu_mcause),
+  .i_wdata(lsu_result),
   .o_rdata(csr_src),
   .o_upc(csr_upc),
   .i_valid(lsu_valid)
@@ -449,68 +486,45 @@ ysyx_24110006_EXU mexu(
   .i_op(idu_op),
   .i_func(idu_func),
   .i_reg_src1(reg_src1),
+  .i_reg_src2(reg_src2),
   .i_reg_rd(idu_rd),
   .i_csr_src(csr_src),
   .i_csr_t(idu_csr_t),
   .i_imm(idu_imm),
   .i_pc(idu_pc),
-  .i_csr_upc(csr_upc),
   .o_result(exu_result),
   .o_upc(exu_upc),
   .o_pc(exu_pc),
   .o_reg_wen(exu_reg_wen),
-  .o_csr_wen(exu_csr_wen),
   .o_result_t(exu_result_t),
   .o_csr_t(exu_csr_t),
-  .o_alu_t(exu_alu_t),
-  .o_cmp(exu_cmp),
-  .o_zero(exu_zero),
   .o_jump(exu_jump),
-  .o_trap(exu_trap),
   .o_reg_rd(exu_rd),
   .o_mem_ren(exu_mem_ren),
   .o_mem_wen(exu_mem_wen),
   .o_mem_wmask(exu_mem_wmask),
   .o_mem_read_t(exu_mem_read_t),
   .o_mem_addr(exu_mem_addr),
+  .o_mem_wdata(mem_wdata),
   .o_fencei(fencei),
-  .i_valid(idu_valid),
+  .o_op(exu_op),
+  .i_exception(idu_exception),
+  .o_exception(exu_exception),
+  .i_mcause(idu_mcause),
+  .o_mcause(exu_mcause),
+  .i_csr(idu_csr),
+  .o_csr(exu_csr),
+  .i_csr_upc(csr_upc),
+  .i_valid(idu_valid&&!conflict),
   .o_valid(exu_valid)
 `ifdef CONFIG_PIPELINE
   ,.i_ready(lsu_ready),
   .o_ready(exu_ready),
-  .i_flush(flush)
+  .i_flush(flush),
+  .o_flush(exu_flush)
 `endif
 );
 
-/* ysyx_24110006_EXU_CTRL mexu_ctrl( */
-/*   .i_clock(clock), */
-/*   .i_reset(reset), */
-/*   .i_alu_t(exu_alu_t), */
-/*   .i_cmp(exu_cmp), */
-/*   .i_zero(exu_zero), */
-/*   .i_result_t(exu_result_t), */
-/*   .i_reg_wen(exu_reg_wen), */
-/*   .i_csr_wen(exu_csr_wen), */
-/*   .i_jump(exu_jump), */
-/*   .i_trap(exu_trap), */
-/*   .i_result(exu_result), */
-/*   .i_upc(exu_upc), */
-/**/
-/*   .o_upc(upc), */
-/*   .o_result_t(result_t), */
-/*   .o_reg_wen(reg_wen), */
-/*   .o_csr_wen(csr_wen), */
-/*   .o_jump(jump), */
-/*   .o_result(result), */
-/**/
-/*   .i_valid(exu_valid), */
-/*   .o_valid(exu_ctrl_valid) */
-/* `ifdef CONFIG_PIPELINE */
-/*   ,.i_ready(lsu_ready), */
-/*   .o_ready(exu_ctrl_ready), */
-/* `endif */
-/* ); */
 
 ysyx_24110006_LSU mlsu(
   .i_clock(clock),
@@ -520,36 +534,40 @@ ysyx_24110006_LSU mlsu(
   .i_wdata(mem_wdata),
   .i_wmask(exu_mem_wmask),
   .i_read_t(exu_mem_read_t),
-  .i_alu_t(exu_alu_t),
-  .i_cmp(exu_cmp),
-  .i_zero(exu_zero),
   .i_result_t(exu_result_t),
   .i_reg_wen(exu_reg_wen),
-  .i_csr_wen(exu_csr_wen),
-  .i_jump(exu_jump),
-  .i_trap(exu_trap),
   .i_result(exu_result),
-  .i_upc(exu_upc),
   .i_reg_rd(exu_rd),
-  .i_pc(exu_pc),
   .i_csr_t(exu_csr_t),
 
   .o_result(lsu_result),
-  .o_upc(lsu_upc),
   .o_reg_wen(lsu_reg_wen),
-  .o_csr_wen(lsu_csr_wen),
   .o_reg_rd(lsu_rd),
-  .o_pc(lsu_pc),
   .o_csr_t(lsu_csr_t),
+  .i_exception(exu_exception),
+  .o_exception(lsu_exception),
+  .i_mcause(exu_mcause),
+  .o_mcause(lsu_mcause),
+  .i_jump(exu_jump),
   .o_jump(lsu_jump),
-
+  .i_pc(exu_pc),
+  .o_pc(lsu_pc),
+  .i_csr(exu_csr),
+  .o_csr(lsu_csr),
+`ifdef CONFIG_SIM
+  .i_upc(exu_upc),
+  .o_upc(lsu_upc),
+  .i_op(exu_op),
+  .o_op(lsu_op),
+  .o_wen(lsu_wen),
+  .o_ren(lsu_ren),
+  .o_addr(lsu_addr),
+`endif
   .i_valid(exu_valid),
   .o_valid(lsu_valid),
 `ifdef CONFIG_PIPELINE
   .i_ready(1),
   .o_ready(lsu_ready),
-  .i_flush(flush),
-  .o_flush(flush),
 `endif
   .o_axi_araddr(lsu_araddr),
   .o_axi_arvalid(lsu_arvalid),

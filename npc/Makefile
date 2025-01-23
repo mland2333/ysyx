@@ -20,7 +20,7 @@ NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 VERILATOR_CFLAGS += -MMD --build -cc  \
 				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-threads 2 
-
+VERILATOR_CFLAGS += -DCONFIG_SIM
 LIBS += -lcapstone
 ARGS ?=
 
@@ -61,7 +61,7 @@ CSRCS += $(shell find $(abspath ./csrc) -maxdepth 1 -name "*.c" -or -name "*.cc"
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
-CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
+CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g
 LDFLAGS += $(LIBS) -lSDL2
 CXXFLAGS += -flto
 LDFLAGS += -flto

@@ -12,6 +12,9 @@ module ysyx_24110006_ICACHE(
   input i_ready,
   output o_ready,
   input i_flush,
+  input i_conflict,
+  output o_exception,
+  output [3:0] o_mcause,
 `endif
 
   output [31:0] o_axi_araddr,
@@ -66,12 +69,12 @@ reg [31:0] pc;
 reg [31:0] inst;
 reg [1:0] burst_counter;
 assign o_inst = inst;
-wire inst_valid = state == judge_t && hit || state == ready_t || state == direct_t && rvalid;
+wire inst_valid = state == judge_t && hit || state == ready_t || state == wait_t && rvalid;
 wire update_reg;
 `ifdef CONFIG_PIPELINE
 reg r_flush;
 always@(posedge i_clock)begin
-  if(i_flush && !inst_valid) r_flush <= 1;
+  if(i_flush && !inst_valid && !o_ready) r_flush <= 1;
   else if(r_flush && inst_valid) r_flush <= 0;
 end
 
@@ -87,11 +90,12 @@ end
 
 always@(posedge i_clock)begin
   if(i_reset) o_ready <= 1;
-  else if((i_flush&&inst_valid) || r_flush && inst_valid) o_ready <= 1;
-  else if(i_valid && o_ready) o_ready <= 0;
-  else if(!o_ready && (inst_valid || o_valid) && i_ready) o_ready <= 1;
+  else if(i_valid && o_ready && !i_flush) o_ready <= 0;
+  else if((inst_valid || !o_ready && o_valid) && i_ready) o_ready <= 1;
 end
-assign update_reg = !i_reset && i_valid && o_ready;
+assign update_reg = !i_reset && i_valid && o_ready && !i_flush;
+assign o_exception = pc[1:0] != 2'b00 || rresp != 0;
+assign o_mcause = rresp != 0 ? 1 : 0;
 `else
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
@@ -139,7 +143,7 @@ always@(posedge i_clock)begin
   if(state == judge_t && hit || state == ready_t)begin
     inst <= cache_array[index][offset*8 +: 32];
   end
-  else if(state == direct_t && rvalid)
+  else if(state == wait_t && rvalid)
     inst <= i_axi_rdata;
 end
 
@@ -150,14 +154,15 @@ localparam judge_t = 3'b001;
 localparam axi_t = 3'b010;
 localparam direct_t = 3'b011;
 localparam ready_t = 3'b100;
+localparam wait_t = 3'b101;
 
 always@(posedge i_clock)begin
   if(i_reset) state <= idle_t;
   else begin
     case(state)
       idle_t:begin
-        if(i_valid && !is_sram) state <= judge_t;
-        else if(i_valid && is_sram) state <= direct_t;
+        if(update_reg && !is_sram) state <= judge_t;
+        else if(update_reg && is_sram) state <= direct_t;
       end
       judge_t:begin
         if(hit) state <= idle_t;
@@ -167,6 +172,9 @@ always@(posedge i_clock)begin
         if(i_axi_rlast) state <= ready_t;
       end
       direct_t:begin
+        state <= wait_t;
+      end
+      wait_t:begin
         if(rvalid) state <= idle_t;
       end
       ready_t:begin
@@ -196,13 +204,14 @@ wire rvalid;
 wire rready = 1;
 wire [1:0] rresp;
 
-assign o_axi_araddr = state==direct_t ? pc : {pc[31:3], 3'b0};
+wire in_sram = state == direct_t || state == wait_t;
+assign o_axi_araddr = in_sram ? pc : {pc[31:3], 3'b0};
 assign o_axi_arvalid = arvalid;
 assign arready = i_axi_arready;
 assign o_axi_arid = 0;
-assign o_axi_arlen = state==direct_t ? 0 : 1;
+assign o_axi_arlen = in_sram ? 0 : 1;
 assign o_axi_arsize = 3'b010;
-assign o_axi_arburst = state==direct_t ? 0 : 2'b01;
+assign o_axi_arburst = in_sram ? 0 : 2'b01;
 
 assign rvalid = i_axi_rvalid;
 assign rresp = i_axi_rresp;

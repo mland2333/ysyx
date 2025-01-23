@@ -14,6 +14,9 @@ module ysyx_24110006_IFU(
     input i_ready,
     output o_ready,
     input i_flush,
+    input i_conflict,
+    output o_exception,
+    output [3:0] o_mcause,
   `endif
 `endif
   output [31:0] o_axi_araddr,
@@ -48,6 +51,9 @@ ysyx_24110006_ICACHE micache(
   .i_ready(i_ready),
   .o_ready(o_ready),
   .i_flush(i_flush),
+  .i_conflict(i_conflict),
+  .o_exception(o_exception),
+  .o_mcause(o_mcause),
 `endif
   .o_axi_araddr(o_axi_araddr),
   .o_axi_arvalid(o_axi_arvalid),

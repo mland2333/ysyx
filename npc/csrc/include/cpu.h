@@ -10,6 +10,9 @@ public:
   uint32_t pc = 0;
   uint32_t inst = 0;
   constexpr static uint32_t nums = N;
+  Cpu(){
+    pc = 0x30000000;
+  }
   void display(){
     for (int i = 0; i < N; i++) {
       std::cout << RegName::regs[i] << "=" << gpr[i] << "  ";
