@@ -32,7 +32,7 @@ wire rs1_stall = rs1 != 0 && (rs1 == i_exu_rd && i_exu_wen && exu_rd_active ||
 wire rs2_stall = rs2 != 0 && (rs2 == i_exu_rd && i_exu_wen && exu_rd_active ||
                     rs2 == i_lsu_rd && i_lsu_wen && lsu_rd_active );
 wire stall = rs1_stall || rs2_stall;
-assign o_stall = !(AUIPC||LUI||JAL) && ((JALR||I||L)&&rs1_stall || (B||S||R)&&stall) && i_valid;
+assign o_stall = !(AUIPC||LUI||JAL) && ((JALR||I||L||CSR)&&rs1_stall || (B||S||R)&&stall) && i_valid;
 
 
 endmodule
