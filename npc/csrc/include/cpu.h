@@ -25,9 +25,9 @@ public:
       if (gpr[i] != ref_cpu->gpr[i])
         return i;
     }
-    /* if (pc != ref_cpu->pc) { */
-    /*   return -1; */
-    /* } */
+    if (pc != ref_cpu->pc) {
+      return -1;
+    }
     return 0;
   }
 };

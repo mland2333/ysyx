@@ -4,7 +4,7 @@ import "DPI-C" function void difftest();
 import "DPI-C" function void diff_skip();
 import "DPI-C" function void fetch_inst();
 `endif
-
+`include "alu_config.v"
 module ysyx_24110006(
   input clock,
 `ifdef CONFIG_YSYXSOC
@@ -72,7 +72,7 @@ module ysyx_24110006(
   input reset
 );
 wire flush;
-wire conflict;
+wire stall;
 wire exception;
 wire [31:0] upc;
 assign exception = lsu_valid & lsu_exception;
@@ -112,8 +112,8 @@ wire [31:0] csr_wdata;
 wire ifu_exception, idu_exception, exu_exception, lsu_exception;
 wire [3:0] ifu_mcause, idu_mcause, exu_mcause, lsu_mcause;
 wire [31:0] alu_a, alu_b;
-wire [3:0] alu_t;
-wire alu_sign, alu_sub, alu_sra;
+wire [`ALU_TYPE-1:0] alu_t;
+wire alu_sign, alu_sub;
 
 wire exu_mem_ren, exu_mem_wen;
 wire [3:0] exu_mem_wmask;
@@ -146,7 +146,7 @@ reg [31:0] sim_pc;
   always@(posedge clock)begin
     if(reset) sim_pc <= 0;
     else begin
-      if(lsu_valid) sim_pc <= lsu_jump ? lsu_upc : lsu_pc + 4;
+      if(lsu_valid) sim_pc <= lsu_jump ? lsu_upc : lsu_exception ? upc : lsu_pc + 4;
     end
   end
 
@@ -354,10 +354,10 @@ ysyx_24110006_IFU mifu(
   .i_valid(pc_valid),
   .o_valid(ifu_valid),
 `ifdef CONFIG_PIPELINE
-  .i_ready((idu_ready||exu_ready||lsu_ready)&&!conflict),
+  .i_ready((idu_ready||exu_ready||lsu_ready)&&!stall),
   .o_ready(ifu_ready),
   .i_flush(flush),
-  .i_conflict(conflict),
+  .i_stall(stall),
 `endif
   .o_axi_araddr(ifu_araddr),
   .o_axi_arvalid(ifu_arvalid),
@@ -380,18 +380,18 @@ ysyx_24110006_IMM mimm(
 );
 
 `ifdef CONFIG_PIPELINE
-ysyx_24110006_CONFLICT mconflict(
+ysyx_24110006_STALL mstall(
   .i_valid(idu_valid),
   .i_op(idu_op),
   .i_rs1(idu_rs1),
   .i_rs2(idu_rs2),
-  .i_lsu_rd(exu_rd),
-  .i_wbu_rd(lsu_rd),
-  .i_lsu_wen(exu_reg_wen),
-  .i_wbu_wen(lsu_reg_wen),
-  .i_lsu_busy(exu_valid),
-  .i_wbu_busy(lsu_valid||!lsu_ready),
-  .o_conflict(conflict)
+  .i_exu_rd(exu_rd),
+  .i_lsu_rd(lsu_rd),
+  .i_exu_wen(exu_reg_wen),
+  .i_lsu_wen(lsu_reg_wen),
+  .i_exu_busy(exu_valid),
+  .i_lsu_busy(lsu_valid||!lsu_ready),
+  .o_stall(stall)
 );
 `endif
 
@@ -422,7 +422,7 @@ ysyx_24110006_IDU midu(
   ,.i_ready(exu_ready||lsu_ready),
   .o_ready(idu_ready),
   .i_flush(flush),
-  .i_conflict(conflict),
+  .i_stall(stall),
   .i_wen(exu_mem_wen),
   .i_ren(exu_mem_ren)
 `endif
@@ -470,8 +470,7 @@ ysyx_24110006_ALUOP maluop(
   .o_alu_b(alu_b),
   .o_alu_sub(alu_sub),
   .o_alu_sign(alu_sign),
-  .o_alu_t(alu_t),
-  .o_alu_sra(alu_sra)
+  .o_alu_t(alu_t)
 );
 
 ysyx_24110006_EXU mexu(
@@ -482,7 +481,6 @@ ysyx_24110006_EXU mexu(
   .i_alu_sub(alu_sub),
   .i_alu_sign(alu_sign),
   .i_alu_t(alu_t),
-  .i_alu_sra(alu_sra),
   .i_op(idu_op),
   .i_func(idu_func),
   .i_reg_src1(reg_src1),
@@ -515,7 +513,7 @@ ysyx_24110006_EXU mexu(
   .i_csr(idu_csr),
   .o_csr(exu_csr),
   .i_csr_upc(csr_upc),
-  .i_valid(idu_valid&&!conflict),
+  .i_valid(idu_valid&&!stall),
   .o_valid(exu_valid)
 `ifdef CONFIG_PIPELINE
   ,.i_ready(lsu_ready),
@@ -568,6 +566,7 @@ ysyx_24110006_LSU mlsu(
 `ifdef CONFIG_PIPELINE
   .i_ready(1),
   .o_ready(lsu_ready),
+  .i_flush(exception),
 `endif
   .o_axi_araddr(lsu_araddr),
   .o_axi_arvalid(lsu_arvalid),

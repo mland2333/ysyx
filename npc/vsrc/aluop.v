@@ -1,3 +1,4 @@
+`include "alu_config.v"
 module ysyx_24110006_ALUOP(
   input [31:0] i_src1,
   input [31:0] i_src2,
@@ -10,8 +11,7 @@ module ysyx_24110006_ALUOP(
   output [31:0] o_alu_b,
   output o_alu_sub,
   output o_alu_sign,
-  output [3:0] o_alu_t,
-  output o_alu_sra
+  output [`ALU_TYPE - 1:0] o_alu_t
 );
 
 wire I = i_op == 7'b0010011;
@@ -38,10 +38,19 @@ assign o_alu_a = JAL || JALR || AUIPC ? i_pc : LUI ? 0 : i_src1;
 wire [31:0]b0 = I || L || AUIPC || S  || LUI ? i_imm : JAL || JALR ? 32'b100 :
         CSR && f001 ? 32'b0 : CSR && f010 ? i_csr_rdata : i_src2;
 assign o_alu_b = o_alu_sub ? ~b0 : b0;
-assign o_alu_t = I||R ? {1'b0, i_func} : B ? {1'b1, i_func} : CSR && f010 ? 4'b0110 : 0;
+assign o_alu_t[`ALU_ADD] = (I|R)&f000|AUIPC|LUI|B|L|S|JAL|JALR|CSR&~f010;
+assign o_alu_t[`ALU_SLL] = (I|R)&f001;
+assign o_alu_t[`ALU_SLT] = (I|R)&(f010|f011);
+assign o_alu_t[`ALU_XOR] = (I|R)&f100;
+assign o_alu_t[`ALU_SRL] = (I&~i_imm[10]|R&~i_imm[5])&f101;
+assign o_alu_t[`ALU_SRA] = (R&i_imm[5]|I&i_imm[10])&f101;
+assign o_alu_t[`ALU_OR]  = (I|R)&f110|CSR&f010;
+assign o_alu_t[`ALU_AND] = (I|R)&f111;
+
+/* assign o_alu_t = I||R ? {1'b0, i_func} : B ? {1'b1, i_func} : CSR && f010 ? 4'b0110 : 0; */
 assign o_alu_sign = R && f010 || B && (f100 || f101);
 assign o_alu_sub = (I || R) && (f011 || f010) || B || R && f000 && i_imm[5];
-assign o_alu_sra = R && i_imm[5] || I && i_imm[10];
+/* assign o_alu_sra = R && i_imm[5] || I && i_imm[10]; */
 
 endmodule
 

@@ -7,7 +7,7 @@ module ysyx_24110006_CSR(
   input [11:0] i_csr_w,
   input [31:0] i_pc,
   input [31:0] i_wdata,
-  input [31:0] i_mcause,
+  input [3:0] i_mcause,
   input i_mret,
   output [31:0] o_rdata,
   output [31:0] o_upc,
@@ -48,7 +48,7 @@ end
 always@(posedge i_clock)begin
   if(i_valid)begin
     if(i_exception)begin
-      csr[MCAUSE] <= i_mcause;
+      csr[MCAUSE] <= {28'b0, i_mcause};
       csr[MEPC] <= i_pc;
     end
     else if(i_csr_t[0])begin

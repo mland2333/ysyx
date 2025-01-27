@@ -18,6 +18,7 @@ endif
 
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
+INC_PATH += $(NPC_HOME)/vsrc
 VERILATOR_CFLAGS += -MMD --build -cc  \
 				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-threads 2 
 VERILATOR_CFLAGS += -DCONFIG_SIM

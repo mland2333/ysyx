@@ -1,3 +1,4 @@
+`include "alu_config.v"
 module ysyx_24110006_EXU(
   input i_clock,
   input i_reset,
@@ -5,10 +6,9 @@ module ysyx_24110006_EXU(
   input [2:0] i_func,
   input [31:0] i_alu_a,
   input [31:0] i_alu_b,
-  input [3:0] i_alu_t,
+  input [`ALU_TYPE-1:0] i_alu_t,
   input i_alu_sign,
   input i_alu_sub,
-  input i_alu_sra,
   input [4:0] i_reg_rd,
   input [1:0] i_csr_t,
   input [11:0] i_csr,
@@ -94,7 +94,7 @@ always@(posedge i_clock)begin
   else if(update_reg) flush_valid <= 1;
   else if(flush_valid) flush_valid <= 0;
 end
-assign o_flush = o_jump && flush_valid;
+assign o_flush = o_jump & flush_valid;
 
 reg exception;
 always@(posedge i_clock)begin
@@ -183,9 +183,6 @@ always@(posedge i_clock)begin
   if(update_reg) alu_sign <= i_alu_sign;
 end
 always@(posedge i_clock)begin
-  if(update_reg) alu_sra <= i_alu_sra;
-end
-always@(posedge i_clock)begin
   if(update_reg) alu_t <= i_alu_t;
 end
 
@@ -202,12 +199,12 @@ wire LUI = op == 7'b0110111;
 wire B = op == 7'b1100011;
 wire CSR = op == 7'b1110011;
 wire FENCE = op == 7'b0001111;
-localparam BEQ = 4'b1000;
-localparam BNE = 4'b1001;
-localparam BLT = 4'b1100;
-localparam BGE = 4'b1101;
-localparam BLTU = 4'b1110;
-localparam BGEU = 4'b1111;
+
+wire is_beq = B & f000;
+wire is_bne = B & f001;
+wire is_blt = B & (f100|f110);
+wire is_bge = B & (f101|f111);
+
 wire f000 = func == 3'b000;
 wire f001 = func == 3'b001;
 wire f010 = func == 3'b010;
@@ -235,21 +232,19 @@ assign o_op = op;
 reg [31:0] alu_a, alu_b;
 reg alu_sub;
 reg alu_sign;
-reg alu_sra;
-reg [3:0] alu_t;
+reg [`ALU_TYPE-1:0] alu_t;
 wire cmp, zero;
-wire branch = (alu_t==BEQ)&&zero||(alu_t==BNE)&&~zero||(alu_t==BLT||alu_t==BLTU)&&cmp||(alu_t==BGE||alu_t==BGEU)&&~cmp;
+wire branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp;
+/* wire branch = (alu_t==BEQ)&&zero||(alu_t==BNE)&&~zero||(alu_t==BLT||alu_t==BLTU)&&cmp||(alu_t==BGE||alu_t==BGEU)&&~cmp; */
 /* assign alu_a = JAL || JALR || AUIPC ? pc : LUI ? 0 : reg_src1; */
 /* assign alu_b = I || L || AUIPC || S  || LUI ? imm : JAL || JALR ? 32'b100 : CSR && f001 ? 32'b0 : CSR && f010 ? csr_src : reg_src2; */
 /* assign alu_t = I||R ? {1'b0, func} : B ? {1'b1, func} : CSR && f010 ? 4'b0110 : 0; */
 /* assign alu_sign = R && f010 || B && (f100 || f101); */
 /* assign alu_sub = (I || R) && (f011 || f010) || B || R && f000 && imm[5]; */
-/* assign alu_sra = R && imm[5] || I && imm[10]; */
 
 /* reg [31:0] r_alu_a, r_alu_b; */
 /* reg r_alu_sub; */
 /* reg r_alu_sign; */
-/* reg r_alu_sra; */
 /* reg [3:0] r_alu_t; */
 /**/
 /* always@(posedge i_clock)begin */
@@ -265,9 +260,6 @@ wire branch = (alu_t==BEQ)&&zero||(alu_t==BNE)&&~zero||(alu_t==BLT||alu_t==BLTU)
 /*   if(valid) r_alu_sign <= alu_sign; */
 /* end */
 /* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_sra <= alu_sra; */
-/* end */
-/* always@(posedge i_clock)begin */
 /*   if(valid) r_alu_t <= alu_t; */
 /* end */
 
@@ -278,7 +270,6 @@ ysyx_24110006_ALU malu(
   .i_sub(alu_sub),
   .i_sign(alu_sign),
   .i_alu_t(alu_t),
-  .i_alu_sra(alu_sra),
   .o_r(o_result),
   .o_cmp(cmp),
   .o_zero(zero),
@@ -288,7 +279,7 @@ ysyx_24110006_ALU malu(
 reg [31:0] upc;
 
 assign o_upc = upc + imm;
-assign o_jump = JAL || JALR || branch || csr_t[1];
+assign o_jump = JAL | JALR | branch | csr_t[1];
 assign o_reg_wen = !(S || B);
 /* assign o_alu_t = alu_t; */
 endmodule

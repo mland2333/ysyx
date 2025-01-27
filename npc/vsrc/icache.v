@@ -12,7 +12,7 @@ module ysyx_24110006_ICACHE(
   input i_ready,
   output o_ready,
   input i_flush,
-  input i_conflict,
+  input i_stall,
   output o_exception,
   output [3:0] o_mcause,
 `endif
