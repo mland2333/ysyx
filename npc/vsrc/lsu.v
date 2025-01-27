@@ -26,16 +26,16 @@ module ysyx_24110006_LSU(
   
   input [11:0] i_csr,
   output [11:0] o_csr,
-
+  input i_exception,
+  output o_exception,
+  input [3:0] i_mcause,
+  output [3:0] o_mcause,
   input i_valid,
   output reg o_valid,
 `ifdef CONFIG_PIPELINE
   input i_ready,
   output o_ready,
-  input i_exception,
-  output o_exception,
-  input [3:0] i_mcause,
-  output [3:0] o_mcause,
+  input i_flush,
 `endif
 `ifdef CONFIG_SIM
   input [31:0] i_upc,
@@ -129,7 +129,7 @@ wire update_reg;
 
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
-  else if(!(i_wen||i_ren)&&i_valid&&o_ready || mem_valid) begin
+  else if(!(i_wen||i_ren)&&i_valid &&o_ready && !i_flush|| mem_valid) begin
     o_valid <= 1;
   end
   else if(o_valid)begin
@@ -137,13 +137,13 @@ always@(posedge i_clock)begin
   end
 end
 always@(posedge i_clock)begin
-  if(i_reset) o_ready <= 1;
+  if(i_reset || i_flush) o_ready <= 1;
   else if(o_ready && !(i_wen||i_ren)) o_ready <= 1;
   else if(o_ready && i_valid && (i_wen || i_ren)) o_ready <= 0;
   else if(!o_ready && mem_valid) o_ready <= 1;
 end
 
-assign update_reg = !i_reset && i_valid && o_ready;
+assign update_reg = !i_reset && i_valid && o_ready && !i_flush;
 /* assign o_flush = o_valid && o_jump; */
 reg exception;
 always@(posedge i_clock)begin

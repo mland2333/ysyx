@@ -22,7 +22,7 @@ module ysyx_24110006_IDU(
   ,input i_ready,
   output o_ready,
   input i_flush,
-  input i_conflict,
+  input i_stall,
   input i_exception,
   output o_exception,
   input [3:0] i_mcause,
@@ -43,20 +43,20 @@ always@(posedge i_clock)begin
   else if(i_valid) begin
     o_valid <= 1;
   end
-  else if(o_valid && i_ready && !i_conflict) begin
+  else if(o_valid && i_ready && !i_stall) begin
     o_valid <= 0;
   end
 end
 
 always@(posedge i_clock)begin
   if(i_reset || i_flush) o_ready <= 1;
-  else if(i_conflict) o_ready <= 0;
+  else if(i_stall) o_ready <= 0;
   else if(i_valid && o_valid && (i_wen || i_ren)) o_ready <= 0;
   else if(i_ready) o_ready <= 1;
   else if(i_valid) o_ready <= 0;
 end
 
-assign update_reg = i_valid && (o_ready || i_ready&&!i_conflict) && !i_flush;
+assign update_reg = i_valid && (o_ready || i_ready&&!i_stall) && !i_flush;
 reg exception;
 always@(posedge i_clock)begin
   if(update_reg)
