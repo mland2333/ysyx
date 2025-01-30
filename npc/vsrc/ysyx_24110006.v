@@ -104,7 +104,7 @@ wire fencei;
 wire [31:0] reg_src1, reg_src2;
 wire [31:0] reg_wdata;
 wire [31:0] csr_src;
-
+wire [31:0] forward_src1, forward_src2;
 
 wire [11:0] idu_csr, exu_csr, lsu_csr;
 wire [1:0] idu_csr_t, exu_csr_t, lsu_csr_t;
@@ -121,12 +121,11 @@ wire [2:0] exu_mem_read_t;
 wire [31:0] exu_mem_addr;
 wire [31:0] mem_wdata;
 wire [31:0] mem_rdata;
-
 wire lsu_jump;
 wire mret = lsu_csr_t[1];
 wire jump = lsu_jump | lsu_exception | mret;
 assign csr_wdata = lsu_result;
-
+wire lsu_wen, lsu_ren;
 wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
 `ifdef CONFIG_PIPELINE
   wire ifu_ready, idu_ready, exu_ready, lsu_ready;
@@ -134,7 +133,6 @@ wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
 reg [31:0] sim_pc;
 `ifdef CONFIG_SIM
   wire is_diff_skip;
-  wire lsu_wen, lsu_ren;
   wire [31:0] lsu_addr;
   `ifndef CONFIG_YSYXSOC
     assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
@@ -379,21 +377,7 @@ ysyx_24110006_IMM mimm(
   .o_imm(ifu_imm)
 );
 
-`ifdef CONFIG_PIPELINE
-ysyx_24110006_STALL mstall(
-  .i_valid(idu_valid),
-  .i_op(idu_op),
-  .i_rs1(idu_rs1),
-  .i_rs2(idu_rs2),
-  .i_exu_rd(exu_rd),
-  .i_lsu_rd(lsu_rd),
-  .i_exu_wen(exu_reg_wen),
-  .i_lsu_wen(lsu_reg_wen),
-  .i_exu_busy(exu_valid),
-  .i_lsu_busy(lsu_valid||!lsu_ready),
-  .o_stall(stall)
-);
-`endif
+
 
 ysyx_24110006_IDU midu(
   .i_clock(clock),
@@ -458,9 +442,34 @@ ysyx_24110006_CSR mcsr(
   .i_valid(lsu_valid)
 );
 
+`ifdef CONFIG_PIPELINE
+ysyx_24110006_FORWARD_STALL mforward_stall(
+  .i_valid(idu_valid),
+  .i_op(idu_op),
+  .i_rs1(idu_rs1),
+  .i_rs2(idu_rs2),
+  .i_reg_src1(reg_src1),
+  .i_reg_src2(reg_src2),
+  .i_lsu_data(lsu_result),
+  .i_exu_data(exu_result),
+  .i_exu_load(exu_mem_ren),
+  .i_lsu_load(lsu_ren),
+  .i_exu_valid(exu_valid),
+  .i_lsu_valid(lsu_valid),
+  .i_lsu_ready(lsu_ready),
+  .i_exu_rd(exu_rd),
+  .i_lsu_rd(lsu_rd),
+  .i_exu_wen(exu_reg_wen),
+  .i_lsu_wen(lsu_reg_wen),
+  .o_src1(forward_src1),
+  .o_src2(forward_src2),
+  .o_stall(stall)
+);
+`endif
+
 ysyx_24110006_ALUOP maluop(
-  .i_src1(reg_src1),
-  .i_src2(reg_src2),
+  .i_src1(forward_src1),
+  .i_src2(forward_src2),
   .i_imm(idu_imm),
   .i_csr_rdata(csr_src),
   .i_pc(idu_pc),
@@ -483,8 +492,8 @@ ysyx_24110006_EXU mexu(
   .i_alu_t(alu_t),
   .i_op(idu_op),
   .i_func(idu_func),
-  .i_reg_src1(reg_src1),
-  .i_reg_src2(reg_src2),
+  .i_reg_src1(forward_src1),
+  .i_reg_src2(forward_src2),
   .i_reg_rd(idu_rd),
   .i_csr_src(csr_src),
   .i_csr_t(idu_csr_t),
@@ -552,13 +561,13 @@ ysyx_24110006_LSU mlsu(
   .o_pc(lsu_pc),
   .i_csr(exu_csr),
   .o_csr(lsu_csr),
+  .o_ren(lsu_ren),
 `ifdef CONFIG_SIM
   .i_upc(exu_upc),
   .o_upc(lsu_upc),
   .i_op(exu_op),
   .o_op(lsu_op),
   .o_wen(lsu_wen),
-  .o_ren(lsu_ren),
   .o_addr(lsu_addr),
 `endif
   .i_valid(exu_valid),

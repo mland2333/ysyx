@@ -23,6 +23,7 @@ module ysyx_24110006_LSU(
   output o_jump,
   input [31:0] i_pc,
   output [31:0] o_pc,
+  output o_ren,
   
   input [11:0] i_csr,
   output [11:0] o_csr,
@@ -43,7 +44,6 @@ module ysyx_24110006_LSU(
   input [6:0] i_op,
   output [6:0] o_op,
   output o_wen,
-  output o_ren,
   output [31:0] o_addr,
 `endif
   output [31:0] o_axi_araddr,
@@ -181,6 +181,10 @@ always@(posedge i_clock)begin
   else if(rvalid&&rready) rdata <= rdata0;
 end
 
+always@(posedge i_clock)begin
+  if(update_reg) ren <= i_ren;
+end
+assign o_ren = ren;
 `ifdef CONFIG_SIM
 reg [31:0] upc;
 always@(posedge i_clock)begin
@@ -196,10 +200,7 @@ always@(posedge i_clock)begin
   if(update_reg) wen <= i_wen;
 end
 assign o_wen = wen;
-always@(posedge i_clock)begin
-  if(update_reg) ren <= i_ren;
-end
-assign o_ren = ren;
+
 
 assign o_addr = addr;
 `endif
