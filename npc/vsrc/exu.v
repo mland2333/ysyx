@@ -38,17 +38,16 @@ module ysyx_24110006_EXU(
   output [11:0] o_csr,
 
   input i_valid,
-  output reg o_valid
-`ifdef CONFIG_PIPELINE
-  ,input i_ready,
+  output reg o_valid,
+  input i_ready,
   output o_ready,
+
   input i_flush,
   output o_flush,
   input i_exception,
   output o_exception,
   input [3:0] i_mcause,
   output [3:0] o_mcause
-`endif
 );
 
 reg [6:0] op;
@@ -61,15 +60,7 @@ reg [4:0] reg_rd;
 reg [1:0] csr_t;
 reg [31:0] mem_wdata;
 wire update_reg;
-/* reg valid; */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) valid <= 0; */
-/*   else if(i_valid && !valid) valid <= 1; */
-/*   else if(valid && !o_valid) valid <= 0; */
-/* end */
 
-`ifdef CONFIG_PIPELINE
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
   else if(i_valid && !i_flush) begin
@@ -108,19 +99,7 @@ always@(posedge i_clock)begin
     mcause <= i_mcause;
 end
 assign o_mcause = mcause;
-`else
-always@(posedge i_clock)begin
-  if(i_reset) o_valid <= 0;
-  else if(!o_valid && i_valid) begin
-    o_valid <= 1;
-  end
-  else if(o_valid)begin
-    o_valid <= 0;
-  end
-end
 
-assign update_reg = !i_reset && !o_valid && i_valid;
-`endif
 
 reg [11:0] csr;
 always@(posedge i_clock)begin
@@ -225,43 +204,13 @@ assign o_csr_t = csr_t;
 assign o_pc = pc;
 assign o_mem_wdata = mem_wdata;
 assign o_op = op;
-/* always@(posedge i_clock)begin */
-/*   if(update_reg)  */
-/*     $fwrite(32'h80000002, "`%xh` in pc `%xh` \n", i_op, i_pc); */
-/* end */
+
 reg [31:0] alu_a, alu_b;
 reg alu_sub;
 reg alu_sign;
 reg [`ALU_TYPE-1:0] alu_t;
 wire cmp, zero;
 wire branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp;
-/* wire branch = (alu_t==BEQ)&&zero||(alu_t==BNE)&&~zero||(alu_t==BLT||alu_t==BLTU)&&cmp||(alu_t==BGE||alu_t==BGEU)&&~cmp; */
-/* assign alu_a = JAL || JALR || AUIPC ? pc : LUI ? 0 : reg_src1; */
-/* assign alu_b = I || L || AUIPC || S  || LUI ? imm : JAL || JALR ? 32'b100 : CSR && f001 ? 32'b0 : CSR && f010 ? csr_src : reg_src2; */
-/* assign alu_t = I||R ? {1'b0, func} : B ? {1'b1, func} : CSR && f010 ? 4'b0110 : 0; */
-/* assign alu_sign = R && f010 || B && (f100 || f101); */
-/* assign alu_sub = (I || R) && (f011 || f010) || B || R && f000 && imm[5]; */
-
-/* reg [31:0] r_alu_a, r_alu_b; */
-/* reg r_alu_sub; */
-/* reg r_alu_sign; */
-/* reg [3:0] r_alu_t; */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_a <= alu_a; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_b <= alu_b; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_sub <= alu_sub; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_sign <= alu_sign; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_t <= alu_t; */
-/* end */
 
 
 ysyx_24110006_ALU malu(
@@ -281,5 +230,4 @@ reg [31:0] upc;
 assign o_upc = upc + imm;
 assign o_jump = JAL | JALR | branch | csr_t[1];
 assign o_reg_wen = !(S || B);
-/* assign o_alu_t = alu_t; */
 endmodule

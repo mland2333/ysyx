@@ -33,11 +33,9 @@ module ysyx_24110006_LSU(
   output [3:0] o_mcause,
   input i_valid,
   output reg o_valid,
-`ifdef CONFIG_PIPELINE
   input i_ready,
   output o_ready,
   input i_flush,
-`endif
 `ifdef CONFIG_SIM
   input [31:0] i_upc,
   output [31:0] o_upc,
@@ -82,34 +80,6 @@ module ysyx_24110006_LSU(
 
 );
 
-/* localparam COUNT = 8'h05; */
-
-/* reg[7:0] out; */
-/* always@(is_begin)begin */
-/*   if(i_reset || out==0) begin out <= COUNT;end */
-/*   else if(is_begin)begin */
-/*     out[6:0] <= out[7:1]; */
-/*     out[7] <= out[4]^out[3]^out[2]^out[0]; */
-/*   end */
-/* end */
-/**/
-/* reg [7:0] count; */
-/* reg is_begin; */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) is_begin <= 0; */
-/*   else if(rvalid && !rready || bvalid && !bready) is_begin <= 1; */
-/*   else if(count == 0) is_begin <= 0; */
-/* end */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) count <= COUNT; */
-/*   else if(is_begin && count != 0) */
-/*     count <= count - 1; */
-/*   else if(count == 0) */
-/*     count <= out; */
-/* end */
-
 reg ren;
 reg wen;
 reg [31:0] addr;
@@ -125,7 +95,6 @@ reg [1:0] csr_t;
 wire mem_valid = ren&&rvalid&&rready || wen&&bvalid&&bready;
 wire [31:0] i_addr = i_result;
 wire update_reg;
-`ifdef CONFIG_PIPELINE
 
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
@@ -144,7 +113,6 @@ always@(posedge i_clock)begin
 end
 
 assign update_reg = !i_reset && i_valid && o_ready && !i_flush;
-/* assign o_flush = o_valid && o_jump; */
 reg exception;
 always@(posedge i_clock)begin
   if(update_reg)
@@ -162,19 +130,6 @@ wire store_addr_misaligned = wen && (addr[1:0] != 2'b0 && wmask == 4'b1111) || (
 wire my_exception = load_addr_misaligned | store_addr_misaligned;
 wire [3:0] my_mcause = ({4{load_addr_misaligned}} & 4'd4) |
                        ({4{store_addr_misaligned}} & 4'd6);
-`else
-
-always@(posedge i_clock)begin
-  if(i_reset) o_valid <= 0;
-  else if(!o_valid && (mem_valid||!(i_wen||i_ren)&&i_valid)) begin
-    o_valid <= 1;
-  end
-  else if(o_valid)begin
-    o_valid <= 0;
-  end
-end
-assign update_reg = !i_reset && !o_valid && i_valid;
-`endif
 
 always@(posedge i_clock)begin
   if(i_reset) rdata <= 0;
@@ -185,6 +140,7 @@ always@(posedge i_clock)begin
   if(update_reg) ren <= i_ren;
 end
 assign o_ren = ren;
+
 `ifdef CONFIG_SIM
 reg [31:0] upc;
 always@(posedge i_clock)begin
