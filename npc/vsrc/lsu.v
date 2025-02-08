@@ -2,6 +2,7 @@
 /* import "DPI-C" function void pmem_write( */
 /*   input int waddr, input int wdata, input byte wmask); */
 /**/
+`include "common_config.v"
 module ysyx_24110006_LSU(
   input i_clock,
   input i_reset,

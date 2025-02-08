@@ -1,3 +1,4 @@
+`include "common_config.v"
 module ysyx_24110006_IDU(
   input i_clock,
   input i_reset,
@@ -15,6 +16,10 @@ module ysyx_24110006_IDU(
   output [1:0] o_csr_t,
   output [11:0] o_csr,
   output o_mret,
+  input i_exception,
+  output o_exception,
+  input [3:0] i_mcause,
+  output [3:0] o_mcause,
 
   input i_valid,
   output reg o_valid,
@@ -23,10 +28,6 @@ module ysyx_24110006_IDU(
 
   input i_flush,
   input i_stall,
-  input i_exception,
-  output o_exception,
-  input [3:0] i_mcause,
-  output [3:0] o_mcause,
   input i_wen,
   input i_ren
 );
@@ -80,7 +81,10 @@ wire B = o_op == 7'b1100011;
 wire CSR = o_op == 7'b1110011;
 wire FENCE = o_op == 7'b0001111;
 
+<<<<<<< HEAD
 /* wire illegal_inst = 0; */
+=======
+>>>>>>> fc42a63 (优化流水线，减少预测失败代价)
 wire illegal_inst = !(I|R|L|S|JAL|JALR|AUIPC|LUI|B|CSR|FENCE) && !i_flush;
 wire breakpoint = inst == 32'h00100073;
 wire ecall_m = inst == 32'h00000073;
@@ -119,7 +123,10 @@ always@(posedge i_clock)begin
   end
 end
 `endif
+<<<<<<< HEAD
 
+=======
+>>>>>>> fc42a63 (优化流水线，减少预测失败代价)
 assign o_csr_t[0] = CSR & (o_func != 0);
 assign o_csr_t[1] = o_mret;
 

@@ -1,7 +1,8 @@
 #include <device/device.h>
 #include <cstdint>
 #include <SDL2/SDL.h>
-
+#include <cstdio>
+#include <cstring>
 static void *vmem = nullptr;
 
 static SDL_Renderer *renderer = NULL;

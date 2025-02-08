@@ -1,3 +1,4 @@
+#include "debug/log.h"
 #include <perf.h>
 
 void Perf::trace(Simulator* sim){
@@ -9,6 +10,20 @@ void Perf::trace(Simulator* sim){
     inst_clk[inst_type] += clk_nums - clk_prev;
     clk_prev = clk_nums;
   }
+  if(sim->TOP_MEMBER(flush)){
+    is_flush = true;
+    flush_clk_begin = clk_nums;
+    flush_nums ++;
+  }
+  if(is_flush && sim->TOP_MEMBER(mifu__DOT__micache__DOT__state) == 0){
+    flush_clk += clk_nums - flush_clk_begin;
+    is_flush = false;
+  }
+  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__state) == 2){
+    ifu_clk++;
+  }
+  if(sim->TOP_MEMBER(mifu__DOT__micache__DOT__rlast))
+    ifu_get_inst++;
   /* if(sim->TOP_MEMBER(pc_valid)) { */
   /*   if(clk_prev != 0){ */
   /*     inst_clk[inst_type] += clk_nums - clk_prev; */
@@ -49,6 +64,8 @@ void Perf::statistic(){
     Log("store 指令数量:%lu，占比 %.4f%%，平均执行周期数 %.2f", insts[STORE], (double)insts[STORE] / (double)inst_nums * 100, (double)inst_clk[STORE] / (double)insts[STORE]);
     Log("csr 指令数量:%lu，占比 %.4f%%，平均执行周期数 %.2f", insts[CSR], (double)insts[CSR] / (double)inst_nums * 100, (double)inst_clk[CSR] / (double)insts[CSR]);
     Log("execute 指令数量:%lu，占比 %.4f%%，平均执行周期数 %.2f", insts[EXECUTE], (double)insts[EXECUTE] / (double)inst_nums * 100, (double)inst_clk[EXECUTE] / (double)insts[EXECUTE]);
+    Log("flush次数:%lu, 浪费周期数:%lu\n", flush_nums, flush_clk);
+    Log("取指次数:%lu\n", ifu_get_inst);
     /* Log("ifu 平均取指延迟周期为%.2f", (double)ifu_clk / (double)(inst_nums)); */
     /* Log("lsu 平均访存延迟周期为%.2f", (double)lsu_clk / (double)(insts[LOAD] + insts[STORE])); */
 

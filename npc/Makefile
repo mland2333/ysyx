@@ -26,7 +26,9 @@ LIBS += -lcapstone
 ARGS ?=
 
 CXXFLAGS += -DCONFIG_ICACHE
-
+VERILATOR_CFLAGS += -DCONFIG_PIPELINE
+VERILATOR_CFLAGS += -DCONFIG_FORWARD
+VERILATOR_CFLAGS += -DCONFIG_ICACHE_PIPELINE
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 BIN = $(BUILD_DIR)/$(TOPNAME)
@@ -70,7 +72,7 @@ LDFLAGS += -flto
 # CXX = ccache g++
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
-	# @rm -rf $(OBJ_DIR)
+	@rm -rf $(OBJ_DIR)
 	$(VERILATOR) $(VERILATOR_CFLAGS) \
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \

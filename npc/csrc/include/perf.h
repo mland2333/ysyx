@@ -28,6 +28,10 @@ public:
   uint64_t lsu_begin = 0;
   uint64_t lsu_clk = 0;
   uint64_t ifu_clk = 0;
+  bool is_flush = false;
+  uint64_t flush_clk_begin = 0;
+  uint64_t flush_clk = 0;
+  uint64_t flush_nums = 0;
 #ifdef CONFIG_ICACHE
   uint64_t miss_counter = 0;
   uint64_t hit_counter = 0;
