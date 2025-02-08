@@ -319,6 +319,7 @@ ysyx_24110006_PC mpc(
 `ifdef CONFIG_PIPELINE
   ,.i_ready(ifu_ready),
   .i_flush(flush)
+`endif
 );
 `endif
 
@@ -334,14 +335,15 @@ ysyx_24110006_IFU mifu(
   .o_inst(ifu_inst),
   .i_fencei(fencei),
   .o_pc(ifu_pc),
-  .i_upc(upc),
   .o_exception(ifu_exception),
   .o_mcause(ifu_mcause),
   .i_valid(pc_valid),
   .o_valid(ifu_valid),
+`ifdef CONFIG_PIPELINE
   .i_ready((idu_ready||exu_ready||lsu_ready)&&!stall),
   .o_ready(ifu_ready),
   .i_flush(flush),
+`endif
   .o_axi_araddr(ifu_araddr),
   .o_axi_arvalid(ifu_arvalid),
   .i_axi_arready(ifu_arready),

@@ -81,10 +81,7 @@ wire B = o_op == 7'b1100011;
 wire CSR = o_op == 7'b1110011;
 wire FENCE = o_op == 7'b0001111;
 
-<<<<<<< HEAD
 /* wire illegal_inst = 0; */
-=======
->>>>>>> fc42a63 (优化流水线，减少预测失败代价)
 wire illegal_inst = !(I|R|L|S|JAL|JALR|AUIPC|LUI|B|CSR|FENCE) && !i_flush;
 wire breakpoint = inst == 32'h00100073;
 wire ecall_m = inst == 32'h00000073;
@@ -123,10 +120,6 @@ always@(posedge i_clock)begin
   end
 end
 `endif
-<<<<<<< HEAD
-
-=======
->>>>>>> fc42a63 (优化流水线，减少预测失败代价)
 assign o_csr_t[0] = CSR & (o_func != 0);
 assign o_csr_t[1] = o_mret;
 

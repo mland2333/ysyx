@@ -12,7 +12,6 @@ module ysyx_24110006_IFU(
   output reg [31:0] o_inst,
   output [31:0] o_pc,
   input i_fencei,
-  input [31:0] i_upc,
 
   input i_valid,
   output reg o_valid,
@@ -53,7 +52,6 @@ ysyx_24110006_ICACHE micache(
 `endif
   .o_pc(o_pc),
   .i_fencei(i_fencei),
-  .i_upc(i_upc),
   .i_valid(i_valid),
   .o_valid(o_valid),
   .o_exception(o_exception),
