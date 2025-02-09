@@ -15,7 +15,6 @@ module ysyx_24110006_EXU(
   input [11:0] i_csr,
   input [31:0] i_reg_src1,
   input [31:0] i_reg_src2,
-  input [31:0] i_csr_src,
   input [31:0] i_imm,
   input [31:0] i_pc,
   input [31:0] i_csr_upc,
@@ -37,8 +36,12 @@ module ysyx_24110006_EXU(
   output o_fencei,
   output [6:0] o_op,
   output [11:0] o_csr,
-  output [7:2] o_branch_mid,
-
+  output [7:0] o_branch_mid,
+`ifdef CONFIG_BTB
+  input i_predict,
+  output o_predict,
+  output o_btb_update,
+`endif
   input i_valid,
   output reg o_valid,
   input i_ready,
@@ -55,7 +58,6 @@ module ysyx_24110006_EXU(
 reg [6:0] op;
 reg [2:0] func;
 reg [31:0] reg_src1;
-reg [31:0] csr_src;
 reg [31:0] imm;
 reg [31:0] pc;
 reg [4:0] reg_rd;
@@ -87,7 +89,11 @@ always@(posedge i_clock)begin
   else if(update_reg) flush_valid <= 1;
   else if(flush_valid) flush_valid <= 0;
 end
-assign o_flush = o_jump & flush_valid;
+`ifdef CONFIG_BTB
+  assign o_flush = (JALR | csr_t[1] | JAL & ~predict) & flush_valid;
+`else
+  assign o_flush = o_jump & flush_valid ;
+`endif
 
 reg exception;
 always@(posedge i_clock)begin
@@ -121,10 +127,6 @@ end
 always@(posedge i_clock)begin
   if(update_reg)
     reg_src1 <= i_reg_src1;
-end
-always@(posedge i_clock)begin
-  if(update_reg)
-    csr_src <= i_csr_src;
 end
 always@(posedge i_clock)begin
   if(update_reg)
@@ -167,7 +169,15 @@ always@(posedge i_clock)begin
   if(update_reg) alu_t <= i_alu_t;
 end
 
-
+`ifdef CONFIG_BTB
+reg predict;
+always@(posedge i_clock)begin
+  if(update_reg)
+    predict <= i_predict;
+end
+assign o_predict = predict;
+assign o_btb_update = !predict && JAL && flush_valid;
+`endif
 
 wire I = op[6:2] == 5'b00100;
 wire R = op[6:2] == 5'b01100;
@@ -226,6 +236,8 @@ ysyx_24110006_ALU malu(
   /* .o_zero(zero), */
   .o_add_r(o_mem_addr)
 );
+assign o_branch_mid[0] = B;
+assign o_branch_mid[1] = B & (imm[31]);
 assign o_branch_mid[2] = reg_src1 == reg_src2;
 assign o_branch_mid[3] = cmp;
 assign o_branch_mid[4] = is_beq;

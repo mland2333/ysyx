@@ -77,15 +77,28 @@ wire exception;
 wire branch;
 wire csr_flush;
 wire [31:0] upc;
+wire jal_btb_update;
+wire branch_btb_update;
+wire btb_update;
+wire predict_err;
+wire [31:0] btb_pc;
 assign exception = lsu_valid & lsu_exception;
 assign branch = lsu_valid & lsu_branch;
 assign csr_flush = lsu_valid & lsu_csr_t[0];
 assign flush = exu_flush | exception | branch | csr_flush;
-assign upc = exception ? csr_upc : branch ? lsu_upc : exu_upc;
-
-wire [7:2] branch_mid;
+assign upc = exception ? csr_upc : (branch | branch_btb_update) ? lsu_upc : exu_upc;
+assign jal_btb_update = exu_btb_update;
+assign branch_btb_update = lsu_btb_update & lsu_valid & branch;
+assign btb_update = jal_btb_update | branch_btb_update;
+assign predict_err = lsu_predict_err & lsu_valid;
+assign btb_pc = (branch_btb_update | predict_err) ? lsu_pc : jal_btb_update ? exu_pc : 0;
+wire [7:0] branch_mid;
 wire lsu_branch;
 wire arbiter_ifu_read;
+wire ifu_predict, idu_predict, exu_predict, lsu_predict;
+wire exu_btb_update, lsu_btb_update;
+wire lsu_predict_err;
+ 
 wire idu_mret;
 wire exu_flush;
 wire exu_cmp;
@@ -144,6 +157,7 @@ wire lsu_wen, lsu_ren;
 wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
 wire ifu_ready, idu_ready, exu_ready, lsu_ready;
 reg [31:0] sim_pc;
+wire sim_branch;
 `ifdef CONFIG_SIM
   wire is_diff_skip;
   wire [31:0] lsu_addr;
@@ -157,7 +171,7 @@ reg [31:0] sim_pc;
   always@(posedge clock)begin
     if(reset) sim_pc <= 0;
     else begin
-      if(lsu_valid) sim_pc <= (lsu_jump | lsu_branch) ? lsu_upc : lsu_exception ? upc : lsu_pc + 4;
+      if(lsu_valid) sim_pc <= (lsu_jump | sim_branch) ? lsu_upc : lsu_exception ? upc : lsu_pc + 4;
     end
   end
 
@@ -343,6 +357,12 @@ ysyx_24110006_IFU mifu(
   .o_pc(ifu_pc),
   .o_exception(ifu_exception),
   .o_mcause(ifu_mcause),
+`ifdef CONFIG_BTB
+  .i_pc(btb_pc),
+  .o_predict(ifu_predict),
+  .i_predict_err(predict_err),
+  .i_btb_update(btb_update),
+`endif
   .i_valid(pc_valid),
   .o_valid(ifu_valid),
 `ifdef CONFIG_PIPELINE
@@ -391,6 +411,10 @@ ysyx_24110006_IDU midu(
   .o_mcause(idu_mcause),
   .o_csr(idu_csr),
   .o_mret(idu_mret),
+`ifdef CONFIG_BTB
+  .i_predict(ifu_predict),
+  .o_predict(idu_predict),
+`endif
   .i_valid(ifu_valid),
   .o_valid(idu_valid),
   .i_ready(exu_ready||lsu_ready),
@@ -501,7 +525,6 @@ ysyx_24110006_EXU mexu(
   .i_reg_src1(src1),
   .i_reg_src2(src2),
   .i_reg_rd(idu_rd),
-  .i_csr_src(csr_src),
   .i_csr_t(idu_csr_t),
   .i_imm(idu_imm),
   .i_pc(idu_pc),
@@ -529,6 +552,11 @@ ysyx_24110006_EXU mexu(
   .i_csr(idu_csr),
   .o_csr(exu_csr),
   .i_csr_upc(csr_upc),
+`ifdef CONFIG_BTB
+  .i_predict(idu_predict),
+  .o_predict(exu_predict),
+  .o_btb_update(exu_btb_update),
+`endif
   .i_valid(idu_valid&&!stall),
   .o_valid(exu_valid),
   .i_ready(lsu_ready),
@@ -570,11 +598,18 @@ ysyx_24110006_LSU mlsu(
   .o_upc(lsu_upc),
   .i_branch_mid(branch_mid),
   .o_branch(lsu_branch),
+`ifdef CONFIG_BTB
+  .i_predict(exu_predict),
+  .o_predict(lsu_predict),
+  .o_predict_err(lsu_predict_err),
+  .o_btb_update(lsu_btb_update),
+`endif
 `ifdef CONFIG_SIM
   .i_op(exu_op),
   .o_op(lsu_op),
   .o_wen(lsu_wen),
   .o_addr(lsu_addr),
+  .o_sim_branch(sim_branch),
 `endif
   .i_valid(exu_valid),
   .o_valid(lsu_valid),

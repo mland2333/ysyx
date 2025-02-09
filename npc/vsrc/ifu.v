@@ -17,6 +17,12 @@ module ysyx_24110006_IFU(
   output reg o_valid,
   output o_exception,
   output [3:0] o_mcause,
+`ifdef CONFIG_BTB
+  input [31:0] i_pc,
+  output o_predict,
+  input i_predict_err,
+  input i_btb_update,
+`endif
 `ifdef CONFIG_ICACHE
   `ifdef CONFIG_PIPELINE
     input i_ready,
@@ -56,6 +62,12 @@ ysyx_24110006_ICACHE micache(
   .o_valid(o_valid),
   .o_exception(o_exception),
   .o_mcause(o_mcause),
+`ifdef CONFIG_BTB
+  .i_pc(i_pc),
+  .o_predict(o_predict),
+  .i_predict_err(i_predict_err),
+  .i_btb_update(i_btb_update),
+`endif
 `ifdef CONFIG_PIPELINE
   .i_ready(i_ready),
   .o_ready(o_ready),

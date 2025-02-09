@@ -25,7 +25,7 @@ module ysyx_24110006_LSU(
   input [31:0] i_pc,
   output [31:0] o_pc,
   output o_ren,
-  input [7:2] i_branch_mid,   
+  input [7:0] i_branch_mid,   
   input [11:0] i_csr,
   output [11:0] o_csr,
   input i_exception,
@@ -40,11 +40,18 @@ module ysyx_24110006_LSU(
   input [31:0] i_upc,
   output [31:0] o_upc,
   output o_branch,
+`ifdef CONFIG_BTB
+  input i_predict,
+  output o_predict,
+  output o_predict_err,
+  output o_btb_update,
+`endif
 `ifdef CONFIG_SIM
   input [6:0] i_op,
   output [6:0] o_op,
   output o_wen,
   output [31:0] o_addr,
+  output o_sim_branch,
 `endif
   output [31:0] o_axi_araddr,
   output o_axi_arvalid,
@@ -161,9 +168,8 @@ always@(posedge i_clock)begin
   if(update_reg) wen <= i_wen;
 end
 assign o_wen = wen;
-
-
 assign o_addr = addr;
+assign o_sim_branch = branch;
 `endif
 
 reg jump;
@@ -183,12 +189,21 @@ always@(posedge i_clock)begin
     csr <= i_csr;
 end
 assign o_csr = csr;
-reg [7:2] branch_mid;
+reg [7:0] branch_mid;
 always@(posedge i_clock)begin
   if(update_reg)
     branch_mid <= i_branch_mid;
 end
-
+`ifdef CONFIG_BTB
+reg predict;
+always@(posedge i_clock)begin
+  if(update_reg)
+    predict <= i_predict;
+end
+assign o_predict = predict;
+assign o_predict_err = predict && !branch;
+assign o_btb_update = !predict && branch_mid[1];
+`endif
 always@(posedge i_clock)begin
   if(update_reg)begin
     ren <= i_ren;
@@ -209,7 +224,12 @@ assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
 wire zero = branch_mid[2];
 wire cmp = branch_mid[3];
-assign o_branch = branch_mid[4] & zero | branch_mid[5] & ~zero | branch_mid[6] & cmp | branch_mid[7] & ~cmp;
+wire branch = branch_mid[4] & zero | branch_mid[5] & ~zero | branch_mid[6] & cmp | branch_mid[7] & ~cmp;
+`ifdef CONFIG_BTB
+  assign o_branch = (predict ^ branch) & (branch_mid[0]);
+`else
+  assign o_branch = branch;
+`endif
 reg [31:0] o_rdata;
 assign o_result = result_t ? o_rdata : result;
 

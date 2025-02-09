@@ -228,7 +228,12 @@ module ysyx_24110006_ICACHE(
   input i_fencei,
   input [31:0] i_upc,
   input i_busy,
-
+`ifdef CONFIG_BTB
+  input [31:0] i_pc,
+  output o_predict,
+  input i_predict_err,
+  input i_btb_update,
+`endif
   input i_valid,
   output reg o_valid,
   input i_ready,
@@ -285,7 +290,33 @@ reg rlast;
 always@(posedge i_clock)
   rlast <= i_axi_rlast;
 `endif
+`ifdef CONFIG_BTB
+  reg [31:3] btb_tag[2];
+  reg [31:2] btb_target[2];
+  always@(posedge i_clock)begin
+    if(i_reset) begin
+      btb_tag[0] <= 0;
+      btb_tag[1] <= 0;
+    end
+    else if(i_btb_update) begin
+      btb_tag[0] <= i_pc[2] == 0 ? i_pc[31:3] : btb_tag[0];
+      btb_target[0] <= i_pc[2] == 0 ? i_upc[31:2] : btb_target[0];
 
+      btb_tag[1] <= i_pc[2] == 1 ? i_pc[31:3] : btb_tag[1];
+      btb_target[1] <= i_pc[2] == 1 ? i_upc[31:2] : btb_target[1];
+    end
+  end
+  wire btb_hit = pc[31:3] == btb_tag[pc[2]];
+  wire [31:0] btb_pc = {btb_target[pc[2]], 2'b0};
+  reg predict;
+  always@(posedge i_clock)
+    if(inst_valid & (i_ready | ~busy)) predict <= btb_hit;
+  assign o_predict = predict;
+  wire [31:0] need_plus_pc;
+  wire [31:0] pc_plus_4;
+  assign need_plus_pc = i_predict_err && i_flush ? i_pc : pc;
+  assign pc_plus_4 = need_plus_pc + 4;
+`endif 
 reg [31:0] pc;
 reg [31:2] pc1;
 localparam MROM = 32'h20000000;
@@ -298,14 +329,25 @@ localparam FLASH = 32'h30000000;
 wire busy = o_valid && !i_ready;
 always@(posedge i_clock)begin
   if(i_reset) pc <= PC;
-  else if(i_flush) pc <= i_upc;
+  else if(i_flush) begin
+    `ifdef CONFIG_BTB
+      pc <= i_predict_err ? pc_plus_4 : i_upc;
+    `else
+      pc <= i_upc;
+    `endif
+  end
   else if(inst_valid & (i_ready | ~busy)) begin
-    pc <= pc + 4;
+    `ifdef CONFIG_BTB
+      pc <= btb_hit ? btb_pc : pc_plus_4;
+    `else
+      pc <= pc + 4;
+    `endif
   end
 end
 always@(posedge i_clock)
   if(inst_valid & (i_ready | ~busy)) pc1 <= pc[31:2];
 assign o_pc = {pc1, 2'b0};
+
 /* reg busy; */
 /* always@(posedge i_clock)begin */
 /*   if(i_reset) busy <= 0; */
