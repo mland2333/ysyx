@@ -299,12 +299,12 @@ wire busy = o_valid && !i_ready;
 always@(posedge i_clock)begin
   if(i_reset) pc <= PC;
   else if(i_flush) pc <= i_upc;
-  else if(inst_valid && (i_ready || !busy)) begin
+  else if(inst_valid & (i_ready | ~busy)) begin
     pc <= pc + 4;
   end
 end
 always@(posedge i_clock)
-  if(inst_valid && (i_ready || !busy)) pc1 <= pc[31:2];
+  if(inst_valid & (i_ready | ~busy)) pc1 <= pc[31:2];
 assign o_pc = {pc1, 2'b0};
 /* reg busy; */
 /* always@(posedge i_clock)begin */
@@ -321,8 +321,8 @@ wire [1:0] cache_index = araddr[4:3];
 reg [26:0] tag_array [4];
 reg [1:0] valid_array [4];
 reg [63:0] cache_array [4];
-wire hit = valid_array[index][valid] && tag_array[index] == tag;
-wire inst_valid = (state == idle_t || state == axi_t) && hit && !i_flush || state == direct_t && rvalid;
+wire hit = valid_array[index][valid] & (tag_array[index] == tag);
+wire inst_valid = ((state == idle_t) | (state == axi_t)) & hit & ~i_flush | (state == direct_t) & rvalid;
 wire is_sram = pc[31:24] == 8'h0f;
 
 localparam idle_t = 3'b000;
@@ -338,8 +338,8 @@ always@(posedge i_clock)begin
   else begin
     case(state)
       idle_t:begin
-        if(!hit && !i_flush && (i_ready || !busy)) begin
-          if(!is_sram) state <= axi_t;
+        if(~hit & ~i_flush & (i_ready | ~busy)) begin
+          if(~is_sram) state <= axi_t;
           else state <= direct_t;
         end
       end
@@ -383,14 +383,14 @@ assign o_inst = inst;
 
 wire update_reg;
 
-assign o_exception = pc[1:0] != 2'b00 || rresp != 0;
+assign o_exception = (pc[1:0] != 2'b00) | (rresp != 0);
 assign o_mcause = rresp != 0 ? 1 : 0;
 
 always@(posedge i_clock)begin
-  if((state == idle_t || state == axi_t) && hit && (i_ready || !busy))begin
+  if(((state == idle_t) | (state == axi_t)) & hit & (i_ready | ~busy))begin
     inst <= cache_array[index][offset*8 +: 32];
   end
-  else if(state == direct_t && rvalid)
+  else if(state == direct_t & rvalid)
     inst <= i_axi_rdata;
 end
 
@@ -401,22 +401,24 @@ always@(posedge i_clock)begin
       valid_array[i] <= 0;
     end
   end
-  else if(arvalid && arready && i_busy)begin
+  else if(arvalid & arready & i_busy)begin
     valid_array[cache_index] <= 0;
     tag_array[cache_index] <= tag;
   end
   else begin
-    if(state == axi_t && rvalid && i_busy)begin
+    if(state == axi_t & rvalid & i_busy)begin
       cache_array[cache_index][burst_counter*32 +: 32] <= i_axi_rdata;
       valid_array[cache_index][burst_counter] <= 1;
     end
   end
 end
 
+wire cache_miss = (state == idle_t) & ~hit & ~i_flush;
+wire axi_free = (i_ready || !busy);
 always@(posedge i_clock)begin
   if(i_reset) arvalid <= 0;
-  else if(!arvalid && (state == idle_t && !hit && !i_flush) && (i_ready || !busy)) arvalid <= 1;
-  else if(arvalid && arready) arvalid <= 0;
+  else if(~arvalid & cache_miss & axi_free) arvalid <= 1;
+  else if(arvalid & i_axi_arready) arvalid <= 0;
 end
 
 always@(posedge i_clock)begin
@@ -433,7 +435,7 @@ wire [1:0] rresp;
 reg [31:0] araddr;
 
 always@(posedge i_clock)begin
-  if(!arvalid && (state == idle_t && !hit && !i_flush) && (i_ready || !busy)) araddr <= pc;
+  if(~arvalid & (state == idle_t & ~hit & ~i_flush) & (i_ready | ~busy)) araddr <= pc;
 end
 assign o_axi_araddr = araddr;
 assign o_axi_arvalid = arvalid;

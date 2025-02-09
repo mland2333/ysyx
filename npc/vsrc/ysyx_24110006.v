@@ -74,11 +74,17 @@ module ysyx_24110006(
 wire flush;
 wire stall;
 wire exception;
+wire branch;
+wire csr_flush;
 wire [31:0] upc;
 assign exception = lsu_valid & lsu_exception;
-assign flush = exu_flush | exception;
-assign upc = exception ? csr_upc : exu_upc;
+assign branch = lsu_valid & lsu_branch;
+assign csr_flush = lsu_valid & lsu_csr_t[0];
+assign flush = exu_flush | exception | branch | csr_flush;
+assign upc = exception ? csr_upc : branch ? lsu_upc : exu_upc;
 
+wire [7:2] branch_mid;
+wire lsu_branch;
 wire arbiter_ifu_read;
 wire idu_mret;
 wire exu_flush;
@@ -151,7 +157,7 @@ reg [31:0] sim_pc;
   always@(posedge clock)begin
     if(reset) sim_pc <= 0;
     else begin
-      if(lsu_valid) sim_pc <= lsu_jump ? lsu_upc : lsu_exception ? upc : lsu_pc + 4;
+      if(lsu_valid) sim_pc <= (lsu_jump | lsu_branch) ? lsu_upc : lsu_exception ? upc : lsu_pc + 4;
     end
   end
 
@@ -515,6 +521,7 @@ ysyx_24110006_EXU mexu(
   .o_mem_wdata(mem_wdata),
   .o_fencei(fencei),
   .o_op(exu_op),
+  .o_branch_mid(branch_mid),
   .i_exception(idu_exception),
   .o_exception(exu_exception),
   .i_mcause(idu_mcause),
@@ -559,9 +566,11 @@ ysyx_24110006_LSU mlsu(
   .i_csr(exu_csr),
   .o_csr(lsu_csr),
   .o_ren(lsu_ren),
-`ifdef CONFIG_SIM
   .i_upc(exu_upc),
   .o_upc(lsu_upc),
+  .i_branch_mid(branch_mid),
+  .o_branch(lsu_branch),
+`ifdef CONFIG_SIM
   .i_op(exu_op),
   .o_op(lsu_op),
   .o_wen(lsu_wen),
@@ -571,7 +580,7 @@ ysyx_24110006_LSU mlsu(
   .o_valid(lsu_valid),
   .i_ready(1),
   .o_ready(lsu_ready),
-  .i_flush(exception),
+  .i_flush(exception|branch),
   .o_axi_araddr(lsu_araddr),
   .o_axi_arvalid(lsu_arvalid),
   .i_axi_arready(lsu_arready),

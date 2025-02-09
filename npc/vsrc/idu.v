@@ -69,17 +69,17 @@ always@(posedge i_clock)begin
 end
 assign o_mcause = exception ? mcause : my_mcause;
 
-wire I = o_op == 7'b0010011;
-wire R = o_op == 7'b0110011;
-wire L = o_op == 7'b0000011;
-wire S = o_op == 7'b0100011;
-wire JAL = o_op == 7'b1101111;
-wire JALR = o_op == 7'b1100111;
-wire AUIPC = o_op == 7'b0010111;
-wire LUI = o_op == 7'b0110111;
-wire B = o_op == 7'b1100011;
-wire CSR = o_op == 7'b1110011;
-wire FENCE = o_op == 7'b0001111;
+wire I = o_op[6:2] == 5'b00100;
+wire R = o_op[6:2] == 5'b01100;
+wire L = o_op[6:2] == 5'b00000;
+wire S = o_op[6:2] == 5'b01000;
+wire JAL = o_op[6:2] == 5'b11011;
+wire JALR = o_op[6:2] == 5'b11001;
+wire AUIPC = o_op[6:2] == 5'b00101;
+wire LUI = o_op[6:2] == 5'b01101;
+wire B = o_op[6:2] == 5'b11000;
+wire CSR = o_op[6:2] == 5'b11100;
+wire FENCE = o_op[6:2] == 5'b00011;
 
 /* wire illegal_inst = 0; */
 wire illegal_inst = !(I|R|L|S|JAL|JALR|AUIPC|LUI|B|CSR|FENCE) && !i_flush;

@@ -37,6 +37,7 @@ module ysyx_24110006_EXU(
   output o_fencei,
   output [6:0] o_op,
   output [11:0] o_csr,
+  output [7:2] o_branch_mid,
 
   input i_valid,
   output reg o_valid,
@@ -61,7 +62,7 @@ reg [4:0] reg_rd;
 reg [1:0] csr_t;
 reg [31:0] mem_wdata;
 wire update_reg;
-
+reg [31:0] reg_src2;
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
   else if(i_valid && !i_flush) begin
@@ -143,11 +144,11 @@ always@(posedge i_clock)begin
 end
 always@(posedge i_clock)begin
   if(update_reg)
-    mem_wdata <= i_reg_src2;
+    reg_src2 <= i_reg_src2;
 end
 always@(posedge i_clock)begin
   if(update_reg)
-    upc <= i_op == 7'b1110011 ? i_csr_upc : (i_op == 7'b1100111 ? i_reg_src1 : i_pc);
+    upc <= (i_op == 7'b1110011 && i_func == 0) ? i_csr_upc : (i_op == 7'b1100111 ? i_reg_src1 : i_pc);
 end
 
 always@(posedge i_clock)begin
@@ -168,17 +169,17 @@ end
 
 
 
-wire I = op == 7'b0010011;
-wire R = op == 7'b0110011;
-wire L = op == 7'b0000011;
-wire S = op == 7'b0100011;
-wire JAL = op == 7'b1101111;
-wire JALR = op == 7'b1100111;
-wire AUIPC = op == 7'b0010111;
-wire LUI = op == 7'b0110111;
-wire B = op == 7'b1100011;
-wire CSR = op == 7'b1110011;
-wire FENCE = op == 7'b0001111;
+wire I = op[6:2] == 5'b00100;
+wire R = op[6:2] == 5'b01100;
+wire L = op[6:2] == 5'b00000;
+wire S = op[6:2] == 5'b01000;
+wire JAL = op[6:2] == 5'b11011;
+wire JALR = op[6:2] == 5'b11001;
+wire AUIPC = op[6:2] == 5'b00101;
+wire LUI = op[6:2] == 5'b01101;
+wire B = op[6:2] == 5'b11000;
+wire CSR = op[6:2] == 5'b11100;
+wire FENCE = op[6:2] == 5'b00011;
 
 wire is_beq = B & f000;
 wire is_bne = B & f001;
@@ -203,7 +204,7 @@ assign o_fencei = FENCE && f001;
 assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
 assign o_pc = pc;
-assign o_mem_wdata = mem_wdata;
+assign o_mem_wdata = reg_src2;
 assign o_op = op;
 
 reg [31:0] alu_a, alu_b;
@@ -211,8 +212,7 @@ reg alu_sub;
 reg alu_sign;
 reg [`ALU_TYPE-1:0] alu_t;
 wire cmp, zero;
-wire branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp;
-
+/* wire branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp; */
 
 ysyx_24110006_ALU malu(
   .i_a(alu_a),
@@ -221,14 +221,20 @@ ysyx_24110006_ALU malu(
   .i_sign(alu_sign),
   .i_alu_t(alu_t),
   .o_r(o_result),
+  /* .o_branch_mid(o_branch_mid[1:0]), */
   .o_cmp(cmp),
-  .o_zero(zero),
+  /* .o_zero(zero), */
   .o_add_r(o_mem_addr)
 );
-
+assign o_branch_mid[2] = reg_src1 == reg_src2;
+assign o_branch_mid[3] = cmp;
+assign o_branch_mid[4] = is_beq;
+assign o_branch_mid[5] = is_bne;
+assign o_branch_mid[6] = is_blt;
+assign o_branch_mid[7] = is_bge;
 reg [31:0] upc;
 
 assign o_upc = upc + imm;
-assign o_jump = JAL | JALR | branch | csr_t[1];
+assign o_jump = JAL | JALR | csr_t[1];
 assign o_reg_wen = !(S || B);
 endmodule

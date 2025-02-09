@@ -25,7 +25,7 @@ module ysyx_24110006_LSU(
   input [31:0] i_pc,
   output [31:0] o_pc,
   output o_ren,
-  
+  input [7:2] i_branch_mid,   
   input [11:0] i_csr,
   output [11:0] o_csr,
   input i_exception,
@@ -37,9 +37,10 @@ module ysyx_24110006_LSU(
   input i_ready,
   output o_ready,
   input i_flush,
-`ifdef CONFIG_SIM
   input [31:0] i_upc,
   output [31:0] o_upc,
+  output o_branch,
+`ifdef CONFIG_SIM
   input [6:0] i_op,
   output [6:0] o_op,
   output o_wen,
@@ -126,8 +127,10 @@ always@(posedge i_clock)begin
     mcause <= i_mcause;
 end
 assign o_mcause = exception ? mcause : my_mcause;
-wire load_addr_misaligned = ren && (addr[1:0] != 2'b0 && read_t == 3'b010) || (addr[0] != 0 && read_t[0]);
-wire store_addr_misaligned = wen && (addr[1:0] != 2'b0 && wmask == 4'b1111) || (addr[0] != 0 && wmask == 4'b0011);
+/* wire load_addr_misaligned = ren & (addr[1:0] != 2'b0) & (read_t == 3'b010) | (addr[0] != 0) & read_t[0]; */
+/* wire store_addr_misaligned = wen && (addr[1:0] != 2'b0) & (wmask == 4'b1111) | (addr[0] != 0) & (wmask == 4'b0011); */
+wire load_addr_misaligned = 0;
+wire store_addr_misaligned = 0;
 wire my_exception = load_addr_misaligned | store_addr_misaligned;
 wire [3:0] my_mcause = ({4{load_addr_misaligned}} & 4'd4) |
                        ({4{store_addr_misaligned}} & 4'd6);
@@ -142,12 +145,13 @@ always@(posedge i_clock)begin
 end
 assign o_ren = ren;
 
-`ifdef CONFIG_SIM
 reg [31:0] upc;
 always@(posedge i_clock)begin
   if(update_reg) upc <= i_upc;
 end
 assign o_upc = upc;
+`ifdef CONFIG_SIM
+
 reg [6:0] op;
 always@(posedge i_clock)begin
   if(update_reg) op <= i_op;
@@ -179,6 +183,12 @@ always@(posedge i_clock)begin
     csr <= i_csr;
 end
 assign o_csr = csr;
+reg [7:2] branch_mid;
+always@(posedge i_clock)begin
+  if(update_reg)
+    branch_mid <= i_branch_mid;
+end
+
 always@(posedge i_clock)begin
   if(update_reg)begin
     ren <= i_ren;
@@ -197,7 +207,9 @@ end
 assign o_reg_wen = reg_wen;
 assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
-
+wire zero = branch_mid[2];
+wire cmp = branch_mid[3];
+assign o_branch = branch_mid[4] & zero | branch_mid[5] & ~zero | branch_mid[6] & cmp | branch_mid[7] & ~cmp;
 reg [31:0] o_rdata;
 assign o_result = result_t ? o_rdata : result;
 
