@@ -89,10 +89,11 @@ always@(posedge i_clock)begin
   else if(update_reg) flush_valid <= 1;
   else if(flush_valid) flush_valid <= 0;
 end
+
 `ifdef CONFIG_BTB
   assign o_flush = (JALR | csr_t[1] | JAL & ~predict) & flush_valid;
 `else
-  assign o_flush = o_jump & flush_valid ;
+  assign o_flush = (o_jump | o_fencei) & flush_valid ;
 `endif
 
 reg exception;
@@ -210,7 +211,7 @@ assign o_mem_wen = S;
 assign o_mem_ren = L;
 assign o_mem_wmask = S ? (f000 ? 4'b0001 : f001 ? 4'b0011 : 4'b1111) : 0;
 assign o_mem_read_t = L ? func : 0;
-assign o_fencei = FENCE && f001;
+assign o_fencei = (FENCE && f001) && flush_valid;
 assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
 assign o_pc = pc;

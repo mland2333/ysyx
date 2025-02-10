@@ -331,7 +331,7 @@ always@(posedge i_clock)begin
   if(i_reset) pc <= PC;
   else if(i_flush) begin
     `ifdef CONFIG_BTB
-      pc <= i_predict_err ? pc_plus_4 : i_upc;
+      pc <= (i_predict_err | i_fencei) ? pc_plus_4 : i_upc;
     `else
       pc <= i_upc;
     `endif
@@ -363,7 +363,24 @@ wire [1:0] cache_index = araddr[4:3];
 reg [26:0] tag_array [4];
 reg [1:0] valid_array [4];
 reg [63:0] cache_array [4];
-wire hit = valid_array[index][valid] & (tag_array[index] == tag);
+wire index0 = index == 'd0;
+wire index1 = index == 'd1;
+wire index2 = index == 'd2;
+wire index3 = index == 'd3;
+wire valid_ok = (index0 & (valid == 'd0) & valid_array[0][0]) |
+                (index0 & (valid == 'd1) & valid_array[0][1]) |
+                (index1 & (valid == 'd0) & valid_array[1][0]) |
+                (index1 & (valid == 'd1) & valid_array[1][1]) |
+                (index2 & (valid == 'd0) & valid_array[2][0]) |
+                (index2 & (valid == 'd1) & valid_array[2][1]) |
+                (index3 & (valid == 'd0) & valid_array[3][0]) |
+                (index3 & (valid == 'd1) & valid_array[3][1]) ;
+wire tag_ok = (index0 & (tag_array[0] == tag)) |
+              (index1 & (tag_array[1] == tag)) |
+              (index2 & (tag_array[2] == tag)) |
+              (index3 & (tag_array[3] == tag)) ;
+/* wire hit = valid_array[index][valid] & (tag_array[index] == tag); */
+wire hit = valid_ok & tag_ok;
 wire inst_valid = ((state == idle_t) | (state == axi_t)) & hit & ~i_flush | (state == direct_t) & rvalid;
 wire is_sram = pc[31:24] == 8'h0f;
 
@@ -428,29 +445,53 @@ wire update_reg;
 assign o_exception = (pc[1:0] != 2'b00) | (rresp != 0);
 assign o_mcause = rresp != 0 ? 1 : 0;
 
+wire [31:0] cache_inst = ({32{index0 & (offset[2] == 'd0)}} & cache_array[0][0 +:32]) |
+                         ({32{index0 & (offset[2] == 'd1)}} & cache_array[0][32+:32]) |
+                         ({32{index1 & (offset[2] == 'd0)}} & cache_array[1][0 +:32]) |
+                         ({32{index1 & (offset[2] == 'd1)}} & cache_array[1][32+:32]) |
+                         ({32{index2 & (offset[2] == 'd0)}} & cache_array[2][0 +:32]) |
+                         ({32{index2 & (offset[2] == 'd1)}} & cache_array[2][32+:32]) |
+                         ({32{index3 & (offset[2] == 'd0)}} & cache_array[3][0 +:32]) |
+                         ({32{index3 & (offset[2] == 'd1)}} & cache_array[3][32+:32]) ;
 always@(posedge i_clock)begin
   if(((state == idle_t) | (state == axi_t)) & hit & (i_ready | ~busy))begin
-    inst <= cache_array[index][offset*8 +: 32];
+    /* inst <= cache_array[index][offset*8 +: 32]; */
+    inst <= cache_inst;
   end
   else if(state == direct_t & rvalid)
     inst <= i_axi_rdata;
 end
 
 always@(posedge i_clock)begin
-  if(i_reset || i_valid && i_fencei) begin
+  if(i_reset || i_fencei) begin
     integer i;
     for(i=0; i<4; i++)begin
       valid_array[i] <= 0;
     end
   end
   else if(arvalid & arready & i_busy)begin
-    valid_array[cache_index] <= 0;
-    tag_array[cache_index] <= tag;
+    integer i;
+    for(i=0; i<4; i=i+1)begin
+      if(cache_index==i) begin
+        valid_array[i] <= 0;
+        tag_array[i] <= tag;
+      end
+    end
   end
   else begin
     if(state == axi_t & rvalid & i_busy)begin
-      cache_array[cache_index][burst_counter*32 +: 32] <= i_axi_rdata;
-      valid_array[cache_index][burst_counter] <= 1;
+      integer i;
+      for(i=0; i<4; i=i+1)begin
+        if(cache_index==i)begin
+          integer j;
+          for(j=0; j<2; j=j+1)begin
+            if(burst_counter==j)begin
+              cache_array[i][j*32 +: 32] <= i_axi_rdata;
+              valid_array[i][j] <= 1;
+            end
+          end
+        end
+      end
     end
   end
 end

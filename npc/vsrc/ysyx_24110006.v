@@ -86,12 +86,16 @@ assign exception = lsu_valid & lsu_exception;
 assign branch = lsu_valid & lsu_branch;
 assign csr_flush = lsu_valid & lsu_csr_t[0];
 assign flush = exu_flush | exception | branch | csr_flush;
-assign upc = exception ? csr_upc : (branch | branch_btb_update) ? lsu_upc : exu_upc;
+`ifdef CONFIG_BTB
+  assign upc = exception ? csr_upc : (branch | branch_btb_update) ? lsu_upc : exu_upc;
+`else
+  assign upc = exception ? csr_upc : branch ? lsu_upc : exu_upc;
+`endif
 assign jal_btb_update = exu_btb_update;
 assign branch_btb_update = lsu_btb_update & lsu_valid & branch;
 assign btb_update = jal_btb_update | branch_btb_update;
 assign predict_err = lsu_predict_err & lsu_valid;
-assign btb_pc = (branch_btb_update | predict_err) ? lsu_pc : jal_btb_update ? exu_pc : 0;
+assign btb_pc = (branch_btb_update | predict_err) ? lsu_pc : (jal_btb_update | fencei) ? exu_pc : 0;
 wire [7:0] branch_mid;
 wire lsu_branch;
 wire arbiter_ifu_read;
