@@ -25,7 +25,7 @@ module ysyx_24110006_LSU(
   input [31:0] i_pc,
   output [31:0] o_pc,
   output o_ren,
-  input [7:0] i_branch_mid,   
+  input [`BRANCH_MID] i_branch_mid,   
   input [11:0] i_csr,
   output [11:0] o_csr,
   input i_exception,
@@ -189,7 +189,7 @@ always@(posedge i_clock)begin
     csr <= i_csr;
 end
 assign o_csr = csr;
-reg [7:0] branch_mid;
+reg [`BRANCH_MID] branch_mid;
 always@(posedge i_clock)begin
   if(update_reg)
     branch_mid <= i_branch_mid;
@@ -202,7 +202,7 @@ always@(posedge i_clock)begin
 end
 assign o_predict = predict;
 assign o_predict_err = predict && !branch;
-assign o_btb_update = !predict && branch_mid[1];
+assign o_btb_update = !predict && branch_mid[`BRANCH_BACK];
 `endif
 always@(posedge i_clock)begin
   if(update_reg)begin
@@ -222,11 +222,11 @@ end
 assign o_reg_wen = reg_wen;
 assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
-wire zero = branch_mid[2];
-wire cmp = branch_mid[3];
-wire branch = branch_mid[4] & zero | branch_mid[5] & ~zero | branch_mid[6] & cmp | branch_mid[7] & ~cmp;
+wire zero = branch_mid[`ZERO];
+wire cmp = branch_mid[`CMP];
+wire branch = branch_mid[`BEQ] & zero | branch_mid[`BNE] & ~zero | branch_mid[`BLT] & cmp | branch_mid[`BGE] & ~cmp;
 `ifdef CONFIG_BTB
-  assign o_branch = (predict ^ branch) & (branch_mid[0]);
+  assign o_branch = (predict ^ branch) & (branch_mid[`BRANCH]);
 `else
   assign o_branch = branch;
 `endif

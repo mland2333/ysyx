@@ -36,7 +36,7 @@ module ysyx_24110006_EXU(
   output o_fencei,
   output [6:0] o_op,
   output [11:0] o_csr,
-  output [7:0] o_branch_mid,
+  output [`BRANCH_MID] o_branch_mid,
 `ifdef CONFIG_BTB
   input i_predict,
   output o_predict,
@@ -232,19 +232,18 @@ ysyx_24110006_ALU malu(
   .i_sign(alu_sign),
   .i_alu_t(alu_t),
   .o_r(o_result),
-  /* .o_branch_mid(o_branch_mid[1:0]), */
   .o_cmp(cmp),
   /* .o_zero(zero), */
   .o_add_r(o_mem_addr)
 );
-assign o_branch_mid[0] = B;
-assign o_branch_mid[1] = B & (imm[31]);
-assign o_branch_mid[2] = reg_src1 == reg_src2;
-assign o_branch_mid[3] = cmp;
-assign o_branch_mid[4] = is_beq;
-assign o_branch_mid[5] = is_bne;
-assign o_branch_mid[6] = is_blt;
-assign o_branch_mid[7] = is_bge;
+assign o_branch_mid[`BRANCH] = B;
+assign o_branch_mid[`BRANCH_BACK] = B & (imm[31]);
+assign o_branch_mid[`ZERO] = reg_src1 == reg_src2;
+assign o_branch_mid[`CMP] = cmp;
+assign o_branch_mid[`BEQ] = is_beq;
+assign o_branch_mid[`BNE] = is_bne;
+assign o_branch_mid[`BLT] = is_blt;
+assign o_branch_mid[`BGE] = is_bge;
 reg [31:0] upc;
 
 assign o_upc = upc + imm;

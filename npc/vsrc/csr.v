@@ -52,11 +52,19 @@ always@(posedge i_clock)begin
       csr[MEPC] <= i_pc;
     end
     else if(i_csr_t[0])begin
-      csr[index_w] <= i_wdata;
+      integer i;
+      for(i=0; i<4; i=i+1)begin
+        if(index_w==i) csr[i] <= i_wdata;
+      end
     end
   end
 end
 
 assign o_upc = i_exception ? csr[MTVEC] : i_mret ? csr[MEPC] : 0;
-assign o_rdata = i_csr_r == 12'hf11 ? 32'h79737978 : i_csr_r == 12'hf12 ? 32'h16fe3b8 : csr[index_r];
+assign o_rdata = {32{i_csr_r == 12'hf11}} & 32'h79737978 |
+                 {32{i_csr_r == 12'hf12}} & 32'h16fe3b8  |
+                 {32{index_r == 'd0}}    & csr[0]       |
+                 {32{index_r == 'd1}}    & csr[1]       |
+                 {32{index_r == 'd2}}    & csr[2]       |
+                 {32{index_r == 'd3}}    & csr[3]       ;
 endmodule

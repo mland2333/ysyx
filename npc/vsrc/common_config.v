@@ -1,10 +1,11 @@
 
-`ifdef CONFIG_AREA_OPT
-  `define PC_LOW 2
-  `define PC_FULL(pc) {pc, 2'b0}
-`else
-  `define PC_LOW 0
-  `define PC_FULL(pc) pc
-`endif
+`define BRANCH_MID 7:0
+`define BRANCH 0
+`define BRANCH_BACK 1
+`define BEQ 2
+`define ZERO 3
+`define BNE 4
+`define BLT 5
+`define CMP 6
+`define BGE 7
 
-`define PC_WIDTH 31:`PC_LOW

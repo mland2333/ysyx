@@ -5,6 +5,7 @@ import "DPI-C" function void diff_skip();
 import "DPI-C" function void fetch_inst();
 `endif
 `include "alu_config.v"
+`include "common_config.v"
 module ysyx_24110006(
   input clock,
 `ifdef CONFIG_YSYXSOC
@@ -96,7 +97,7 @@ assign branch_btb_update = lsu_btb_update & lsu_valid & branch;
 assign btb_update = jal_btb_update | branch_btb_update;
 assign predict_err = lsu_predict_err & lsu_valid;
 assign btb_pc = (branch_btb_update | predict_err) ? lsu_pc : (jal_btb_update | fencei) ? exu_pc : 0;
-wire [7:0] branch_mid;
+wire [`BRANCH_MID] branch_mid;
 wire lsu_branch;
 wire arbiter_ifu_read;
 wire ifu_predict, idu_predict, exu_predict, lsu_predict;
