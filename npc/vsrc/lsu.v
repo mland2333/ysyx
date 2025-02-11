@@ -2,6 +2,7 @@
 /* import "DPI-C" function void pmem_write( */
 /*   input int waddr, input int wdata, input byte wmask); */
 /**/
+`include "common_config.v"
 module ysyx_24110006_LSU(
   input i_clock,
   input i_reset,
@@ -23,7 +24,8 @@ module ysyx_24110006_LSU(
   output o_jump,
   input [31:0] i_pc,
   output [31:0] o_pc,
-  
+  output o_ren,
+  input [`BRANCH_MID] i_branch_mid,   
   input [11:0] i_csr,
   output [11:0] o_csr,
   input i_exception,
@@ -32,19 +34,24 @@ module ysyx_24110006_LSU(
   output [3:0] o_mcause,
   input i_valid,
   output reg o_valid,
-`ifdef CONFIG_PIPELINE
   input i_ready,
   output o_ready,
   input i_flush,
-`endif
-`ifdef CONFIG_SIM
   input [31:0] i_upc,
   output [31:0] o_upc,
+  output o_branch,
+`ifdef CONFIG_BTB
+  input i_predict,
+  output o_predict,
+  output o_predict_err,
+  output o_btb_update,
+`endif
+`ifdef CONFIG_SIM
   input [6:0] i_op,
   output [6:0] o_op,
   output o_wen,
-  output o_ren,
   output [31:0] o_addr,
+  output o_sim_branch,
 `endif
   output [31:0] o_axi_araddr,
   output o_axi_arvalid,
@@ -82,34 +89,6 @@ module ysyx_24110006_LSU(
 
 );
 
-/* localparam COUNT = 8'h05; */
-
-/* reg[7:0] out; */
-/* always@(is_begin)begin */
-/*   if(i_reset || out==0) begin out <= COUNT;end */
-/*   else if(is_begin)begin */
-/*     out[6:0] <= out[7:1]; */
-/*     out[7] <= out[4]^out[3]^out[2]^out[0]; */
-/*   end */
-/* end */
-/**/
-/* reg [7:0] count; */
-/* reg is_begin; */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) is_begin <= 0; */
-/*   else if(rvalid && !rready || bvalid && !bready) is_begin <= 1; */
-/*   else if(count == 0) is_begin <= 0; */
-/* end */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) count <= COUNT; */
-/*   else if(is_begin && count != 0) */
-/*     count <= count - 1; */
-/*   else if(count == 0) */
-/*     count <= out; */
-/* end */
-
 reg ren;
 reg wen;
 reg [31:0] addr;
@@ -125,7 +104,6 @@ reg [1:0] csr_t;
 wire mem_valid = ren&&rvalid&&rready || wen&&bvalid&&bready;
 wire [31:0] i_addr = i_result;
 wire update_reg;
-`ifdef CONFIG_PIPELINE
 
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
@@ -144,7 +122,6 @@ always@(posedge i_clock)begin
 end
 
 assign update_reg = !i_reset && i_valid && o_ready && !i_flush;
-/* assign o_flush = o_valid && o_jump; */
 reg exception;
 always@(posedge i_clock)begin
   if(update_reg)
@@ -157,36 +134,31 @@ always@(posedge i_clock)begin
     mcause <= i_mcause;
 end
 assign o_mcause = exception ? mcause : my_mcause;
-wire load_addr_misaligned = ren && (addr[1:0] != 2'b0 && read_t == 3'b010) || (addr[0] != 0 && read_t[0]);
-wire store_addr_misaligned = wen && (addr[1:0] != 2'b0 && wmask == 4'b1111) || (addr[0] != 0 && wmask == 4'b0011);
+/* wire load_addr_misaligned = ren & (addr[1:0] != 2'b0) & (read_t == 3'b010) | (addr[0] != 0) & read_t[0]; */
+/* wire store_addr_misaligned = wen && (addr[1:0] != 2'b0) & (wmask == 4'b1111) | (addr[0] != 0) & (wmask == 4'b0011); */
+wire load_addr_misaligned = 0;
+wire store_addr_misaligned = 0;
 wire my_exception = load_addr_misaligned | store_addr_misaligned;
 wire [3:0] my_mcause = ({4{load_addr_misaligned}} & 4'd4) |
                        ({4{store_addr_misaligned}} & 4'd6);
-`else
-
-always@(posedge i_clock)begin
-  if(i_reset) o_valid <= 0;
-  else if(!o_valid && (mem_valid||!(i_wen||i_ren)&&i_valid)) begin
-    o_valid <= 1;
-  end
-  else if(o_valid)begin
-    o_valid <= 0;
-  end
-end
-assign update_reg = !i_reset && !o_valid && i_valid;
-`endif
 
 always@(posedge i_clock)begin
   if(i_reset) rdata <= 0;
   else if(rvalid&&rready) rdata <= rdata0;
 end
 
-`ifdef CONFIG_SIM
+always@(posedge i_clock)begin
+  if(update_reg) ren <= i_ren;
+end
+assign o_ren = ren;
+
 reg [31:0] upc;
 always@(posedge i_clock)begin
   if(update_reg) upc <= i_upc;
 end
 assign o_upc = upc;
+`ifdef CONFIG_SIM
+
 reg [6:0] op;
 always@(posedge i_clock)begin
   if(update_reg) op <= i_op;
@@ -196,12 +168,8 @@ always@(posedge i_clock)begin
   if(update_reg) wen <= i_wen;
 end
 assign o_wen = wen;
-always@(posedge i_clock)begin
-  if(update_reg) ren <= i_ren;
-end
-assign o_ren = ren;
-
 assign o_addr = addr;
+assign o_sim_branch = branch;
 `endif
 
 reg jump;
@@ -221,6 +189,21 @@ always@(posedge i_clock)begin
     csr <= i_csr;
 end
 assign o_csr = csr;
+reg [`BRANCH_MID] branch_mid;
+always@(posedge i_clock)begin
+  if(update_reg)
+    branch_mid <= i_branch_mid;
+end
+`ifdef CONFIG_BTB
+reg predict;
+always@(posedge i_clock)begin
+  if(update_reg)
+    predict <= i_predict;
+end
+assign o_predict = predict;
+assign o_predict_err = predict && !branch;
+assign o_btb_update = !predict && branch_mid[`BRANCH_BACK];
+`endif
 always@(posedge i_clock)begin
   if(update_reg)begin
     ren <= i_ren;
@@ -239,7 +222,14 @@ end
 assign o_reg_wen = reg_wen;
 assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
-
+wire zero = branch_mid[`ZERO];
+wire cmp = branch_mid[`CMP];
+wire branch = branch_mid[`BEQ] & zero | branch_mid[`BNE] & ~zero | branch_mid[`BLT] & cmp | branch_mid[`BGE] & ~cmp;
+`ifdef CONFIG_BTB
+  assign o_branch = (predict ^ branch) & (branch_mid[`BRANCH]);
+`else
+  assign o_branch = branch;
+`endif
 reg [31:0] o_rdata;
 assign o_result = result_t ? o_rdata : result;
 

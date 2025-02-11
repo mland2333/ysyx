@@ -4,6 +4,7 @@ module ysyx_24110006_PC(
   input i_jump,
   input [31:0] i_upc,
   output [31:0] o_pc,
+
   input i_valid,
   output reg o_valid
 `ifdef CONFIG_PIPELINE

@@ -1,6 +1,8 @@
 module ysyx_24110006_ARBITER(
   input i_clock,
   input i_reset,
+  input i_flush,
+  output o_busy,
 
   input [31:0] i_axi_araddr0,
   input i_axi_arvalid0,
@@ -83,13 +85,19 @@ localparam IDLE_WRITE = 2'b00;
 localparam MEM1_WRITE = 2'b01;
 reg [1:0] read_state;
 reg [1:0] write_state;
+reg arready;
+assign o_busy = read_state == MEM0_READ;
 
 always@(posedge i_clock)begin
   if(i_reset) read_state <= IDLE_READ;
   else begin
     case(read_state)
       IDLE_READ:begin
+      `ifdef CONFIG_ICACHE_PIPELINE
+        if(i_axi_arvalid0 && !i_flush) read_state <= MEM0_READ;
+      `else
         if(i_axi_arvalid0) read_state <= MEM0_READ;
+      `endif
         else if(i_axi_arvalid1) read_state <= MEM1_READ;
       end
       MEM0_READ:begin
@@ -125,13 +133,19 @@ assign o_axi_arsize = is_read0 ? i_axi_arsize0 : is_read1 ? i_axi_arsize1 : 0;
 assign o_axi_arburst = is_read0 ? i_axi_arburst0 : is_read1 ? i_axi_arburst1 : 0;
 assign o_axi_rready = is_read0 ? i_axi_rready0 : is_read1 ? i_axi_rready1 : 0;
 
-
+`ifdef CONFIG_ICACHE_PIPELINE
+assign o_axi_arready0 = is_read0 ? i_axi_arready : i_flush;
+assign o_axi_rvalid0 = is_read0 ? i_axi_rvalid : i_flush;
+assign o_axi_rlast0 = is_read0 ? i_axi_rlast : i_flush;
+`else 
 assign o_axi_arready0 = is_read0 ? i_axi_arready : 0;
-assign o_axi_rdata0 = is_read0 ? i_axi_rdata : 0;
 assign o_axi_rvalid0 = is_read0 ? i_axi_rvalid : 0;
+assign o_axi_rlast0 = is_read0 ? i_axi_rlast : 0;
+`endif
+assign o_axi_rdata0 = is_read0 ? i_axi_rdata : 0;
 assign o_axi_rresp0 = is_read0 ? i_axi_rresp : 0;
 assign o_axi_rid0 = is_read0 ? i_axi_rid : 0;
-assign o_axi_rlast0 = is_read0 ? i_axi_rlast : 0;
+
 
 assign o_axi_arready1 = is_read1 ? i_axi_arready : 0;
 assign o_axi_rdata1 = is_read1 ? i_axi_rdata : 0;

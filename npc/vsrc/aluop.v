@@ -34,7 +34,7 @@ wire f101 = i_func == 3'b101;
 wire f110 = i_func == 3'b110;
 wire f111 = i_func == 3'b111;
 
-assign o_alu_a = JAL || JALR || AUIPC ? i_pc : LUI ? 0 : CSR? i_csr_rdata : i_src1;
+assign o_alu_a = JAL || JALR || AUIPC ? i_pc : LUI ? 0 : i_src1;
 wire [31:0]b0 = I || L || AUIPC || S  || LUI ? i_imm : JAL || JALR ? 32'b100 :
         CSR && f001 ? 32'b0 : CSR && f010 ? i_csr_rdata : i_src2;
 assign o_alu_b = o_alu_sub ? ~b0 : b0;

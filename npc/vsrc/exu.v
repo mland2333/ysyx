@@ -1,4 +1,5 @@
 `include "alu_config.v"
+`include "common_config.v"
 module ysyx_24110006_EXU(
   input i_clock,
   input i_reset,
@@ -14,7 +15,6 @@ module ysyx_24110006_EXU(
   input [11:0] i_csr,
   input [31:0] i_reg_src1,
   input [31:0] i_reg_src2,
-  input [31:0] i_csr_src,
   input [31:0] i_imm,
   input [31:0] i_pc,
   input [31:0] i_csr_upc,
@@ -36,40 +36,35 @@ module ysyx_24110006_EXU(
   output o_fencei,
   output [6:0] o_op,
   output [11:0] o_csr,
-
+  output [`BRANCH_MID] o_branch_mid,
+`ifdef CONFIG_BTB
+  input i_predict,
+  output o_predict,
+  output o_btb_update,
+`endif
   input i_valid,
-  output reg o_valid
-`ifdef CONFIG_PIPELINE
-  ,input i_ready,
+  output reg o_valid,
+  input i_ready,
   output o_ready,
+
   input i_flush,
   output o_flush,
   input i_exception,
   output o_exception,
   input [3:0] i_mcause,
   output [3:0] o_mcause
-`endif
 );
 
 reg [6:0] op;
 reg [2:0] func;
 reg [31:0] reg_src1;
-reg [31:0] csr_src;
 reg [31:0] imm;
 reg [31:0] pc;
 reg [4:0] reg_rd;
 reg [1:0] csr_t;
 reg [31:0] mem_wdata;
 wire update_reg;
-/* reg valid; */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) valid <= 0; */
-/*   else if(i_valid && !valid) valid <= 1; */
-/*   else if(valid && !o_valid) valid <= 0; */
-/* end */
-
-`ifdef CONFIG_PIPELINE
+reg [31:0] reg_src2;
 always@(posedge i_clock)begin
   if(i_reset) o_valid <= 0;
   else if(i_valid && !i_flush) begin
@@ -94,7 +89,12 @@ always@(posedge i_clock)begin
   else if(update_reg) flush_valid <= 1;
   else if(flush_valid) flush_valid <= 0;
 end
-assign o_flush = o_jump & flush_valid;
+
+`ifdef CONFIG_BTB
+  assign o_flush = (JALR | csr_t[1] | JAL & ~predict) & flush_valid;
+`else
+  assign o_flush = (o_jump | o_fencei) & flush_valid ;
+`endif
 
 reg exception;
 always@(posedge i_clock)begin
@@ -108,19 +108,7 @@ always@(posedge i_clock)begin
     mcause <= i_mcause;
 end
 assign o_mcause = mcause;
-`else
-always@(posedge i_clock)begin
-  if(i_reset) o_valid <= 0;
-  else if(!o_valid && i_valid) begin
-    o_valid <= 1;
-  end
-  else if(o_valid)begin
-    o_valid <= 0;
-  end
-end
 
-assign update_reg = !i_reset && !o_valid && i_valid;
-`endif
 
 reg [11:0] csr;
 always@(posedge i_clock)begin
@@ -143,10 +131,6 @@ always@(posedge i_clock)begin
 end
 always@(posedge i_clock)begin
   if(update_reg)
-    csr_src <= i_csr_src;
-end
-always@(posedge i_clock)begin
-  if(update_reg)
     imm <= i_imm;
 end
 always@(posedge i_clock)begin
@@ -163,11 +147,11 @@ always@(posedge i_clock)begin
 end
 always@(posedge i_clock)begin
   if(update_reg)
-    mem_wdata <= i_reg_src2;
+    reg_src2 <= i_reg_src2;
 end
 always@(posedge i_clock)begin
   if(update_reg)
-    upc <= i_op == 7'b1110011 ? i_csr_upc : (i_op == 7'b1100111 ? i_reg_src1 : i_pc);
+    upc <= (i_op == 7'b1110011 && i_func == 0) ? i_csr_upc : (i_op == 7'b1100111 ? i_reg_src1 : i_pc);
 end
 
 always@(posedge i_clock)begin
@@ -186,19 +170,27 @@ always@(posedge i_clock)begin
   if(update_reg) alu_t <= i_alu_t;
 end
 
+`ifdef CONFIG_BTB
+reg predict;
+always@(posedge i_clock)begin
+  if(update_reg)
+    predict <= i_predict;
+end
+assign o_predict = predict;
+assign o_btb_update = !predict && JAL && flush_valid;
+`endif
 
-
-wire I = op == 7'b0010011;
-wire R = op == 7'b0110011;
-wire L = op == 7'b0000011;
-wire S = op == 7'b0100011;
-wire JAL = op == 7'b1101111;
-wire JALR = op == 7'b1100111;
-wire AUIPC = op == 7'b0010111;
-wire LUI = op == 7'b0110111;
-wire B = op == 7'b1100011;
-wire CSR = op == 7'b1110011;
-wire FENCE = op == 7'b0001111;
+wire I = op[6:2] == 5'b00100;
+wire R = op[6:2] == 5'b01100;
+wire L = op[6:2] == 5'b00000;
+wire S = op[6:2] == 5'b01000;
+wire JAL = op[6:2] == 5'b11011;
+wire JALR = op[6:2] == 5'b11001;
+wire AUIPC = op[6:2] == 5'b00101;
+wire LUI = op[6:2] == 5'b01101;
+wire B = op[6:2] == 5'b11000;
+wire CSR = op[6:2] == 5'b11100;
+wire FENCE = op[6:2] == 5'b00011;
 
 wire is_beq = B & f000;
 wire is_bne = B & f001;
@@ -219,50 +211,19 @@ assign o_mem_wen = S;
 assign o_mem_ren = L;
 assign o_mem_wmask = S ? (f000 ? 4'b0001 : f001 ? 4'b0011 : 4'b1111) : 0;
 assign o_mem_read_t = L ? func : 0;
-assign o_fencei = FENCE && f001;
+assign o_fencei = (FENCE && f001) && flush_valid;
 assign o_reg_rd = reg_rd;
 assign o_csr_t = csr_t;
 assign o_pc = pc;
-assign o_mem_wdata = mem_wdata;
+assign o_mem_wdata = reg_src2;
 assign o_op = op;
-/* always@(posedge i_clock)begin */
-/*   if(update_reg)  */
-/*     $fwrite(32'h80000002, "`%xh` in pc `%xh` \n", i_op, i_pc); */
-/* end */
+
 reg [31:0] alu_a, alu_b;
 reg alu_sub;
 reg alu_sign;
 reg [`ALU_TYPE-1:0] alu_t;
 wire cmp, zero;
-wire branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp;
-/* wire branch = (alu_t==BEQ)&&zero||(alu_t==BNE)&&~zero||(alu_t==BLT||alu_t==BLTU)&&cmp||(alu_t==BGE||alu_t==BGEU)&&~cmp; */
-/* assign alu_a = JAL || JALR || AUIPC ? pc : LUI ? 0 : reg_src1; */
-/* assign alu_b = I || L || AUIPC || S  || LUI ? imm : JAL || JALR ? 32'b100 : CSR && f001 ? 32'b0 : CSR && f010 ? csr_src : reg_src2; */
-/* assign alu_t = I||R ? {1'b0, func} : B ? {1'b1, func} : CSR && f010 ? 4'b0110 : 0; */
-/* assign alu_sign = R && f010 || B && (f100 || f101); */
-/* assign alu_sub = (I || R) && (f011 || f010) || B || R && f000 && imm[5]; */
-
-/* reg [31:0] r_alu_a, r_alu_b; */
-/* reg r_alu_sub; */
-/* reg r_alu_sign; */
-/* reg [3:0] r_alu_t; */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_a <= alu_a; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_b <= alu_b; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_sub <= alu_sub; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_sign <= alu_sign; */
-/* end */
-/* always@(posedge i_clock)begin */
-/*   if(valid) r_alu_t <= alu_t; */
-/* end */
-
+/* wire branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp; */
 
 ysyx_24110006_ALU malu(
   .i_a(alu_a),
@@ -272,14 +233,20 @@ ysyx_24110006_ALU malu(
   .i_alu_t(alu_t),
   .o_r(o_result),
   .o_cmp(cmp),
-  .o_zero(zero),
+  /* .o_zero(zero), */
   .o_add_r(o_mem_addr)
 );
-
+assign o_branch_mid[`BRANCH] = B;
+assign o_branch_mid[`BRANCH_BACK] = B & (imm[31]);
+assign o_branch_mid[`ZERO] = reg_src1 == reg_src2;
+assign o_branch_mid[`CMP] = cmp;
+assign o_branch_mid[`BEQ] = is_beq;
+assign o_branch_mid[`BNE] = is_bne;
+assign o_branch_mid[`BLT] = is_blt;
+assign o_branch_mid[`BGE] = is_bge;
 reg [31:0] upc;
 
 assign o_upc = upc + imm;
-assign o_jump = JAL | JALR | branch | csr_t[1];
+assign o_jump = JAL | JALR | csr_t[1];
 assign o_reg_wen = !(S || B);
-/* assign o_alu_t = alu_t; */
 endmodule

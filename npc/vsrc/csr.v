@@ -52,42 +52,19 @@ always@(posedge i_clock)begin
       csr[MEPC] <= i_pc;
     end
     else if(i_csr_t[0])begin
-      csr[index_w] <= i_wdata;
+      integer i;
+      for(i=0; i<4; i=i+1)begin
+        if(index_w==i) csr[i] <= i_wdata;
+      end
     end
   end
 end
 
 assign o_upc = i_exception ? csr[MTVEC] : i_mret ? csr[MEPC] : 0;
-assign o_rdata = i_csr_r == 12'hf11 ? 32'h79737978 : i_csr_r == 12'hf12 ? 32'h16fe3b8 : csr[index_r];
-
-/* always@(posedge i_clock)begin */
-/*   if(i_valid && i_wen)begin */
-/*     case(i_csr_t) */
-/*       ECALL:begin */
-/*         csr[MEPC] = i_pc; */
-/*         csr[MCAUSE] = i_mcause; */
-/*       end */
-/*       CSRW:begin */
-/*         csr[index] = i_wdata; */
-/*       end */
-/*       default:begin */
-/*       end */
-/*     endcase */
-/*   end */
-/*   else if(i_exception)begin */
-/*     csr[MCAUSE] = i_mcause; */
-/*     csr[MEPC] = csr[MEPC]; */
-/*   end */
-/* end */
-
-/* always@(posedge i_clock) */
-/*   csr[MVENDORID] = 32'h79737978; */
-/* always@(posedge i_clock) */
-/*   csr[MARCHID] = 32'h16fe3b6; */
-
-
-/* assign o_upc = i_csr_t == ECALL ? csr[MTVEC] : i_csr_t == MRET ? csr[MEPC] : 0; */
-
-/* assign o_rdata = i_csr == 12'hf11 ? 32'h79737978 : i_csr == 12'hf12 ? 32'h16fe3b8 : csr[index]; */
-
+assign o_rdata = {32{i_csr_r == 12'hf11}} & 32'h79737978 |
+                 {32{i_csr_r == 12'hf12}} & 32'h16fe3b8  |
+                 {32{index_r == 'd0}}    & csr[0]       |
+                 {32{index_r == 'd1}}    & csr[1]       |
+                 {32{index_r == 'd2}}    & csr[2]       |
+                 {32{index_r == 'd3}}    & csr[3]       ;
 endmodule
