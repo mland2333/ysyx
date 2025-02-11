@@ -1,4 +1,4 @@
-`include "alu_config.v"
+`include "alu_config.sv"
 module ysyx_24110006_ALUOP(
   input [31:0] i_src1,
   input [31:0] i_src2,

@@ -1,4 +1,4 @@
-`include "common_config.v"
+`include "common_config.sv"
 module ysyx_24110006_IDU(
   input i_clock,
   input i_reset,

@@ -1,5 +1,5 @@
-`include "alu_config.v"
-`include "common_config.v"
+`include "alu_config.sv"
+`include "common_config.sv"
 module ysyx_24110006_EXU(
   input i_clock,
   input i_reset,

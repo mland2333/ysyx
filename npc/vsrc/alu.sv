@@ -1,4 +1,4 @@
-`include "alu_config.v"
+`include "alu_config.sv"
 
 module ysyx_24110006_SHIFT (
     input  signed [31:0] a,  // 输入数据

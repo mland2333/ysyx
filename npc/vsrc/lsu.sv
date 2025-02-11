@@ -2,7 +2,7 @@
 /* import "DPI-C" function void pmem_write( */
 /*   input int waddr, input int wdata, input byte wmask); */
 /**/
-`include "common_config.v"
+`include "common_config.sv"
 module ysyx_24110006_LSU(
   input i_clock,
   input i_reset,
@@ -53,40 +53,7 @@ module ysyx_24110006_LSU(
   output [31:0] o_addr,
   output o_sim_branch,
 `endif
-  output [31:0] o_axi_araddr,
-  output o_axi_arvalid,
-  input i_axi_arready,
-  output [3:0] o_axi_arid,
-  output [7:0] o_axi_arlen,
-  output [2:0] o_axi_arsize,
-  output [1:0] o_axi_arburst,
-
-  input [31:0] i_axi_rdata,
-  input i_axi_rvalid,
-  input [1:0] i_axi_rresp,
-  output o_axi_rready,
-  input o_axi_rlast,
-  input [3:0] o_axi_rid,
-
-  output [31:0] o_axi_awaddr,
-  output o_axi_awvalid,
-  input i_axi_awready,
-  output [3:0] o_axi_awid,
-  output [7:0] o_axi_awlen,
-  output [2:0] o_axi_awsize,
-  output [1:0] o_axi_awburst,
-
-  output [31:0] o_axi_wdata,
-  output [3:0] o_axi_wstrb,
-  output o_axi_wvalid,
-  input i_axi_wready,
-  output o_axi_wlast,
-
-  input [1:0] i_axi_bresp,
-  input i_axi_bvalid,
-  output o_axi_bready,
-  input [3:0] i_axi_bid
-
+  AXIFULL.master out
 );
 
 reg ren;
@@ -240,16 +207,16 @@ reg[3:0] wmask0;
 always@(*)begin
   case(addr[1:0])
     2'b00:begin
-      rdata0 = i_axi_rdata;
+      rdata0 = out.rdata;
     end
     2'b01:begin
-      rdata0 = {8'b0, i_axi_rdata[31:8]};
+      rdata0 = {8'b0, out.rdata[31:8]};
     end
     2'b10:begin
-      rdata0 = {16'b0, i_axi_rdata[31:16]};
+      rdata0 = {16'b0, out.rdata[31:16]};
     end
     2'b11:begin
-      rdata0 = {24'b0, i_axi_rdata[31:24]};
+      rdata0 = {24'b0, out.rdata[31:24]};
     end
   endcase
 end
@@ -310,35 +277,35 @@ wire [1:0] bresp;
 wire bvalid;
 reg bready;
 
-assign o_axi_araddr = addr;
-assign o_axi_arvalid = arvalid;
-assign arready = i_axi_arready;
-assign o_axi_arid = 0;
-assign o_axi_arlen = 0;
-assign o_axi_arsize = i_read_t[1] ? 3'b010 : i_read_t[0] ? 3'b001 : 3'b000;
-assign o_axi_arburst = 0;
+assign out.araddr = addr;
+assign out.arvalid = arvalid;
+assign arready = out.arready;
+assign out.arid = 0;
+assign out.arlen = 0;
+assign out.arsize = i_read_t[1] ? 3'b010 : i_read_t[0] ? 3'b001 : 3'b000;
+assign out.arburst = 0;
 
-assign rvalid = i_axi_rvalid;
-assign rresp = i_axi_rresp;
-assign o_axi_rready = rready;
+assign rvalid = out.rvalid;
+assign rresp = out.rresp;
+assign out.rready = rready;
 
-assign o_axi_awaddr = addr;
-assign o_axi_awvalid = awvalid;
-assign awready = i_axi_awready;
-assign o_axi_awid = 0;
-assign o_axi_awlen = 0;
-assign o_axi_awsize = wmask == 4'b0011 ? 3'b001 : wmask == 4'b1111 ? 3'b010 : 3'b000;
-assign o_axi_awburst = 0;
+assign out.awaddr = addr;
+assign out.awvalid = awvalid;
+assign awready = out.awready;
+assign out.awid = 0;
+assign out.awlen = 0;
+assign out.awsize = wmask == 4'b0011 ? 3'b001 : wmask == 4'b1111 ? 3'b010 : 3'b000;
+assign out.awburst = 0;
 
-assign o_axi_wdata = wdata0;
-assign o_axi_wstrb = wmask0;
-assign o_axi_wvalid = wvalid;
-assign wready = i_axi_wready;
-assign o_axi_wlast = 1;
+assign out.wdata = wdata0;
+assign out.wstrb = wmask0;
+assign out.wvalid = wvalid;
+assign wready = out.wready;
+assign out.wlast = 1;
 
-assign bresp = i_axi_bresp;
-assign bvalid = i_axi_bvalid;
-assign o_axi_bready = bready;
+assign bresp = out.bresp;
+assign bvalid = out.bvalid;
+assign out.bready = bready;
 
 always@(posedge i_clock) begin
   if(i_reset) arvalid <= 0;
