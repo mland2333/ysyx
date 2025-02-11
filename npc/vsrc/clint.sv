@@ -1,7 +1,7 @@
 module ysyx_24110006_CLINT(
   input i_clock,
   input i_reset,
-  AXIFULL_READ.slave in
+  if_axi_read.slave in
 );
 reg [31:0] lmtime;
 reg [31:0] hmtime;

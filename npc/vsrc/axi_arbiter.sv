@@ -3,9 +3,9 @@ module ysyx_24110006_ARBITER(
   input i_reset,
   input i_flush,
   output o_busy,
-  AXIFULL_READ.slave ifu,
-  AXIFULL.slave lsu,
-  AXIFULL.master out
+  if_axi_read.slave ifu,
+  if_axi.slave lsu,
+  if_axi.master out
 );
 localparam IDLE_READ = 2'b00;
 localparam MEM0_READ = 2'b01;

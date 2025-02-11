@@ -4,7 +4,7 @@
 void Perf::trace(Simulator* sim){
   if(timer_begin == 0) timer_begin = Utils::get_time();
   clk_nums ++;
-  if(sim->TOP_MEMBER(lsu_valid)){
+  if(sim->top->rootp->__PVT__ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__if_vr_id->valid){
     inst_nums++;
     idu_decode_inst(sim->TOP_MEMBER(mlsu__DOT__op));
     inst_clk[inst_type] += clk_nums - clk_prev;

@@ -25,17 +25,13 @@ module ysyx_24110006_LSU(
   input [31:0] i_pc,
   output [31:0] o_pc,
   output o_ren,
-  input [`BRANCH_MID] i_branch_mid,   
+  input [`BRANCH_MID] i_branch_mid,
   input [11:0] i_csr,
   output [11:0] o_csr,
   input i_exception,
   output o_exception,
   input [3:0] i_mcause,
   output [3:0] o_mcause,
-  input i_valid,
-  output reg o_valid,
-  input i_ready,
-  output o_ready,
   input i_flush,
   input [31:0] i_upc,
   output [31:0] o_upc,
@@ -53,7 +49,9 @@ module ysyx_24110006_LSU(
   output [31:0] o_addr,
   output o_sim_branch,
 `endif
-  AXIFULL.master out
+  if_pipeline_vr.in i_vr,
+  if_pipeline_vr.out o_vr,
+  if_axi.master o_axi
 );
 
 reg ren;
@@ -73,22 +71,22 @@ wire [31:0] i_addr = i_result;
 wire update_reg;
 
 always@(posedge i_clock)begin
-  if(i_reset) o_valid <= 0;
-  else if(!(i_wen||i_ren)&&i_valid &&o_ready && !i_flush|| mem_valid) begin
-    o_valid <= 1;
+  if(i_reset) o_vr.valid <= 0;
+  else if(!(i_wen||i_ren)&&i_vr.valid &&i_vr.ready && !i_flush|| mem_valid) begin
+    o_vr.valid <= 1;
   end
-  else if(o_valid)begin
-    o_valid <= 0;
+  else if(o_vr.valid)begin
+    o_vr.valid <= 0;
   end
 end
 always@(posedge i_clock)begin
-  if(i_reset || i_flush) o_ready <= 1;
-  else if(o_ready && !(i_wen||i_ren)) o_ready <= 1;
-  else if(o_ready && i_valid && (i_wen || i_ren)) o_ready <= 0;
-  else if(!o_ready && mem_valid) o_ready <= 1;
+  if(i_reset || i_flush) i_vr.ready <= 1;
+  else if(i_vr.ready && !(i_wen||i_ren)) i_vr.ready <= 1;
+  else if(i_vr.ready && i_vr.valid && (i_wen || i_ren)) i_vr.ready <= 0;
+  else if(!i_vr.ready && mem_valid) i_vr.ready <= 1;
 end
 
-assign update_reg = !i_reset && i_valid && o_ready && !i_flush;
+assign update_reg = !i_reset && i_vr.valid && i_vr.ready && !i_flush;
 reg exception;
 always@(posedge i_clock)begin
   if(update_reg)
@@ -207,16 +205,16 @@ reg[3:0] wmask0;
 always@(*)begin
   case(addr[1:0])
     2'b00:begin
-      rdata0 = out.rdata;
+      rdata0 = o_axi.rdata;
     end
     2'b01:begin
-      rdata0 = {8'b0, out.rdata[31:8]};
+      rdata0 = {8'b0, o_axi.rdata[31:8]};
     end
     2'b10:begin
-      rdata0 = {16'b0, out.rdata[31:16]};
+      rdata0 = {16'b0, o_axi.rdata[31:16]};
     end
     2'b11:begin
-      rdata0 = {24'b0, out.rdata[31:24]};
+      rdata0 = {24'b0, o_axi.rdata[31:24]};
     end
   endcase
 end
@@ -277,35 +275,35 @@ wire [1:0] bresp;
 wire bvalid;
 reg bready;
 
-assign out.araddr = addr;
-assign out.arvalid = arvalid;
-assign arready = out.arready;
-assign out.arid = 0;
-assign out.arlen = 0;
-assign out.arsize = i_read_t[1] ? 3'b010 : i_read_t[0] ? 3'b001 : 3'b000;
-assign out.arburst = 0;
+assign o_axi.araddr = addr;
+assign o_axi.arvalid = arvalid;
+assign arready = o_axi.arready;
+assign o_axi.arid = 0;
+assign o_axi.arlen = 0;
+assign o_axi.arsize = i_read_t[1] ? 3'b010 : i_read_t[0] ? 3'b001 : 3'b000;
+assign o_axi.arburst = 0;
 
-assign rvalid = out.rvalid;
-assign rresp = out.rresp;
-assign out.rready = rready;
+assign rvalid = o_axi.rvalid;
+assign rresp = o_axi.rresp;
+assign o_axi.rready = rready;
 
-assign out.awaddr = addr;
-assign out.awvalid = awvalid;
-assign awready = out.awready;
-assign out.awid = 0;
-assign out.awlen = 0;
-assign out.awsize = wmask == 4'b0011 ? 3'b001 : wmask == 4'b1111 ? 3'b010 : 3'b000;
-assign out.awburst = 0;
+assign o_axi.awaddr = addr;
+assign o_axi.awvalid = awvalid;
+assign awready = o_axi.awready;
+assign o_axi.awid = 0;
+assign o_axi.awlen = 0;
+assign o_axi.awsize = wmask == 4'b0011 ? 3'b001 : wmask == 4'b1111 ? 3'b010 : 3'b000;
+assign o_axi.awburst = 0;
 
-assign out.wdata = wdata0;
-assign out.wstrb = wmask0;
-assign out.wvalid = wvalid;
-assign wready = out.wready;
-assign out.wlast = 1;
+assign o_axi.wdata = wdata0;
+assign o_axi.wstrb = wmask0;
+assign o_axi.wvalid = wvalid;
+assign wready = o_axi.wready;
+assign o_axi.wlast = 1;
 
-assign bresp = out.bresp;
-assign bvalid = out.bvalid;
-assign out.bready = bready;
+assign bresp = o_axi.bresp;
+assign bvalid = o_axi.bvalid;
+assign o_axi.bready = bready;
 
 always@(posedge i_clock) begin
   if(i_reset) arvalid <= 0;

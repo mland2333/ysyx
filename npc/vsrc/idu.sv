@@ -24,11 +24,8 @@ module ysyx_24110006_IDU(
   input i_predict,
   output o_predict,
 `endif
-  input i_valid,
-  output reg o_valid,
-  input i_ready,
-  output o_ready,
-
+  if_pipeline_vr.in i_vr,
+  if_pipeline_vr.out o_vr,
   input i_flush,
   input i_stall,
   input i_wen,
@@ -41,24 +38,24 @@ reg [31:0] pc;
 wire update_reg;
 
 always@(posedge i_clock)begin
-  if(i_reset || i_flush) o_valid <= 0;
-  else if(i_valid) begin
-    o_valid <= 1;
+  if(i_reset || i_flush) o_vr.valid <= 0;
+  else if(i_vr.valid) begin
+    o_vr.valid <= 1;
   end
-  else if(o_valid && i_ready && !i_stall) begin
-    o_valid <= 0;
+  else if(o_vr.valid && o_vr.ready && !i_stall) begin
+    o_vr.valid <= 0;
   end
 end
-
+reg r_ready;
 always@(posedge i_clock)begin
-  if(i_reset || i_flush) o_ready <= 1;
-  else if(i_stall) o_ready <= 0;
-  else if(i_valid && o_valid && (i_wen || i_ren)) o_ready <= 0;
-  else if(i_ready) o_ready <= 1;
-  else if(i_valid) o_ready <= 0;
+  if(i_reset || i_flush) r_ready <= 1;
+  else if(i_stall) r_ready <= 0;
+  else if(i_vr.valid && o_vr.valid && (i_wen || i_ren)) r_ready <= 0;
+  else if(o_vr.ready) r_ready <= 1;
+  else if(i_vr.valid) r_ready <= 0;
 end
-
-assign update_reg = i_valid && (o_ready || i_ready) &&!i_stall && !i_flush;
+assign i_vr.ready = (r_ready | o_vr.ready) & ~i_stall; 
+assign update_reg = i_vr.valid && (r_ready || o_vr.ready) &&!i_stall && !i_flush;
 reg exception;
 always@(posedge i_clock)begin
   if(update_reg)
@@ -124,7 +121,7 @@ assign o_csr = inst[31:20];
 assign o_mret = inst == 32'h30200073;
 `ifndef CONFIG_YOSYS
 always@(posedge i_clock)begin
-  if(o_valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE) && !i_flush) begin
+  if(o_vr.valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE) && !i_flush) begin
     $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", o_op, o_pc);
     quit();
   end

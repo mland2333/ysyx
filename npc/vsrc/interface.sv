@@ -1,4 +1,4 @@
-interface AXIFULL();
+interface if_axi();
   logic        awready;
   logic        awvalid;
   logic [31:0] awaddr;
@@ -28,166 +28,105 @@ interface AXIFULL();
   logic [31:0] rdata;
   logic        rlast;
   logic [3:0]  rid;
-  modport master(
+  modport master (
+    output awvalid, awaddr, awid, awlen, awsize, awburst,
     input  awready,
-    output awvalid,
-    output awaddr,
-    output awid,
-    output awlen,
-    output awsize,
-    output awburst,
+    output wvalid, wdata, wstrb, wlast,
     input  wready,
-    output wvalid,
-    output wdata,
-    output wstrb,
-    output wlast,
     output bready,
-    input  bvalid,
-    input  bresp,
-    input  bid,
+    input  bvalid, bresp, bid,
+    output arvalid, araddr, arid, arlen, arsize, arburst,
     input  arready,
-    output arvalid,
-    output araddr,
-    output arid,
-    output arlen,
-    output arsize,
-    output arburst,
     output rready,
-    input  rvalid,
-    input  rresp,
-    input  rdata,
-    input  rlast,
-    input  rid
+    input  rvalid, rresp, rdata, rlast, rid
+    );
+  modport slave (
+    input awvalid, awaddr, awid, awlen, awsize, awburst,
+    output  awready,
+    input wvalid, wdata, wstrb, wlast,
+    output  wready,
+    input bready,
+    output  bvalid, bresp, bid,
+    input arvalid, araddr, arid, arlen, arsize, arburst,
+    output  arready,
+    input rready,
+    output  rvalid, rresp, rdata, rlast, rid
+    );
+endinterface
+
+interface if_axi_read();
+  logic        arready;
+  logic        arvalid;
+  logic [31:0] araddr;
+  logic [3:0]  arid;
+  logic [7:0]  arlen;
+  logic [2:0]  arsize;
+  logic [1:0]  arburst;
+  logic        rready;
+  logic        rvalid;
+  logic [1:0]  rresp;
+  logic [31:0] rdata;
+  logic        rlast;
+  logic [3:0]  rid;
+  modport master(
+    output arvalid, araddr, arid, arlen, arsize, arburst,
+    input  arready,
+    output rready,
+    input  rvalid, rresp, rdata, rlast, rid
   );
   modport slave(
-    output awready,
-    input  awvalid,
-    input  awaddr,
-    input  awid,
-    input  awlen,
-    input  awsize,
-    input  awburst,
-    output wready,
-    input  wvalid,
-    input  wdata,
-    input  wstrb,
-    input  wlast,
-    input  bready,
-    output bvalid,
-    output bresp,
-    output bid,
-    output arready,
-    input  arvalid,
-    input  araddr,
-    input  arid,
-    input  arlen,
-    input  arsize,
-    input  arburst,
-    input  rready,
-    output rvalid,
-    output rresp,
-    output rdata,
-    output rlast,
-    output rid
+    input arvalid, araddr, arid, arlen, arsize, arburst,
+    output  arready,
+    input rready,
+    output  rvalid, rresp, rdata, rlast, rid
+  );
+endinterface
+interface if_axi_write();
+  logic        awready;
+  logic        awvalid;
+  logic [31:0] awaddr;
+  logic [3:0]  awid;
+  logic [7:0]  awlen;
+  logic [2:0]  awsize;
+  logic [1:0]  awburst;
+  logic        wready;
+  logic        wvalid;
+  logic [31:0] wdata;
+  logic [3:0]  wstrb;
+  logic        wlast;
+  logic        bready;
+  logic        bvalid;
+  logic [1:0]  bresp;
+  logic [3:0]  bid;
+  modport master(
+    output awvalid, awaddr, awid, awlen, awsize, awburst,
+    input  awready,
+    output wvalid, wdata, wstrb, wlast,
+    input  wready,
+    output bready,
+    input  bvalid, bresp, bid
+  );
+  modport slave(
+    input awvalid, awaddr, awid, awlen, awsize, awburst,
+    output  awready,
+    input wvalid, wdata, wstrb, wlast,
+    output  wready,
+    input bready,
+    output  bvalid, bresp, bid
   );
 endinterface
 
-interface AXIFULL_READ();
-  logic        arready;
-  logic        arvalid;
-  logic [31:0] araddr;
-  logic [3:0]  arid;
-  logic [7:0]  arlen;
-  logic [2:0]  arsize;
-  logic [1:0]  arburst;
-  logic        rready;
-  logic        rvalid;
-  logic [1:0]  rresp;
-  logic [31:0] rdata;
-  logic        rlast;
-  logic [3:0]  rid;
-  modport master(
-    input  arready,
-    output arvalid,
-    output araddr,
-    output arid,
-    output arlen,
-    output arsize,
-    output arburst,
-    output rready,
-    input  rvalid,
-    input  rresp,
-    input  rdata,
-    input  rlast,
-    input  rid
+interface if_pipeline_vr();
+  logic valid;
+  logic ready;
+  modport in(
+    input valid,
+    output ready
   );
-  modport slave(
-    output arready,
-    input  arvalid,
-    input  araddr,
-    input  arid,
-    input  arlen,
-    input  arsize,
-    input  arburst,
-    input  rready,
-    output rvalid,
-    output rresp,
-    output rdata,
-    output rlast,
-    output rid
+  modport out(
+    output valid,
+    input ready
   );
 endinterface
-interface AXIFULL_WRITE();
-  logic        awready;
-  logic        awvalid;
-  logic [31:0] awaddr;
-  logic [3:0]  awid;
-  logic [7:0]  awlen;
-  logic [2:0]  awsize;
-  logic [1:0]  awburst;
-  logic        wready;
-  logic        wvalid;
-  logic [31:0] wdata;
-  logic [3:0]  wstrb;
-  logic        wlast;
-  logic        bready;
-  logic        bvalid;
-  logic [1:0]  bresp;
-  logic [3:0]  bid;
-  modport master(
-    input  awready,
-    output awvalid,
-    output awaddr,
-    output awid,
-    output awlen,
-    output awsize,
-    output awburst,
-    input  wready,
-    output wvalid,
-    output wdata,
-    output wstrb,
-    output wlast,
-    output bready,
-    input  bvalid,
-    input  bresp,
-    input  bid
-  );
-  modport slave(
-    output awready,
-    input  awvalid,
-    input  awaddr,
-    input  awid,
-    input  awlen,
-    input  awsize,
-    input  awburst,
-    output wready,
-    input  wvalid,
-    input  wdata,
-    input  wstrb,
-    input  wlast,
-    input  bready,
-    output bvalid,
-    output bresp,
-    output bid
-  );
-endinterface
+
+

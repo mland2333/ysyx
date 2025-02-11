@@ -83,9 +83,9 @@ wire branch_btb_update;
 wire btb_update;
 wire predict_err;
 wire [31:0] btb_pc;
-assign exception = lsu_valid & lsu_exception;
-assign branch = lsu_valid & lsu_branch;
-assign csr_flush = lsu_valid & lsu_csr_t[0];
+assign exception = ls_vr_wb.valid & lsu_exception;
+assign branch = ls_vr_wb.valid & lsu_branch;
+assign csr_flush = ls_vr_wb.valid & lsu_csr_t[0];
 assign flush = exu_flush | exception | branch | csr_flush;
 `ifdef CONFIG_BTB
   assign upc = exception ? csr_upc : (branch | branch_btb_update) ? lsu_upc : exu_upc;
@@ -93,9 +93,9 @@ assign flush = exu_flush | exception | branch | csr_flush;
   assign upc = exception ? csr_upc : branch ? lsu_upc : exu_upc;
 `endif
 assign jal_btb_update = exu_btb_update;
-assign branch_btb_update = lsu_btb_update & lsu_valid & branch;
+assign branch_btb_update = lsu_btb_update & ls_vr_wb.valid & branch;
 assign btb_update = jal_btb_update | branch_btb_update;
-assign predict_err = lsu_predict_err & lsu_valid;
+assign predict_err = lsu_predict_err & ls_vr_wb.valid;
 assign btb_pc = (branch_btb_update | predict_err) ? lsu_pc : (jal_btb_update | fencei) ? exu_pc : 0;
 wire [`BRANCH_MID] branch_mid;
 wire lsu_branch;
@@ -144,6 +144,7 @@ wire [31:0] alu_a, alu_b;
 wire [`ALU_TYPE-1:0] alu_t;
 wire alu_sign, alu_sub;
 
+
 wire exu_mem_ren, exu_mem_wen;
 wire [3:0] exu_mem_wmask;
 wire [2:0] exu_mem_read_t;
@@ -155,15 +156,13 @@ wire mret = lsu_csr_t[1];
 wire jump = lsu_jump | lsu_exception | mret;
 assign csr_wdata = lsu_result;
 wire lsu_wen, lsu_ren;
-wire pc_valid, ifu_valid, idu_valid, exu_valid, lsu_valid;
-wire ifu_ready, idu_ready, exu_ready, lsu_ready;
 reg [31:0] sim_pc;
 wire sim_branch;
 `ifdef CONFIG_SIM
   wire is_diff_skip;
   wire [31:0] lsu_addr;
   `ifndef CONFIG_YSYXSOC
-    assign is_diff_skip = clint_rvalid || uart_bvalid || lsu_valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
+    assign is_diff_skip = clint_rvalid || uart_bvalid || ls_vr_wb.valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
   `else
     assign is_diff_skip = clint_axi.rvalid || (lsu_wen||lsu_ren)&&(lsu_addr >= 32'h10000000 && lsu_addr < 32'h10001000 || lsu_addr >= 32'h02000000 && lsu_addr < 32'h03000000);
   `endif
@@ -172,18 +171,18 @@ wire sim_branch;
   always@(posedge clock)begin
     if(reset) sim_pc <= 0;
     else begin
-      if(lsu_valid) sim_pc <= (lsu_jump | sim_branch) ? lsu_upc : lsu_exception ? upc : lsu_pc + 4;
+      if(ls_vr_wb.valid) sim_pc <= (lsu_jump | sim_branch) ? lsu_upc : lsu_exception ? upc : lsu_pc + 4;
     end
   end
 
   always@(posedge clock)begin
-    if(lsu_valid) begin
+    if(ls_vr_wb.valid) begin
       if(is_diff_skip) diff_skip();
       difftest();
     end
   end
   always@(posedge clock)begin
-    if(ifu_valid) fetch_inst();
+    if(if_vr_id.valid) fetch_inst();
   end
 
   always@ *
@@ -196,10 +195,14 @@ wire sim_branch;
 wire reg_valid;
 `endif
 
-AXIFULL_READ ifu_axi();
-AXIFULL lsu_axi();
-AXIFULL xbar_axi();
-AXIFULL mem_axi();
+if_pipeline_vr if_vr_id();
+if_pipeline_vr id_vr_ex();
+if_pipeline_vr ex_vr_ls();
+if_pipeline_vr ls_vr_wb();
+if_axi_read ifu_axi();
+if_axi lsu_axi();
+if_axi xbar_axi();
+if_axi mem_axi();
 `ifdef CONFIG_YSYXSOC
 assign io_master_awvalid = mem_axi.awvalid;
 assign io_master_awaddr  = mem_axi.awaddr;
@@ -231,9 +234,9 @@ assign mem_axi.rdata   = io_master_rdata;
 assign mem_axi.rlast   = io_master_rlast;
 assign mem_axi.rid     = io_master_rid;
 `else
-AXIFULL_WRITE uart_axi();
+if_axi_write uart_axi();
 `endif
-AXIFULL_READ clint_axi();
+if_axi_read clint_axi();
 
 ysyx_24110006_IFU mifu(
   .i_clock(clock),
@@ -251,12 +254,9 @@ ysyx_24110006_IFU mifu(
   .i_predict_err(predict_err),
   .i_btb_update(btb_update),
 `endif
-  .i_valid(pc_valid),
-  .o_valid(ifu_valid),
-  .i_ready((idu_ready||exu_ready||lsu_ready)&&!stall),
-  .o_ready(ifu_ready),
+  .o_vr(if_vr_id),
   .i_flush(flush),
-  .out(ifu_axi.master)
+  .o_axi(ifu_axi.master)
 );
 
 ysyx_24110006_IMM mimm(
@@ -289,10 +289,8 @@ ysyx_24110006_IDU midu(
   .i_predict(ifu_predict),
   .o_predict(idu_predict),
 `endif
-  .i_valid(ifu_valid),
-  .o_valid(idu_valid),
-  .i_ready(exu_ready||lsu_ready),
-  .o_ready(idu_ready),
+  .i_vr(if_vr_id),
+  .o_vr(id_vr_ex),
   .i_flush(flush),
   .i_stall(stall),
   .i_wen(exu_mem_wen),
@@ -309,7 +307,7 @@ ysyx_24110006_RegisterFile mreg(
   .i_wen(lsu_reg_wen),
   .o_rdata1(reg_src1),
   .o_rdata2(reg_src2),
-  .i_valid(lsu_valid),
+  .i_valid(ls_vr_wb.valid),
   .o_valid(reg_valid)
 );
 
@@ -326,11 +324,11 @@ ysyx_24110006_CSR mcsr(
   .i_wdata(lsu_result),
   .o_rdata(csr_src),
   .o_upc(csr_upc),
-  .i_valid(lsu_valid)
+  .i_valid(ls_vr_wb.valid)
 );
 
 ysyx_24110006_FORWARD_STALL mforward_stall(
-  .i_valid(idu_valid),
+  .i_valid(id_vr_ex.valid),
   .i_op(idu_op),
   .i_rs1(idu_rs1),
   .i_rs2(idu_rs2),
@@ -340,9 +338,9 @@ ysyx_24110006_FORWARD_STALL mforward_stall(
   .i_exu_data(exu_result),
   .i_exu_load(exu_mem_ren),
   .i_lsu_load(lsu_ren),
-  .i_exu_valid(exu_valid),
-  .i_lsu_valid(lsu_valid),
-  .i_lsu_ready(lsu_ready),
+  .i_exu_valid(ex_vr_ls.valid),
+  .i_lsu_valid(ls_vr_wb.valid),
+  .i_lsu_ready(ex_vr_ls.ready),
   .i_exu_rd(exu_rd),
   .i_lsu_rd(lsu_rd),
   .i_exu_wen(exu_reg_wen),
@@ -412,11 +410,10 @@ ysyx_24110006_EXU mexu(
   .o_predict(exu_predict),
   .o_btb_update(exu_btb_update),
 `endif
-  .i_valid(idu_valid&&!stall),
-  .o_valid(exu_valid),
-  .i_ready(lsu_ready),
-  .o_ready(exu_ready),
+  .i_vr(id_vr_ex),
+  .o_vr(ex_vr_ls),
   .i_flush(flush),
+  .i_stall(stall),
   .o_flush(exu_flush)
 );
 
@@ -466,13 +463,11 @@ ysyx_24110006_LSU mlsu(
   .o_addr(lsu_addr),
   .o_sim_branch(sim_branch),
 `endif
-  .i_valid(exu_valid),
-  .o_valid(lsu_valid),
-  .i_ready(1),
-  .o_ready(lsu_ready),
+  .i_vr(ex_vr_ls),
+  .o_vr(ls_vr_wb),
   .i_flush(exception|branch),
 
-  .out(lsu_axi.master)
+  .o_axi(lsu_axi.master)
 );
 
 ysyx_24110006_ARBITER marbiter(

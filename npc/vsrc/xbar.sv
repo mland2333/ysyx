@@ -2,12 +2,12 @@ module ysyx_24110006_XBAR(
   input i_clock,
   input i_reset,
   
-  AXIFULL.slave in,
-  AXIFULL.master mem,
+  if_axi.slave in,
+  if_axi.master mem,
 `ifndef CONFIG_YSYXSOC
-  AXIFULL_WRITE.master uart,
+  if_axi_write.master uart,
 `endif
-  AXIFULL_READ.master clint
+  if_axi_read.master clint
 );
 
 /* `define UART 32'ha00003f8 */

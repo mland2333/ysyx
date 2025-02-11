@@ -13,15 +13,12 @@ module ysyx_24110006_ICACHE(
   input i_predict_err,
   input i_btb_update,
 `endif
-  input i_valid,
-  output reg o_valid,
-  input i_ready,
-  output o_ready,
+  if_pipeline_vr.out o_vr,
 
   input i_flush,
   output o_exception,
   output [3:0] o_mcause,
-  AXIFULL_READ.master out
+  if_axi_read.master o_axi
   
 );
 
@@ -48,13 +45,13 @@ always@(posedge i_clock)begin
   if(i_reset) miss_time <= 0;
   else begin
     if(state == idle_t && !hit || state == axi_t) miss_time <= miss_time+1;
-    else if(o_valid) miss_time <= 0;
+    else if(o_vr.valid) miss_time <= 0;
   end
 end
 
 reg rlast;
 always@(posedge i_clock)
-  rlast <= out.rlast;
+  rlast <= o_axi.rlast;
 `endif
 `ifdef CONFIG_BTB
   reg [31:3] btb_tag[2];
@@ -76,7 +73,7 @@ always@(posedge i_clock)
   wire [31:0] btb_pc = {btb_target[pc[2]], 2'b0};
   reg predict;
   always@(posedge i_clock)
-    if(inst_valid & (i_ready | ~busy)) predict <= btb_hit;
+    if(inst_valid & (o_vr.ready | ~busy)) predict <= btb_hit;
   assign o_predict = predict;
   wire [31:0] need_plus_pc;
   wire [31:0] pc_plus_4;
@@ -92,7 +89,7 @@ localparam FLASH = 32'h30000000;
 `else
   localparam PC = 32'h80000000;
 `endif
-wire busy = o_valid && !i_ready;
+wire busy = o_vr.valid && !o_vr.ready;
 always@(posedge i_clock)begin
   if(i_reset) pc <= PC;
   else if(i_flush) begin
@@ -102,7 +99,7 @@ always@(posedge i_clock)begin
       pc <= i_upc;
     `endif
   end
-  else if(inst_valid & (i_ready | ~busy)) begin
+  else if(inst_valid & (o_vr.ready | ~busy)) begin
     `ifdef CONFIG_BTB
       pc <= btb_hit ? btb_pc : pc_plus_4;
     `else
@@ -111,15 +108,9 @@ always@(posedge i_clock)begin
   end
 end
 always@(posedge i_clock)
-  if(inst_valid & (i_ready | ~busy)) pc1 <= pc[31:2];
+  if(inst_valid & (o_vr.ready | ~busy)) pc1 <= pc[31:2];
 assign o_pc = {pc1, 2'b0};
 
-/* reg busy; */
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) busy <= 0; */
-/*   else if(o_valid && !i_ready) busy <= 1; */
-/*   else if(i_ready) busy <= 0; */
-/* end */
 wire [26:0] tag = pc[31:5];
 wire [1:0] index = pc[4:3];
 wire [2:0] offset = pc[2:0];
@@ -163,24 +154,24 @@ always@(posedge i_clock)begin
   else begin
     case(state)
       idle_t:begin
-        if(~hit & ~i_flush & (i_ready | ~busy)) begin
+        if(~hit & ~i_flush & (o_vr.ready | ~busy)) begin
           if(~is_sram) state <= axi_t;
           else state <= direct_t;
         end
       end
       axi_t:begin
-        if(out.rlast) state <= ready_t;
+        if(o_axi.rlast) state <= ready_t;
         else if(i_flush) state <= axi_flush_t;
       end
       direct_t:begin
-        if(out.rvalid) state <= idle_t;
+        if(o_axi.rvalid) state <= idle_t;
         else if(i_flush) state <= direct_flush_t;
       end
       axi_flush_t:begin
-        if(out.rlast) state <= idle_t;
+        if(o_axi.rlast) state <= idle_t;
       end
       direct_flush_t:begin
-        if(out.rvalid) state <= idle_t;
+        if(o_axi.rvalid) state <= idle_t;
       end
       ready_t:begin
         state <= idle_t;
@@ -193,12 +184,12 @@ always@(posedge i_clock)begin
 end
 
 always@(posedge i_clock)begin
-  if(i_reset || i_flush) o_valid <= 0;
+  if(i_reset || i_flush) o_vr.valid <= 0;
   else if(inst_valid) begin
-    o_valid <= 1;
+    o_vr.valid <= 1;
   end
-  else if(o_valid && i_ready)begin
-    o_valid <= 0;
+  else if(o_vr.valid && o_vr.ready)begin
+    o_vr.valid <= 0;
   end
 end
 
@@ -220,12 +211,12 @@ wire [31:0] cache_inst = ({32{index0 & (offset[2] == 'd0)}} & cache_array[0][0 +
                          ({32{index3 & (offset[2] == 'd0)}} & cache_array[3][0 +:32]) |
                          ({32{index3 & (offset[2] == 'd1)}} & cache_array[3][32+:32]) ;
 always@(posedge i_clock)begin
-  if(((state == idle_t) | (state == axi_t)) & hit & (i_ready | ~busy))begin
+  if(((state == idle_t) | (state == axi_t)) & hit & (o_vr.ready | ~busy))begin
     /* inst <= cache_array[index][offset*8 +: 32]; */
     inst <= cache_inst;
   end
   else if(state == direct_t & rvalid)
-    inst <= out.rdata;
+    inst <= o_axi.rdata;
 end
 
 always@(posedge i_clock)begin
@@ -252,7 +243,7 @@ always@(posedge i_clock)begin
           integer j;
           for(j=0; j<2; j=j+1)begin
             if(burst_counter==j)begin
-              cache_array[i][j*32 +: 32] <= out.rdata;
+              cache_array[i][j*32 +: 32] <= o_axi.rdata;
               valid_array[i][j] <= 1;
             end
           end
@@ -263,15 +254,15 @@ always@(posedge i_clock)begin
 end
 
 wire cache_miss = (state == idle_t) & ~hit & ~i_flush;
-wire axi_free = (i_ready || !busy);
+wire axi_free = (o_vr.ready || !busy);
 always@(posedge i_clock)begin
   if(i_reset) arvalid <= 0;
   else if(~arvalid & cache_miss & axi_free) arvalid <= 1;
-  else if(arvalid & out.arready) arvalid <= 0;
+  else if(arvalid & o_axi.arready) arvalid <= 0;
 end
 
 always@(posedge i_clock)begin
-  if(i_reset || out.rlast) burst_counter <= 0;
+  if(i_reset || o_axi.rlast) burst_counter <= 0;
   else if(arvalid) burst_counter <= pc[2];
   else if(state == axi_t && rvalid) burst_counter <= burst_counter + 1;
 end
@@ -284,18 +275,18 @@ wire [1:0] rresp;
 reg [31:0] araddr;
 
 always@(posedge i_clock)begin
-  if(~arvalid & (state == idle_t & ~hit & ~i_flush) & (i_ready | ~busy)) araddr <= pc;
+  if(~arvalid & (state == idle_t & ~hit & ~i_flush) & (o_vr.ready | ~busy)) araddr <= pc;
 end
-assign out.araddr = araddr;
-assign out.arvalid = arvalid;
-assign arready = out.arready;
-assign out.arid = 0;
-assign out.arlen = is_sram ? 0 : 1;
-assign out.arsize = 3'b010;
-assign out.arburst = is_sram ? 0 : 2'b10;
+assign o_axi.araddr = araddr;
+assign o_axi.arvalid = arvalid;
+assign arready = o_axi.arready;
+assign o_axi.arid = 0;
+assign o_axi.arlen = is_sram ? 0 : 1;
+assign o_axi.arsize = 3'b010;
+assign o_axi.arburst = is_sram ? 0 : 2'b10;
 
-assign rvalid = out.rvalid;
-assign rresp = out.rresp;
-assign out.rready = rready;
+assign rvalid = o_axi.rvalid;
+assign rresp = o_axi.rresp;
+assign o_axi.rready = rready;
 
 endmodule
