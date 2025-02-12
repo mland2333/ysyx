@@ -1,5 +1,6 @@
 #include <common.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "syscall.h"
 #include "am.h"
 static const char*syscall_name[] = {
@@ -31,6 +32,7 @@ int sys_write(Context *c){
   for (int i = 0; i < len; i++) {
     putch(*(buf+i));
   }
+  printf("len=%d\n", len);
   return len;
 }
 
