@@ -80,7 +80,7 @@ void *_sbrk(intptr_t increment) {
   intptr_t old_sbrk = msbrk;
   msbrk += increment;
   _syscall_(SYS_brk, increment, 0, 0);
-  return (void*)old_sbrk;
+  return (void*)-1;
 }
 
 int _read(int fd, void *buf, size_t count) {
