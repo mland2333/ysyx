@@ -25,28 +25,30 @@
 /*   "SYS_gettimeofday" */
 /* }; */
 
-void sys_write(Context *c){
+int sys_write(Context *c){
   char* buf = (char*)c->gpr[11];
   intptr_t len = (intptr_t)c->gpr[12];
   for (int i = 0; i < len; i++) {
     putch(*(buf+i));
   }
+  return len;
 }
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;
+  int ret = 0;
   /* printf("%s\n", syscall_name[a[0]]); */
   switch (a[0]) {
-    case 0: halt(c->GPR1); break;
+    case 0: halt(c->GPR1);break;
     case 1: yield();break;
     case 4: 
       if(c->gpr[10] == 1 || c->gpr[10] == 2) {
-        sys_write(c);
+        ret = sys_write(c);
       }
     break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
-   c->GPRx = 0;
+   c->GPRx = ret;
 }
 
 
