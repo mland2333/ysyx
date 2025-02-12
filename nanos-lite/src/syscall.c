@@ -26,8 +26,8 @@ static const char*syscall_name[] = {
 };
 
 int sys_write(Context *c){
-  char* buf = (char*)c->gpr[11];
-  intptr_t len = (intptr_t)c->gpr[12];
+  char* buf = (char*)c->GPR3;
+  intptr_t len = (intptr_t)c->GPR4;
   for (int i = 0; i < len; i++) {
     putch(*(buf+i));
   }
@@ -46,7 +46,7 @@ void do_syscall(Context *c) {
     case SYS_exit: halt(c->GPR1);break;
     case SYS_yield: yield();break;
     case SYS_write: 
-      if(c->gpr[10] == 1 || c->gpr[10] == 2) {
+      if(c->GPR2 == 1 || c->GPR2 == 2) {
         ret = sys_write(c);
       }
     break;
