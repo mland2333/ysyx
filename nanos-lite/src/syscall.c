@@ -1,4 +1,5 @@
 #include <common.h>
+#include <stdint.h>
 #include "syscall.h"
 #include "am.h"
 static const char*syscall_name[] = {
@@ -23,6 +24,14 @@ static const char*syscall_name[] = {
   "SYS_times",
   "SYS_gettimeofday"
 };
+
+void sys_write(Context *c){
+  char* buf = (char*)c->gpr[11];
+  intptr_t len = (intptr_t)c->gpr[12];
+  for (int i = 0; i < len; i++) {
+    putch(*(buf+i));
+  }
+}
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;
@@ -30,7 +39,11 @@ void do_syscall(Context *c) {
   switch (a[0]) {
     case 0: halt(c->GPR1); break;
     case 1: yield();break;
+    case 2:
+    case 3: sys_write(c); break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
    c->GPRx = 0;
 }
+
+
