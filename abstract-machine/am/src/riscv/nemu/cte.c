@@ -9,11 +9,11 @@ Context* __am_irq_handle(Context *c) {
     Event ev = {0};
     /* uint32_t a0; */
     /* asm volatile("mv %0, a0": "=r"(a0)); */
-    register int a7 asm("a7");
+    int value = c->GPR1;
     switch (c->mcause) {
       case 11: 
-        if (a7 == -1) ev.event = EVENT_YIELD; 
-        else if(a7 == 1) ev.event = EVENT_SYSCALL;
+        if (value == -1) ev.event = EVENT_YIELD; 
+        else if(value == 1) ev.event = EVENT_SYSCALL;
         else ev.event = EVENT_ERROR;
         c->mepc += 4; 
         break;
