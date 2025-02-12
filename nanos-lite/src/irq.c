@@ -3,6 +3,7 @@
 static Context* do_event(Event e, Context* c) {
   switch (e.event) {
     case EVENT_YIELD: printf("yield\n");
+    case EVENT_SYSCALL: ;
     default: printf("%d\n", e.event);
   }
 
