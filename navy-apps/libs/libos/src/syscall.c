@@ -72,8 +72,8 @@ int _write(int fd, void *buf, size_t count) {
 void *_sbrk(intptr_t increment) {
   extern char _end[];
   static intptr_t msbrk;
-  static char first_sbrk = 1;
-  if(first_sbrk) {
+  static int first_sbrk = 1;
+  if(first_sbrk == 1) {
     msbrk = (intptr_t) _end;
     first_sbrk = 0;
   }
