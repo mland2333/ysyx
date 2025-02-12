@@ -7,8 +7,14 @@ static Context* (*user_handler)(Event, Context*) = NULL;
 Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
+    uint32_t a0;
+    asm volatile("mv %0, a0": "=r"(a0));
     switch (c->mcause) {
-      case 11: ev.event = EVENT_YIELD; c->mepc += 4; break;
+      case 11: 
+        if (a0 == -1) ev.event = EVENT_YIELD; 
+        else if(a0 == 1) ev.event = EVENT_SYSCALL;
+        c->mepc += 4; 
+        break;
       default: ev.event = EVENT_ERROR; break;
     }
 
