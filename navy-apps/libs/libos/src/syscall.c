@@ -68,11 +68,11 @@ int _open(const char *path, int flags, mode_t mode) {
 int _write(int fd, void *buf, size_t count) {
   return _syscall_(SYS_write, fd, (intptr_t)buf, count);
 }
-
-void *_sbrk(intptr_t increment) {
   extern char _end[];
   static intptr_t msbrk;
   static int first_sbrk = 1;
+void *_sbrk(intptr_t increment) {
+
   if(first_sbrk == 1) {
     msbrk = (intptr_t) _end;
     first_sbrk = 0;
