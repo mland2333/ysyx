@@ -32,7 +32,6 @@ int sys_write(Context *c){
   for (int i = 0; i < len; i++) {
     putch(*(buf+i));
   }
-  printf("len=%d\n", len);
   return len;
 }
 

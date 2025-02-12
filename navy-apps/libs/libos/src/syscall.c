@@ -78,10 +78,8 @@ void *_sbrk(intptr_t increment) {
     first_sbrk = 0;
   }
   intptr_t old_sbrk = msbrk;
-  /* char buffer[33]; */
-  /* sprintf(buffer, "old_sbrk=0x%x\n", old_sbrk); */
   msbrk += increment;
-  /* _syscall_(SYS_brk, increment, 0, 0); */
+  _syscall_(SYS_brk, increment, 0, 0);
   return (void*)old_sbrk;
 }
 
