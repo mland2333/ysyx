@@ -7,8 +7,9 @@ static Context* (*user_handler)(Event, Context*) = NULL;
 Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
-    uint32_t a0;
-    asm volatile("mv %0, a0": "=r"(a0));
+    /* uint32_t a0; */
+    /* asm volatile("mv %0, a0": "=r"(a0)); */
+    register int a0 asm("a0");
     switch (c->mcause) {
       case 11: 
         if (a0 == -1) ev.event = EVENT_YIELD; 
