@@ -70,11 +70,11 @@ int _write(int fd, void *buf, size_t count) {
 }
 
 void *_sbrk(intptr_t increment) {
-  extern char end[];
+  extern char _end[];
   static intptr_t msbrk;
   static char first_sbrk = 1;
   if(first_sbrk) {
-    msbrk = (intptr_t) end;
+    msbrk = (intptr_t) _end;
     first_sbrk = 0;
   }
   intptr_t old_sbrk = msbrk;
