@@ -24,7 +24,7 @@ int NDL_PollEvent(char *buf, int len) {
 }
 
 void NDL_OpenCanvas(int *w, int *h) {
-  FILE *file = fopen("/proc/displayinfo", "r");
+  FILE *file = fopen("/proc/dispinfo", "r");
   char line[100];  // 存储每一行
   int width = 0, height = 0;
 
