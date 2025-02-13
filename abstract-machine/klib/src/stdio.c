@@ -73,6 +73,7 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
           s++;
         break;
         case 'x':
+        case 'p':
           numu = va_arg(ap, uint32_t);
           j = 0;
           do{
@@ -104,8 +105,9 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
 int sprintf(char *out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  return vsprintf(out, fmt, ap);
+  int ret = vsprintf(out, fmt, ap);
   va_end(ap);
+  return ret;
 }
 
 int snprintf(char *out, size_t n, const char *fmt, ...) {

@@ -5,6 +5,8 @@
 #include <BMP.h>
 
 int main() {
+  /* extern char _end[]; */
+  /* printf("end = 0x%x\n", (intptr_t)_end); */
   NDL_Init(0);
   int w, h;
   void *bmp = BMP_Load("/share/pictures/projectn.bmp", &w, &h);
