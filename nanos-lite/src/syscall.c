@@ -50,6 +50,11 @@ int sys_read(Context* c){
   if(fd == 0 || fd == 1 || fd == 2) return 0;
   return fs_read(fd, buf, len);
 }
+int sys_close(Context* c){
+  int fd = c->GPR2;
+  return fs_close(fd);
+}
+
 int sys_lseek(Context* c){
   int fd = c->GPR2;
   size_t offset = c->GPR3;
@@ -68,6 +73,7 @@ void do_syscall(Context *c) {
     case SYS_open: ret = sys_open(c); break;
     case SYS_read: ret = sys_read(c); break;
     case SYS_write: ret = sys_write(c); break;
+    case SYS_close: ret = sys_close(c); break;
     case SYS_lseek: ret = sys_lseek(c); break;
     case SYS_brk: break;
     default: panic("Unhandled syscall ID = %d", a[0]);
