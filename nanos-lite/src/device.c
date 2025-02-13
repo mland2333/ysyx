@@ -28,14 +28,18 @@ size_t events_read(void *buf, size_t offset, size_t len) {
   else sprintf(buf, "ku %s", keyname[ev.keycode]);
   return 3 + sizeof(keyname[ev.keycode]);
 }
-
+static int width;
+static int height;
 size_t dispinfo_read(void *buf, size_t offset, size_t len) {
-  int w = io_read(AM_GPU_CONFIG).width;
-  int h = io_read(AM_GPU_CONFIG).height;
-  return sprintf(buf, "WIDTH : %d\nHEIGHT: %d\n", w, h);
+  width = io_read(AM_GPU_CONFIG).width;
+  height = io_read(AM_GPU_CONFIG).height;
+  return sprintf(buf, "WIDTH : %d\nHEIGHT: %d\n", width, height);
 }
 
 size_t fb_write(const void *buf, size_t offset, size_t len) {
+  int y = offset / width;
+  int x = offset % width;
+  io_write(AM_GPU_FBDRAW, x, y, buf, 1, 1, true);
   return 0;
 }
 
