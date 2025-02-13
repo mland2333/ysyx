@@ -24,19 +24,23 @@ int NDL_PollEvent(char *buf, int len) {
 }
 
 void NDL_OpenCanvas(int *w, int *h) {
-  FILE *file = fopen("/proc/dispinfo", "r");
-  char line[100];  // 存储每一行
-  int width = 0, height = 0;
+  int fd = open("/proc/dispinfo", O_RDONLY);  // 以只读模式打开
+    char buffer[1024];  
+    ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);  // 读取文件
+    close(fd);  
+    buffer[bytesRead] = '\0';
 
-  while (fgets(line, sizeof(line), file)) {
-    if (strncmp(line, "WIDTH", 5) == 0) {
-      sscanf(line, "WIDTH : %d", &width);  // 处理 "WIDTH :    640"
-    } else if (strncmp(line, "HEIGHT", 6) == 0) {
-      sscanf(line, "HEIGHT: %d", &height); // 处理 "HEIGHT:  480"
+    int width = 0, height = 0;
+    char *line = strtok(buffer, "\n");  // 按行分割
+    while (line) {
+        if (strncmp(line, "WIDTH", 5) == 0) {
+            sscanf(line, "WIDTH : %d", &width);
+        } else if (strncmp(line, "HEIGHT", 6) == 0) {
+            sscanf(line, "HEIGHT: %d", &height);
+        }
+        line = strtok(NULL, "\n");  // 读取下一行
     }
-  }
-  printf("WIDTH=%d, HEIGHT=%d\n", width, height);
-  fclose(file);
+    printf("WIDTH=%d, HEIGHT=%d\n", width, height);
   if (getenv("NWM_APP")) {
     int fbctl = 4;
     fbdev = 5;
