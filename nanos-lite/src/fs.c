@@ -85,7 +85,7 @@ extern size_t ramdisk_write(const void *buf, size_t offset, size_t len);
 size_t fs_write(int fd, const void *buf, size_t len){
   assert(fd >= 0 && fd < FILES_NUM);
   size_t offset = file_table[fd].disk_offset;
-  assert((file_table[fd].open_offest + len) <= file_table[fd].size);
+  /* assert((file_table[fd].open_offest + len) <= file_table[fd].size); */
   if (file_table[fd].write == NULL)
     ramdisk_write(buf, offset + file_table[fd].open_offest, len);
   else
