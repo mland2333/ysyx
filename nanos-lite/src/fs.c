@@ -55,14 +55,14 @@ extern size_t ramdisk_read(void*, size_t, size_t);
 size_t fs_read(int fd, void *buf, size_t len){
   assert(fd >= 0 && fd < FILES_NUM);
   size_t offset = file_table[fd].disk_offset;
-  if((file_table[fd].open_offset + len) > file_table[fd].size){
-    printf("offset = %d, len = %d, size = %d\n", file_table[fd].open_offset, len, 
-           file_table[fd].size);
-    len = file_table[fd].size - file_table[fd].open_offset;
+  size_t open_offset = file_table[fd].open_offset;
+  if (file_table[fd].read != NULL){
+    file_table[fd].read(buf, open_offset, len);
+    return len;
   }
-  /* assert((file_table[fd].open_offset + len) <= file_table[fd].size); */
-  ramdisk_read(buf, offset + file_table[fd].open_offset, len);
-  file_table[fd].open_offset += len;
+  assert((open_offset + len) <= file_table[fd].size);
+  ramdisk_read(buf, offset + open_offset, len);
+  file_table[fd].open_offset += len;;
   return len;
 }
 size_t fs_lseek(int fd, size_t offset, int whence){
