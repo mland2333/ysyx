@@ -44,7 +44,6 @@ size_t fs_read(int fd, void *buf, size_t len){
   assert(fd >= 0 && fd < FILES_NUM);
   size_t offset = file_table[fd].disk_offset;
   assert((file_table[fd].open_offest + len) <= file_table[fd].size);
-  printf("addr = %p\n", buf);
   ramdisk_read(buf, offset + file_table[fd].open_offest, len);
   file_table[fd].open_offest += len;
   return len;

@@ -84,7 +84,6 @@ void *_sbrk(intptr_t increment) {
 }
 
 int _read(int fd, void *buf, size_t count) {
-  printf("addr_ = %p\n", buf);
   return _syscall_(SYS_read, fd, (intptr_t)buf, count);
 }
 
@@ -93,7 +92,7 @@ int _close(int fd) {
 }
 
 off_t _lseek(int fd, off_t offset, int whence) {
-  return _syscall_(SYS_read, fd, (intptr_t)offset, whence);
+  return _syscall_(SYS_lseek, fd, (intptr_t)offset, whence);
 }
 
 int _gettimeofday(struct timeval *tv, struct timezone *tz) {

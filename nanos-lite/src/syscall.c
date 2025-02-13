@@ -48,7 +48,6 @@ int sys_read(Context* c){
   char* buf = (char*)c->GPR3;
   size_t len = c->GPR4;
   if(fd == 0 || fd == 1 || fd == 2) return 0;
-  printf("addr = %p\n", buf);
   return fs_read(fd, buf, len);
 }
 int sys_lseek(Context* c){
@@ -73,6 +72,5 @@ void do_syscall(Context *c) {
     case SYS_brk: break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
-  printf("ret=%d\n", ret);
   c->GPRx = ret;
 }
