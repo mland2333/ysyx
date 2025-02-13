@@ -24,12 +24,14 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
   Elf_Phdr phdr;
   for (int i = 0; i < phnum; i++) {
     uintptr_t phdr_addr = phoff + i * (sizeof(Elf_Phdr));
-    ramdisk_read((void*)&phdr, phdr_addr, sizeof(Elf_Phdr));
+    fs_lseek(fd, phdr_addr, 0);
+    fs_read(fd, (void*)&phdr, sizeof(Elf_Phdr));
     if (phdr.p_type == PT_LOAD) {
       uintptr_t vaddr = phdr.p_vaddr;
       size_t offset = phdr.p_offset;
       size_t len = phdr.p_memsz;
-      ramdisk_read((void*)vaddr, offset, len);
+      fs_lseek(fd, offset, 0);
+      fs_read(fd, (void*)vaddr, len);
     }
   }
   
