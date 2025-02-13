@@ -29,6 +29,7 @@ size_t invalid_write(const void *buf, size_t offset, size_t len) {
 extern size_t serial_write(const void *buf, size_t offset, size_t len);
 extern size_t events_read(void *buf, size_t offset, size_t len);
 extern size_t dispinfo_read(void *buf, size_t offset, size_t len);
+extern size_t fb_write(const void *buf, size_t offset, size_t len);
 static Finfo file_table[] __attribute__((used)) = {
   [FD_STDIN]  = {"stdin", 0, 0, invalid_read, invalid_write},
   [FD_STDOUT] = {"stdout", 0, 0, invalid_read, serial_write},
@@ -36,6 +37,7 @@ static Finfo file_table[] __attribute__((used)) = {
 #include "files.h"
   {"/dev/event", 0, 0, events_read, invalid_write},
   {"/proc/dispinfo", 0, 0, dispinfo_read, invalid_write},
+  {"/dev/fb", 0, 0, invalid_read, fb_write},
 };
 
 
@@ -45,7 +47,13 @@ const char* get_file_name_by_fd(int fd){
   assert(fd >= 0 && fd < FILES_NUM);
   return file_table[fd].name;
 }
-
+int get_file_fd_by_name(const char* name){
+  for (int i = 0; i < FILES_NUM; i++) {
+    if(strcmp(name, file_table[i].name) == 0) return i;
+  }
+  assert(0);
+  return -1;
+}
 int fs_open(const char *pathname, int flags, int mode){
   for (int i = 0; i < FILES_NUM; i++) {
     if(strcmp(pathname, file_table[i].name) == 0) return i;
@@ -107,5 +115,8 @@ int fs_close(int fd){
 }
 
 void init_fs() {
-  // TODO: initialize the size of /dev/fb
+  int w = io_read(AM_GPU_CONFIG).width;
+  int h = io_read(AM_GPU_CONFIG).height;
+  int fd = get_file_fd_by_name("/dev/fb");
+  file_table[fd].size = w * h * sizeof(int);
 }

@@ -24,23 +24,6 @@ int NDL_PollEvent(char *buf, int len) {
 }
 
 void NDL_OpenCanvas(int *w, int *h) {
-  int fd = open("/proc/dispinfo", O_RDONLY);  // 以只读模式打开
-    char buffer[1024];  
-    ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);  // 读取文件
-    close(fd);  
-    buffer[bytesRead] = '\0';
-
-    int width = 0, height = 0;
-    char *line = strtok(buffer, "\n");  // 按行分割
-    while (line) {
-        if (strncmp(line, "WIDTH", 5) == 0) {
-            sscanf(line, "WIDTH : %d", &width);
-        } else if (strncmp(line, "HEIGHT", 6) == 0) {
-            sscanf(line, "HEIGHT: %d", &height);
-        }
-        line = strtok(NULL, "\n");  // 读取下一行
-    }
-    printf("WIDTH=%d, HEIGHT=%d\n", width, height);
   if (getenv("NWM_APP")) {
     int fbctl = 4;
     fbdev = 5;
@@ -61,6 +44,22 @@ void NDL_OpenCanvas(int *w, int *h) {
 }
 
 void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
+  int fd = open("/proc/dispinfo", O_RDONLY); 
+  char buffer[1024];  
+  ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+  close(fd);  
+  buffer[bytesRead] = '\0';
+  int width = 0, height = 0;
+  char *line = strtok(buffer, "\n");  // 按行分割
+  while (line) {
+    if (strncmp(line, "WIDTH", 5) == 0) {
+      sscanf(line, "WIDTH : %d", &width);
+    } else if (strncmp(line, "HEIGHT", 6) == 0) {
+      sscanf(line, "HEIGHT: %d", &height);
+    }
+    line = strtok(NULL, "\n");  // 读取下一行
+  }
+  printf("WIDTH=%d, HEIGHT=%d\n", width, height);
 }
 
 void NDL_OpenAudio(int freq, int channels, int samples) {
