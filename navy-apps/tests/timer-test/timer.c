@@ -8,7 +8,7 @@ int main() {
   intptr_t now = 0;
   while (1) {
     gettimeofday(&st, NULL);
-    if (st.tv_usec - now >= 500000) {
+    if ((st.tv_usec - now) >= 500000) {
       printf("timer\n");
       now = st.tv_usec;
     }
