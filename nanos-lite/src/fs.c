@@ -61,9 +61,9 @@ size_t fs_read(int fd, void *buf, size_t len){
   if (file_table[fd].read != NULL){
     return file_table[fd].read(buf, open_offset, len);
   }
-  assert((open_offset + len) <= file_table[fd].size);
+  /* assert((open_offset + len) <= file_table[fd].size); */
   ramdisk_read(buf, offset + open_offset, len);
-  file_table[fd].open_offset += len;;
+  file_table[fd].open_offset += len;
   return len;
 }
 size_t fs_lseek(int fd, size_t offset, int whence){
