@@ -8,11 +8,7 @@
 # define Elf_Ehdr Elf32_Ehdr
 # define Elf_Phdr Elf32_Phdr
 #endif
-extern size_t get_ramdisk_size();
-extern size_t ramdisk_read(void*, size_t, size_t);
 static uintptr_t loader(PCB *pcb, const char *filename) {
-  /* TODO(); */
-  /* size_t ramdisk_size = get_ramdisk_size(); */
   Elf_Ehdr header;
   int fd = fs_open(filename, 0, 0);
   assert(fd != -1);
