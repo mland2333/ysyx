@@ -60,7 +60,7 @@ int sys_lseek(Context* c){
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;
-  printf("%s\n", syscall_name[a[0]]);
+  if (false) printf("%s\n", syscall_name[a[0]]);
   int ret = 0;
   switch (a[0]) {
     case SYS_exit: halt(c->GPR2); break;
