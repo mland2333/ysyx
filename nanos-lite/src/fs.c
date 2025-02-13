@@ -31,7 +31,15 @@ static Finfo file_table[] __attribute__((used)) = {
   [FD_STDERR] = {"stderr", 0, 0, invalid_read, invalid_write},
 #include "files.h"
 };
+
+
 #define FILES_NUM 23
+
+const char* get_file_name_by_fd(int fd){
+  assert(fd >= 0 && fd < FILES_NUM);
+  return file_table[fd].name;
+}
+
 int fs_open(const char *pathname, int flags, int mode){
   for (int i = 0; i < FILES_NUM; i++) {
     if(strcmp(pathname, file_table[i].name) == 0) return i;
