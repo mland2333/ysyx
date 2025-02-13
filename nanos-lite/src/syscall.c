@@ -38,7 +38,7 @@ void do_syscall(Context *c) {
   printf("%s\n", syscall_name[a[0]]);
   int ret = 0;
   switch (a[0]) {
-    case SYS_exit: halt(c->GPR2); break;
+    /* case SYS_exit: halt(c->GPR2); break; */
     case SYS_yield: yield(); break;
     case SYS_write: ret = sys_write(c); break;
     case SYS_brk: break;
