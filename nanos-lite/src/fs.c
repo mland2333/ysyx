@@ -36,6 +36,7 @@ int fs_open(const char *pathname, int flags, int mode){
   for (int i = 0; i < FILES_NUM; i++) {
     if(strcmp(pathname, file_table[i].name) == 0) return i;
   }
+  assert(0);
   return -1;
 }
 extern size_t ramdisk_read(void*, size_t, size_t);
