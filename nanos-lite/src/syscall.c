@@ -72,5 +72,6 @@ void do_syscall(Context *c) {
     case SYS_brk: break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
+  printf("ret=%d\n", ret);
   c->GPRx = ret;
 }
