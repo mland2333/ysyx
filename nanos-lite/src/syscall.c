@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "syscall.h"
 #include "am.h"
+#include <fs.h>
 const char* syscall_name[] = {
   "SYS_exit",
   "SYS_yield",
@@ -25,14 +26,37 @@ const char* syscall_name[] = {
   "SYS_gettimeofday"
 };
 int sys_write(Context*c){
+  int fd = c->GPR2;
   char* buf = (char*)c->GPR3;
   size_t len = c->GPR4;
-  for (int i = 0; i < len; i ++) {
-    putch(*(buf+i));
+  if(fd == 1 || fd == 2){
+    for (int i = 0; i < len; i ++) {
+      putch(*(buf+i));
+    }
+    return len;
   }
-  return len;
+  return fs_write(fd, buf, len);
 }
-
+int sys_open(Context* c){
+  char* file_path = (char*)c->GPR2;
+  int flags = c->GPR3;
+  int mode = c->GPR4;
+  return fs_open(file_path, flags, mode);
+}
+int sys_read(Context* c){
+  int fd = c->GPR2;
+  char* buf = (char*)c->GPR3;
+  size_t len = c->GPR4;
+  if(fd == 0 || fd == 1 || fd == 2) return 0;
+  return fs_read(fd, buf, len);
+}
+int sys_lseek(Context* c){
+  int fd = c->GPR2;
+  size_t offset = c->GPR3;
+  int whence = c->GPR4;
+  if(fd == 0 || fd == 1 || fd == 2) return 0;
+  return fs_lseek(fd, offset, whence);
+}
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;
@@ -41,7 +65,10 @@ void do_syscall(Context *c) {
   switch (a[0]) {
     case SYS_exit: halt(c->GPR2); break;
     case SYS_yield: yield(); break;
+    case SYS_open: ret = sys_open(c); break;
+    case SYS_read: ret = sys_read(c); break;
     case SYS_write: ret = sys_write(c); break;
+    case SYS_lseek: ret = sys_lseek(c); break;
     case SYS_brk: break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
