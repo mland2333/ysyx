@@ -29,12 +29,6 @@ int sys_write(Context*c){
   int fd = c->GPR2;
   char* buf = (char*)c->GPR3;
   size_t len = c->GPR4;
-  if(fd == 1 || fd == 2){
-    for (int i = 0; i < len; i ++) {
-      putch(*(buf+i));
-    }
-    return len;
-  }
   return fs_write(fd, buf, len);
 }
 int sys_open(Context* c){

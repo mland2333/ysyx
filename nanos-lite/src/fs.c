@@ -25,9 +25,10 @@ size_t invalid_write(const void *buf, size_t offset, size_t len) {
 }
 
 /* This is the information about all files in disk. */
+extern size_t serial_write(const void *buf, size_t offset, size_t len);
 static Finfo file_table[] __attribute__((used)) = {
   [FD_STDIN]  = {"stdin", 0, 0, invalid_read, invalid_write},
-  [FD_STDOUT] = {"stdout", 0, 0, invalid_read, invalid_write},
+  [FD_STDOUT] = {"stdout", 0, 0, invalid_read, serial_write},
   [FD_STDERR] = {"stderr", 0, 0, invalid_read, invalid_write},
 #include "files.h"
 };
@@ -85,7 +86,10 @@ size_t fs_write(int fd, const void *buf, size_t len){
   assert(fd >= 0 && fd < FILES_NUM);
   size_t offset = file_table[fd].disk_offset;
   assert((file_table[fd].open_offest + len) <= file_table[fd].size);
-  ramdisk_write(buf, offset + file_table[fd].open_offest, len);
+  if (file_table[fd].write == NULL)
+    ramdisk_write(buf, offset + file_table[fd].open_offest, len);
+  else
+    file_table[fd].write(buf, offset, len);
   file_table[fd].open_offest += len;
   return len;
 }
