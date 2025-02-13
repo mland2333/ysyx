@@ -72,12 +72,12 @@ int _write(int fd, void *buf, size_t count) {
   static intptr_t msbrk;
   static int first_sbrk = 1;
 void *_sbrk(intptr_t increment) {
-
   if(first_sbrk == 1) {
     msbrk = (intptr_t) _end;
     first_sbrk = 0;
   }
   intptr_t old_sbrk = msbrk;
+  if(msbrk + increment >= 0x88000000) return (void*)-1;
   msbrk += increment;
   _syscall_(SYS_brk, increment, 0, 0);
   return (void*)old_sbrk;
