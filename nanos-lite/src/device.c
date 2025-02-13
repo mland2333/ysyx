@@ -37,9 +37,9 @@ size_t dispinfo_read(void *buf, size_t offset, size_t len) {
 }
 
 size_t fb_write(const void *buf, size_t offset, size_t len) {
-  /* int y = offset / width; */
-  /* int x = offset % width; */
-  io_write(AM_GPU_FBDRAW, 0, 0, buf, width, height, true);
+  int y = offset / width;
+  int x = offset % width;
+  io_write(AM_GPU_FBDRAW, x, y, buf, len / 4, 1, true);
   return 0;
 }
 
