@@ -120,4 +120,5 @@ void init_fs() {
   int h = io_read(AM_GPU_CONFIG).height;
   int fd = get_file_fd_by_name("/dev/fb");
   file_table[fd].size = w * h * sizeof(int);
+  printf("size = %d\n", file_table[fd].size);
 }
