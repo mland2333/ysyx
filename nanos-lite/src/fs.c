@@ -62,7 +62,7 @@ size_t fs_lseek(int fd, size_t offset, int whence){
     default:
       assert(0);
   }
-  return offset;
+  return file_table[fd].open_offest;
 }
 extern size_t ramdisk_write(const void *buf, size_t offset, size_t len);
 size_t fs_write(int fd, const void *buf, size_t len){
