@@ -67,7 +67,9 @@ void do_syscall(Context *c) {
   a[0] = c->GPR1;
   if (true) {
     printf("%s ", syscall_name[a[0]]);
-    if (a[0] == SYS_open || a[0] == SYS_read || a[0] == SYS_write || a[0] == SYS_close || a[0] == SYS_lseek)
+    if (a[0] == SYS_open)
+      printf("%s", (char*)c->GPR2);
+    else if (a[0] == SYS_read || a[0] == SYS_write || a[0] == SYS_close || a[0] == SYS_lseek)
       printf("%s", get_file_name_by_fd(c->GPR2));
     printf("\n");
   }
