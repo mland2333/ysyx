@@ -56,6 +56,16 @@ int sys_lseek(Context* c){
   if(fd == 0 || fd == 1 || fd == 2) return 0;
   return fs_lseek(fd, offset, whence);
 }
+
+int sys_gettimeofday(Context* c){
+  struct timeval* st = (struct timeval*) c->GPR2;
+  intptr_t now_time = io_read(AM_TIMER_UPTIME).us;
+  st->tv_sec = now_time / 1000000;
+  st->tv_usec = now_time;
+  return 0;
+}
+
+
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;
@@ -81,6 +91,7 @@ void do_syscall(Context *c) {
     case SYS_close: ret = sys_close(c); break;
     case SYS_lseek: ret = sys_lseek(c); break;
     case SYS_brk: break;
+    case SYS_gettimeofday: ret = sys_gettimeofday(c); break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
   c->GPRx = ret;
