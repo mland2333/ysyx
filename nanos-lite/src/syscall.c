@@ -78,6 +78,8 @@ void do_syscall(Context *c) {
       printf("%s, offset = %d", get_file_name_by_fd(c->GPR2), c->GPR3);
     else if(a[0] == SYS_close)
       printf("%s", get_file_name_by_fd(c->GPR2));
+    else if(a[0] == SYS_brk)
+      printf("increment = 0x%x", c->GPR2);
     printf("\n");
   }
   int ret = 0;
