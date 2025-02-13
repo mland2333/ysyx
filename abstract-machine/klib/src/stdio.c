@@ -73,6 +73,7 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
           s++;
         break;
         case 'x':
+        case 'p':
           numu = va_arg(ap, uint32_t);
           j = 0;
           do{
