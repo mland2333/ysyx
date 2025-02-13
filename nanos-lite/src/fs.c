@@ -27,15 +27,17 @@ size_t invalid_write(const void *buf, size_t offset, size_t len) {
 
 /* This is the information about all files in disk. */
 extern size_t serial_write(const void *buf, size_t offset, size_t len);
+extern size_t events_read(void *buf, size_t offset, size_t len);
 static Finfo file_table[] __attribute__((used)) = {
   [FD_STDIN]  = {"stdin", 0, 0, invalid_read, invalid_write},
   [FD_STDOUT] = {"stdout", 0, 0, invalid_read, serial_write},
   [FD_STDERR] = {"stderr", 0, 0, invalid_read, invalid_write},
 #include "files.h"
+  {"/dev/event", 0, 0, events_read, invalid_write},
 };
 
 
-#define FILES_NUM 25
+#define FILES_NUM (sizeof(file_table) / sizeof(file_table[0]))
 
 const char* get_file_name_by_fd(int fd){
   assert(fd >= 0 && fd < FILES_NUM);
@@ -99,13 +101,7 @@ size_t fs_write(int fd, const void *buf, size_t len){
 int fs_close(int fd){
     return 0;
 }
-extern size_t events_read(void *buf, size_t offset, size_t len);
+
 void init_fs() {
-  for (int i = 0; i < FILES_NUM; i++) {
-    if (strcmp("/dev/event", file_table[i].name) == 0){
-      file_table[i].read = events_read;
-      break;
-    }
-  }
   // TODO: initialize the size of /dev/fb
 }
