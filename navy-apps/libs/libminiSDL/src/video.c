@@ -49,12 +49,8 @@ void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
   buffer[bytesRead] = '\0';
   int width = 0, height = 0;
   sscanf(buffer, "WIDTH: %d\nHEIGHT: %d\n", &width, &height);
-  fd = open("/dev/fb", 0);
-  for (int i = 0; i<h && i < height; i++){
-    lseek(fd, (y+i)*width*4, SEEK_SET);
-    write(fd, (void*)(s->pixels + i*w*4), w*sizeof(int));
-  }
-  close(fd);
+  printf("here\n");
+  NDL_DrawRect((uint32_t*)s->pixels, x, y, w, h);
 }
 
 // APIs below are already implemented.
