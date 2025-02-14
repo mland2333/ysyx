@@ -12,6 +12,7 @@ SECTIONS {
   _etext = .;
   .rodata : {
     *(.rodata*)
+    *(.srodata*)
   }
   .data.extra : {
     /* section information for finsh shell */
