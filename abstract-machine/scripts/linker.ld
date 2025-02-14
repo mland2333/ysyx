@@ -59,6 +59,7 @@ SECTIONS {
     . = ALIGN(8);
   }
   .bss : {
+  . = ALIGN(8);
 	_bss_start = .;
     *(.bss*)
     *(.sbss*)
