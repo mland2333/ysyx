@@ -35,10 +35,10 @@ int SDL_PollEvent(SDL_Event *ev) {
 
 int SDL_WaitEvent(SDL_Event *event) {
   char buf[64];
-  char is_down;
-  char name[32];
   NDL_WaitEvent(buf, 64);
 
+  char is_down;
+  char name[32];
   sscanf(buf, "k%c %s", &is_down, name);
   event->type = is_down == 'd' ? SDL_KEYDOWN : SDL_KEYUP;
   int key_num = sizeof(keyname) / sizeof(keyname[0]);
