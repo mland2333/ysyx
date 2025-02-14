@@ -3,16 +3,67 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
   assert(dst && src);
   assert(dst->format->BitsPerPixel == src->format->BitsPerPixel);
+  int bytes_per_pixel = src->format->BytesPerPixel;
+
+  // 确定源和目标的拷贝区域
+  int src_x = (srcrect) ? srcrect->x : 0;
+  int src_y = (srcrect) ? srcrect->y : 0;
+  int src_w = (srcrect) ? srcrect->w : src->w;
+  int src_h = (srcrect) ? srcrect->h : src->h;
+
+  int dst_x = (dstrect) ? dstrect->x : 0;
+  int dst_y = (dstrect) ? dstrect->y : 0;
+
+  for (int i = 0; i < src_h; i++) {
+    if (dst_y + i >= dst->h) break; 
+    if (src_y + i >= src->h) break; 
+
+    uint8_t *src_pixel = src->pixels + (src_y + i) * src->pitch + src_x * bytes_per_pixel;
+    uint8_t *dst_pixel = dst->pixels + (dst_y + i) * dst->pitch + dst_x * bytes_per_pixel;
+
+    memcpy(dst_pixel, src_pixel, src_w * bytes_per_pixel);
+  }
 }
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
 }
 
 void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
+  if (w == 0) w = s->w;
+  if (h == 0) h = s->h;
+
+  if (x < 0) x = 0;
+  if (y < 0) y = 0;
+  if (x + w > s->w) w = s->w - x;
+  if (y + h > s->h) h = s->h - y;
+  int fd = open("/proc/dispinfo", O_RDONLY); 
+  char buffer[1024];  
+  ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+  close(fd);  
+  buffer[bytesRead] = '\0';
+  int width = 0, height = 0;
+  char *line = strtok(buffer, "\n");  // 按行分割
+  while (line) {
+    if (strncmp(line, "WIDTH", 5) == 0) {
+      sscanf(line, "WIDTH : %d", &width);
+    } else if (strncmp(line, "HEIGHT", 6) == 0) {
+      sscanf(line, "HEIGHT: %d", &height);
+    }
+    line = strtok(NULL, "\n");  // 读取下一行
+  }
+  close(fd);
+  fd = open("/dev/fb", 0);
+  for (int i = 0; i<h && i < height; i++){
+    lseek(fd, (y+i)*width*4, SEEK_SET);
+    write(fd, (void*)(s->pixels + i*w*4), w*sizeof(int));
+  }
+  close(fd);
 }
 
 // APIs below are already implemented.
