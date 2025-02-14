@@ -57,9 +57,11 @@ int get_file_fd_by_name(const char* name){
   return -1;
 }
 int fs_open(const char *pathname, int flags, int mode){
-  printf("open %s\n", pathname);
   for (int i = 0; i < FILES_NUM; i++) {
-    if(strcmp(pathname, file_table[i].name) == 0) return i;
+    if(strcmp(pathname, file_table[i].name) == 0) {
+      printf("open %s %d\n", pathname, i);
+      return i;
+    }
   }
   assert(0);
   return -1;
