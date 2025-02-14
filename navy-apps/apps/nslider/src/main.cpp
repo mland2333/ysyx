@@ -47,7 +47,7 @@ void next(int rep) {
 int main() {
   SDL_Init(0);
   screen = SDL_SetVideoMode(W, H, 32, SDL_HWSURFACE);
-
+  printf("cur=%d", cur);
   int rep = 0, g = 0;
 
   render();
