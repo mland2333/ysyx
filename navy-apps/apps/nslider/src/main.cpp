@@ -12,12 +12,12 @@
 //   gg - first page
 
 // number of slides
-const int N = 5;
+const int N = 10;
 // slides path pattern (starts from 0)
 const char *path = "/share/slides/slides-%d.bmp";
 
 static SDL_Surface *screen = NULL;
-static int cur = 1;
+static int cur = 0;
 
 void render() {
   char fname[256];
