@@ -68,7 +68,7 @@ int sys_gettimeofday(Context* c){
 void do_syscall(Context *c) {
   uintptr_t a[4];
   a[0] = c->GPR1;
-  if (true) {
+  if (false) {
     printf("%s ", syscall_name[a[0]]);
     if (a[0] == SYS_open)
       printf("%s", (char*)c->GPR2);
