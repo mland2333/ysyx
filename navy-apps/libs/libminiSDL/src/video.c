@@ -36,7 +36,7 @@ void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
   int dst_h = (dstrect) ? dstrect->h : dst->h;
   for (int i = 0; i < dst_h; i++){
     for (int j = 0; j < dst_w; j++){
-      uint8_t *dst_pixel = dst->pixels + (dst_y + i) * dst->pitch + dst_x * bytes_per_pixel;
+      uint8_t *dst_pixel = dst->pixels + (dst_y + i) * dst_w * bytes_per_pixel + dst_x * bytes_per_pixel;
       memcpy(dst_pixel + j*4, &color, sizeof(color));
     }
   }
