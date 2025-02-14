@@ -52,14 +52,19 @@ void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
   buffer[bytesRead] = '\0';
   int width = 0, height = 0;
   sscanf(buffer, "WIDTH: %d\nHEIGHT: %d\n", &width, &height);
-  printf("WIDTH=%d, HEIGHT=%d\n", width, height);
+  /* printf("WIDTH=%d, w=%d, HEIGHT=%d, h=%d\n", width, w, height, h); */
   fd = open("/dev/fb", 0);
+  /* for (int i = 0; i<h; i++) */
+  /*   for (int j = 0; j<w; i++) */
+  /*     printf("%d ", i*w+j); */
+  /* printf("\n"); */
+  if (w==0) w = width;
+  if (h==0) h = height;
   for (int i = 0; i<h && i < height; i++){
-    lseek(fd, i*width*4, SEEK_SET);
+    lseek(fd, ((y+i)*width+x)*4, SEEK_SET);
     write(fd, (void*)(pixels + i*w), w*sizeof(int));
   }
   close(fd);
-  /* printf("WIDTH=%d, HEIGHT=%d\n", width, height); */
 }
 
 void NDL_OpenAudio(int freq, int channels, int samples) {

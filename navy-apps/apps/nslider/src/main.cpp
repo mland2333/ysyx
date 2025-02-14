@@ -17,7 +17,7 @@ const int N = 5;
 const char *path = "/share/slides/slides-%d.bmp";
 
 static SDL_Surface *screen = NULL;
-static int cur = 0;
+static int cur = 1;
 
 void render() {
   char fname[256];
@@ -33,7 +33,6 @@ void prev(int rep) {
   if (rep == 0) rep = 1;
   cur -= rep;
   if (cur < 0) cur = 0;
-  printf("here\n");
   render();
 }
 
