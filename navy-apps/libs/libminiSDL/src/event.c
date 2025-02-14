@@ -24,7 +24,7 @@ int SDL_WaitEvent(SDL_Event *event) {
   char name[32];
   if ((ret = NDL_PollEvent(buf, 64)) == 1) {
     sscanf(buf, "k%c %s", &is_down, name);
-    event->type = is_down ? SDL_KEYDOWN : SDL_KEYUP;
+    event->type = is_down == 'd' ? SDL_KEYDOWN : SDL_KEYUP;
     int key_num = sizeof(keyname) / sizeof(keyname[0]);
     for (int i = 0; i < key_num; i++) {
       if(strcmp(name, keyname[i]) == 0) {

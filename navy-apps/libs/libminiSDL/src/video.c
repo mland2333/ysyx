@@ -48,16 +48,7 @@ void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
   close(fd);  
   buffer[bytesRead] = '\0';
   int width = 0, height = 0;
-  char *line = strtok(buffer, "\n");  // 按行分割
-  while (line) {
-    if (strncmp(line, "WIDTH", 5) == 0) {
-      sscanf(line, "WIDTH : %d", &width);
-    } else if (strncmp(line, "HEIGHT", 6) == 0) {
-      sscanf(line, "HEIGHT: %d", &height);
-    }
-    line = strtok(NULL, "\n");  // 读取下一行
-  }
-  close(fd);
+  sscanf(buffer, "WIDTH: %d\nHEIGHT: %d\n", &width, &height);
   fd = open("/dev/fb", 0);
   for (int i = 0; i<h && i < height; i++){
     lseek(fd, (y+i)*width*4, SEEK_SET);
