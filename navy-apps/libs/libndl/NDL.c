@@ -24,6 +24,15 @@ int NDL_PollEvent(char *buf, int len) {
   return 1;
 }
 
+int NDL_WaitEvent(char *buf, int len) {
+  int fd = open("/dev/events", O_RDONLY);
+  int ret;
+  while ((ret = read(fd, buf, len)) == 0);
+  close(fd);
+  return 1;
+}
+
+
 void NDL_OpenCanvas(int *w, int *h) {
   if (getenv("NWM_APP")) {
     int fbctl = 4;
