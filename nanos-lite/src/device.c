@@ -31,7 +31,7 @@ static int height;
 size_t dispinfo_read(void *buf, size_t offset, size_t len) {
   width = io_read(AM_GPU_CONFIG).width;
   height = io_read(AM_GPU_CONFIG).height;
-  return sprintf(buf, "WIDTH : %d\nHEIGHT: %d\n", width, height);
+  return sprintf(buf, "WIDTH: %d\nHEIGHT: %d\n", width, height);
 }
 
 size_t fb_write(const void *buf, size_t offset, size_t len) {
