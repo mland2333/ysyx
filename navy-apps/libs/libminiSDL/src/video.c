@@ -9,7 +9,7 @@
 void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
   assert(dst && src);
   assert(dst->format->BitsPerPixel == src->format->BitsPerPixel);
-  /* printf("enter blit\n"); */
+  printf("enter blit\n");
   int bytes_per_pixel = src->format->BytesPerPixel;
 
   // 确定源和目标的拷贝区域
@@ -25,14 +25,14 @@ void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_
   for (int i = 0; i < src_h; i++) {
     uint8_t* src_pixel = src->pixels + (src_y + i) * src_w * bytes_per_pixel + src_x * bytes_per_pixel;
     uint8_t* dst_pixel = dst->pixels + (src_y + i) * src_w * bytes_per_pixel + src_x * bytes_per_pixel;
-    /* printf("dst = %x, src = %x\n", dst_pixel, src_pixel); */
+    printf("dst = %x, src = %x\n", dst_pixel, src_pixel);
     memcpy(dst_pixel, src_pixel, src_w * bytes_per_pixel);
   }
-  /* printf("quit blit\n"); */
+  printf("quit blit\n");
 }
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
-  /* printf("enter fill\n"); */
+  printf("enter fill\n");
   int bytes_per_pixel = dst->format->BytesPerPixel;
   int dst_x = (dstrect) ? dstrect->x : 0;
   int dst_y = (dstrect) ? dstrect->y : 0;
@@ -45,7 +45,7 @@ void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
       *(uint32_t*)dst_pixel = color;
     }
   }
-  /* printf("quit fill\n"); */
+  printf("quit fill\n");
 }
 
 void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
