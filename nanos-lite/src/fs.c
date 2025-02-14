@@ -59,7 +59,7 @@ int get_file_fd_by_name(const char* name){
 int fs_open(const char *pathname, int flags, int mode){
   for (int i = 0; i < FILES_NUM; i++) {
     if(strcmp(pathname, file_table[i].name) == 0) {
-      printf("open %s %d\n", pathname, i);
+      /* printf("open %s %d\n", pathname, i); */
       return i;
     }
   }
@@ -116,7 +116,7 @@ size_t fs_write(int fd, const void *buf, size_t len){
   return len;
 }
 int fs_close(int fd){
-    printf("close %s %d\n", file_table[fd].name, fd);
+    /* printf("close %s %d\n", file_table[fd].name, fd); */
     return 0;
 }
 
