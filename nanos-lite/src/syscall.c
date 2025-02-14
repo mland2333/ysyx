@@ -73,9 +73,9 @@ void do_syscall(Context *c) {
     if (a[0] == SYS_open)
       printf("%s", (char*)c->GPR2);
     else if (a[0] == SYS_read || a[0] == SYS_write)
-      printf("%s, offset = %d, len = %d", get_file_name_by_fd(c->GPR2), c->GPR3, c->GPR4);
+      printf("%s, offset = %u, len = %d", get_file_name_by_fd(c->GPR2), c->GPR3, c->GPR4);
     else if(a[0] == SYS_lseek)
-      printf("%s, offset = %d", get_file_name_by_fd(c->GPR2), c->GPR3);
+      printf("%s, offset = %u", get_file_name_by_fd(c->GPR2), c->GPR3);
     else if(a[0] == SYS_close)
       printf("%s", get_file_name_by_fd(c->GPR2));
     else if(a[0] == SYS_brk)
