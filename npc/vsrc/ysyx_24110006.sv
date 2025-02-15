@@ -87,11 +87,7 @@ assign exception = ls_vr_wb.valid & lsu_exception;
 assign branch = ls_vr_wb.valid & lsu_branch;
 assign csr_flush = ls_vr_wb.valid & lsu_csr_t[0];
 assign flush = exu_flush | exception | branch | csr_flush;
-`ifdef CONFIG_BTB
-  assign upc = exception ? csr_upc : (branch | branch_btb_update) ? lsu_upc : exu_upc;
-`else
-  assign upc = exception ? csr_upc : branch ? lsu_upc : exu_upc;
-`endif
+assign upc = exception ? csr_upc : (branch | branch_btb_update) ? lsu_upc : exu_upc;
 assign jal_btb_update = exu_btb_update;
 assign branch_btb_update = lsu_btb_update & ls_vr_wb.valid & branch;
 assign btb_update = jal_btb_update | branch_btb_update;
@@ -248,12 +244,10 @@ ysyx_24110006_IFU mifu(
   .o_pc(ifu_pc),
   .o_exception(ifu_exception),
   .o_mcause(ifu_mcause),
-`ifdef CONFIG_BTB
   .i_pc(btb_pc),
   .o_predict(ifu_predict),
   .i_predict_err(predict_err),
   .i_btb_update(btb_update),
-`endif
   .o_vr(if_vr_id),
   .i_flush(flush),
   .o_axi(ifu_axi.master)
@@ -285,10 +279,8 @@ ysyx_24110006_IDU midu(
   .o_mcause(idu_mcause),
   .o_csr(idu_csr),
   .o_mret(idu_mret),
-`ifdef CONFIG_BTB
   .i_predict(ifu_predict),
   .o_predict(idu_predict),
-`endif
   .i_vr(if_vr_id),
   .o_vr(id_vr_ex),
   .i_flush(flush),
@@ -405,11 +397,9 @@ ysyx_24110006_EXU mexu(
   .i_csr(idu_csr),
   .o_csr(exu_csr),
   .i_csr_upc(csr_upc),
-`ifdef CONFIG_BTB
   .i_predict(idu_predict),
   .o_predict(exu_predict),
   .o_btb_update(exu_btb_update),
-`endif
   .i_vr(id_vr_ex),
   .o_vr(ex_vr_ls),
   .i_flush(flush),
@@ -450,12 +440,10 @@ ysyx_24110006_LSU mlsu(
   .o_upc(lsu_upc),
   .i_branch_mid(branch_mid),
   .o_branch(lsu_branch),
-`ifdef CONFIG_BTB
   .i_predict(exu_predict),
   .o_predict(lsu_predict),
   .o_predict_err(lsu_predict_err),
   .o_btb_update(lsu_btb_update),
-`endif
 `ifdef CONFIG_SIM
   .i_op(exu_op),
   .o_op(lsu_op),

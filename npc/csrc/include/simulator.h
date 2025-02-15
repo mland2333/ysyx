@@ -25,7 +25,11 @@
   #define PC_BEGIN 0x80000000
 #endif
 #define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
-
+#ifdef CONFIG_RISCV32E
+  #define REG_NUMS 16
+#else
+  #define REG_NUMS 32
+#endif
 enum class SIM_STATE{
   NORMAL,
   QUIT,
@@ -41,7 +45,8 @@ private:
   void step_and_dump_wave(); 
   void single_cycle();
   void cpu_update(){
-    for (int i = 0; i < 16; i++) {
+
+    for (int i = 0; i < REG_NUMS; i++) {
       cpu.gpr[i] = TOP_MEMBER(mreg__DOT__rf[i]);
     }
     cpu.pc = TOP_MEMBER(sim_pc);

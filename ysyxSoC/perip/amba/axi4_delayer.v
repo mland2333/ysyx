@@ -139,7 +139,7 @@ assign out_rready = in_rready;
 assign in_rid = out_rid; 
 assign in_rresp = out_rresp;
 
-localparam NUMS = 2;
+localparam NUMS = 4;
 wire [NUMS-1:0] valid;
 reg [NUMS-1:0] tasks;
 reg [$clog2(NUMS)-1:0] task_index;
@@ -184,20 +184,19 @@ generate
   end
 endgenerate
 
-reg [$clog2(NUMS)-1:0] rdata_index;
+reg [31:0] r_rdata;
+reg r_valid;
 always@(*)begin
-  if(valid[0]) rdata_index = 0;
-  /* else if(valid[1]) rdata_index = 1; */
-  /* else if(valid[2]) rdata_index = 2; */
-  /* else if(valid[3]) rdata_index = 3; */
-  /* else if(valid[4]) rdata_index = 4; */
-  /* else if(valid[5]) rdata_index = 5; */
-  /* else if(valid[6]) rdata_index = 6; */
-  else rdata_index = 1;
+  integer i;
+  r_rdata = 0;
+  r_valid = 0;
+  for(i=0; i<NUMS; i=i+1)begin
+    r_rdata = r_rdata | ({32{valid[i]}} & rdata_buffer[i]);
+    r_valid = r_valid | valid[i];
+  end
 end
-
-assign in_rdata = rdata_buffer[rdata_index];
-assign in_rvalid = |valid;
+assign in_rdata = r_rdata;
+assign in_rvalid = r_valid;
 
 wire rlast_valid;
 delayer m_rlast(

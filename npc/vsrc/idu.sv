@@ -20,10 +20,8 @@ module ysyx_24110006_IDU(
   output o_exception,
   input [3:0] i_mcause,
   output [3:0] o_mcause,
-`ifdef CONFIG_BTB
   input i_predict,
   output o_predict,
-`endif
   if_pipeline_vr.in i_vr,
   if_pipeline_vr.out o_vr,
   input i_flush,
@@ -68,14 +66,12 @@ always@(posedge i_clock)begin
     mcause <= i_mcause;
 end
 assign o_mcause = exception ? mcause : my_mcause;
-`ifdef CONFIG_BTB
 reg predict;
 always@(posedge i_clock)begin
   if(update_reg)
     predict <= i_predict;
 end
 assign o_predict = predict;
-`endif
 wire I = o_op[6:2] == 5'b00100;
 wire R = o_op[6:2] == 5'b01100;
 wire L = o_op[6:2] == 5'b00000;

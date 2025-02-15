@@ -37,11 +37,9 @@ module ysyx_24110006_EXU(
   output [6:0] o_op,
   output [11:0] o_csr,
   output [`BRANCH_MID] o_branch_mid,
-`ifdef CONFIG_BTB
   input i_predict,
   output o_predict,
   output o_btb_update,
-`endif
   if_pipeline_vr.in i_vr,
   if_pipeline_vr.out o_vr,
   input i_stall,
@@ -90,11 +88,7 @@ always@(posedge i_clock)begin
   else if(flush_valid) flush_valid <= 0;
 end
 
-`ifdef CONFIG_BTB
-  assign o_flush = (JALR | csr_t[1] | JAL & ~predict) & flush_valid;
-`else
-  assign o_flush = (o_jump | o_fencei) & flush_valid ;
-`endif
+assign o_flush = (JALR | csr_t[1] | JAL & ~predict) & flush_valid;
 
 reg exception;
 always@(posedge i_clock)begin
@@ -170,7 +164,6 @@ always@(posedge i_clock)begin
   if(update_reg) alu_t <= i_alu_t;
 end
 
-`ifdef CONFIG_BTB
 reg predict;
 always@(posedge i_clock)begin
   if(update_reg)
@@ -178,7 +171,6 @@ always@(posedge i_clock)begin
 end
 assign o_predict = predict;
 assign o_btb_update = !predict && JAL && flush_valid;
-`endif
 
 wire I = op[6:2] == 5'b00100;
 wire R = op[6:2] == 5'b01100;

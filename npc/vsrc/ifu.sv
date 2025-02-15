@@ -11,12 +11,10 @@ module ysyx_24110006_IFU(
 
   output o_exception,
   output [3:0] o_mcause,
-`ifdef CONFIG_BTB
   input [31:0] i_pc,
   output o_predict,
   input i_predict_err,
   input i_btb_update,
-`endif
   input i_flush,
   if_pipeline_vr.out o_vr,
   if_axi_read.master o_axi
@@ -32,12 +30,10 @@ ysyx_24110006_ICACHE micache(
   .i_fencei(i_fencei),
   .o_exception(o_exception),
   .o_mcause(o_mcause),
-`ifdef CONFIG_BTB
   .i_pc(i_pc),
   .o_predict(o_predict),
   .i_predict_err(i_predict_err),
   .i_btb_update(i_btb_update),
-`endif
   .i_flush(i_flush),
   .o_vr(o_vr),
   .o_axi(o_axi)

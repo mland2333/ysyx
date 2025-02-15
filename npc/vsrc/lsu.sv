@@ -36,12 +36,10 @@ module ysyx_24110006_LSU(
   input [31:0] i_upc,
   output [31:0] o_upc,
   output o_branch,
-`ifdef CONFIG_BTB
   input i_predict,
   output o_predict,
   output o_predict_err,
   output o_btb_update,
-`endif
 `ifdef CONFIG_SIM
   input [6:0] i_op,
   output [6:0] o_op,
@@ -159,7 +157,6 @@ always@(posedge i_clock)begin
   if(update_reg)
     branch_mid <= i_branch_mid;
 end
-`ifdef CONFIG_BTB
 reg predict;
 always@(posedge i_clock)begin
   if(update_reg)
@@ -168,7 +165,6 @@ end
 assign o_predict = predict;
 assign o_predict_err = predict && !branch;
 assign o_btb_update = !predict && branch_mid[`BRANCH_BACK];
-`endif
 always@(posedge i_clock)begin
   if(update_reg)begin
     ren <= i_ren;
@@ -190,11 +186,7 @@ assign o_csr_t = csr_t;
 wire zero = branch_mid[`ZERO];
 wire cmp = branch_mid[`CMP];
 wire branch = branch_mid[`BEQ] & zero | branch_mid[`BNE] & ~zero | branch_mid[`BLT] & cmp | branch_mid[`BGE] & ~cmp;
-`ifdef CONFIG_BTB
-  assign o_branch = (predict ^ branch) & (branch_mid[`BRANCH]);
-`else
-  assign o_branch = branch;
-`endif
+assign o_branch = (predict ^ branch) & (branch_mid[`BRANCH]);
 reg [31:0] o_rdata;
 assign o_result = result_t ? o_rdata : result;
 
