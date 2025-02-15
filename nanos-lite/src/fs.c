@@ -1,4 +1,5 @@
 #include <fs.h>
+#include <stdio.h>
 #include <string.h>
 
 typedef size_t (*ReadFn) (void *buf, size_t offset, size_t len);
@@ -36,7 +37,7 @@ static Finfo file_table[] __attribute__((used)) = {
   [FD_STDERR] = {"stderr", 0, 0, invalid_read, serial_write},
   [FD_FB] = {"/dev/fb", 0, 0, invalid_read, fb_write},
 #include "files.h"
-  {"/dev/event", 0, 0, events_read, invalid_write},
+  {"/dev/events", 0, 0, events_read, invalid_write},
   {"/proc/dispinfo", 0, 0, dispinfo_read, invalid_write},
   
 };
@@ -57,7 +58,10 @@ int get_file_fd_by_name(const char* name){
 }
 int fs_open(const char *pathname, int flags, int mode){
   for (int i = 0; i < FILES_NUM; i++) {
-    if(strcmp(pathname, file_table[i].name) == 0) return i;
+    if(strcmp(pathname, file_table[i].name) == 0) {
+      /* printf("open %s %d\n", pathname, i); */
+      return i;
+    }
   }
   assert(0);
   return -1;
@@ -112,6 +116,8 @@ size_t fs_write(int fd, const void *buf, size_t len){
   return len;
 }
 int fs_close(int fd){
+    /* printf("close %s %d\n", file_table[fd].name, fd); */
+    file_table[fd].open_offset = 0;
     return 0;
 }
 

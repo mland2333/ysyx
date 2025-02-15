@@ -3,16 +3,60 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
   assert(dst && src);
   assert(dst->format->BitsPerPixel == src->format->BitsPerPixel);
+  /* printf("enter blit\n"); */
+  int bytes_per_pixel = src->format->BytesPerPixel;
+
+  // 确定源和目标的拷贝区域
+  int src_x = (srcrect) ? srcrect->x : 0;
+  int src_y = (srcrect) ? srcrect->y : 0;
+  int src_w = (srcrect) ? srcrect->w : src->w;
+  int src_h = (srcrect) ? srcrect->h : src->h;
+
+  int dst_x = (dstrect) ? dstrect->x : 0;
+  int dst_y = (dstrect) ? dstrect->y : 0;
+  uint8_t* srcpixel = src->pixels;
+  uint8_t* dstpixel = dst->pixels;
+  for (int i = 0; i < src_h; i++) {
+    uint8_t* src_pixel = src->pixels + (src_y + i) * src_w * bytes_per_pixel + src_x * bytes_per_pixel;
+    uint8_t* dst_pixel = dst->pixels + (src_y + i) * src_w * bytes_per_pixel + src_x * bytes_per_pixel;
+    printf("dst = %x, src = %x\n", &dst->pixels, &src->pixels);
+    memcpy(dst_pixel, src_pixel, src_w * bytes_per_pixel);
+  }
+  /* printf("quit blit\n"); */
 }
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
+  printf("enter fill\n");
+  int bytes_per_pixel = dst->format->BytesPerPixel;
+  int dst_x = (dstrect) ? dstrect->x : 0;
+  int dst_y = (dstrect) ? dstrect->y : 0;
+  int dst_w = (dstrect) ? dstrect->w : dst->w;
+  int dst_h = (dstrect) ? dstrect->h : dst->h;
+  uint32_t _color = color;
+  for (int i = 0; i < dst_h; i++){
+    for (int j = 0; j < dst_w; j++){
+      uint8_t *dst_pixel = dst->pixels + (dst_y + i) * dst_w * bytes_per_pixel + (dst_x + j) * bytes_per_pixel;
+      *(uint32_t*)dst_pixel = color;
+    }
+  }
+  printf("quit fill\n");
 }
 
 void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
+  if (w == 0) w = s->w;
+  if (h == 0) h = s->h;
+
+  if (x < 0) x = 0;
+  if (y < 0) y = 0;
+  if (x + w > s->w) w = s->w - x;
+  if (y + h > s->h) h = s->h - y;
+  NDL_DrawRect((uint32_t*)s->pixels, x, y, w, h);
 }
 
 // APIs below are already implemented.

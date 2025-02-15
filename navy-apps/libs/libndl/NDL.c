@@ -16,12 +16,22 @@ uint32_t NDL_GetTicks() {
 }
 
 int NDL_PollEvent(char *buf, int len) {
-  int fd = open("/dev/event", 0, 0);
+  int fd = open("/dev/events", O_RDONLY);
   int ret = read(fd, buf, len);
   close(fd);
-  if (ret != 0) return 1;
-  else return 0;
+  if(ret == 0) return 0;
+  /* printf("%s\n", buf); */
+  return 1;
 }
+
+int NDL_WaitEvent(char *buf, int len) {
+  int fd = open("/dev/events", O_RDONLY);
+  int ret;
+  while ((ret = read(fd, buf, len)) == 0);
+  close(fd);
+  return 1;
+}
+
 
 void NDL_OpenCanvas(int *w, int *h) {
   if (getenv("NWM_APP")) {
@@ -50,24 +60,20 @@ void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
   close(fd);  
   buffer[bytesRead] = '\0';
   int width = 0, height = 0;
-  char *line = strtok(buffer, "\n");  // 按行分割
-  while (line) {
-    if (strncmp(line, "WIDTH", 5) == 0) {
-      sscanf(line, "WIDTH : %d", &width);
-    } else if (strncmp(line, "HEIGHT", 6) == 0) {
-      sscanf(line, "HEIGHT: %d", &height);
-    }
-    line = strtok(NULL, "\n");  // 读取下一行
-  }
-  close(fd);
-  /* printf("WIDTH=%d, HEIGHT=%d\n", width, height); */
+  sscanf(buffer, "WIDTH: %d\nHEIGHT: %d\n", &width, &height);
+  /* printf("WIDTH=%d, w=%d, HEIGHT=%d, h=%d\n", width, w, height, h); */
   fd = open("/dev/fb", 0);
+  /* for (int i = 0; i<h; i++) */
+  /*   for (int j = 0; j<w; i++) */
+  /*     printf("%d ", i*w+j); */
+  /* printf("\n"); */
+  if (w==0) w = width;
+  if (h==0) h = height;
   for (int i = 0; i<h && i < height; i++){
-    lseek(fd, i*width*4, SEEK_SET);
+    lseek(fd, ((y+i)*width+x)*4, SEEK_SET);
     write(fd, (void*)(pixels + i*w), w*sizeof(int));
   }
   close(fd);
-  /* printf("WIDTH=%d, HEIGHT=%d\n", width, height); */
 }
 
 void NDL_OpenAudio(int freq, int channels, int samples) {
