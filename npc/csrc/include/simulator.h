@@ -18,13 +18,15 @@
 #include <args.h>
 #include <VysyxSoCFull_if_pipeline_vr.h>
 #ifdef CONFIG_YSYXSOC
-  #define TOP_PREFIX top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__
+  #define TOP_PREFIX top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__top__DOT__
+  #define INTERFACE_PREFIX top->rootp->__PVT__ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__top__DOT__
   #define PC_BEGIN 0xa0000000
 #else 
   #define TOP_PREFIX top->rootp->ysyx_24110006__DOT__
   #define PC_BEGIN 0x80000000
 #endif
 #define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
+#define INTERFACE(member) CONCAT(INTERFACE_PREFIX, member)
 #ifdef CONFIG_RISCV32E
   #define REG_NUMS 16
 #else
@@ -50,7 +52,7 @@ private:
       cpu.gpr[i] = TOP_MEMBER(mreg__DOT__rf[i]);
     }
     cpu.pc = TOP_MEMBER(sim_pc);
-    if (top->rootp->__PVT__ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__if_vr_id->valid)
+    if (INTERFACE(if_vr_id)->valid)
       /* cpu.inst = TOP_MEMBER(mifu__DOT__inst); */
       cpu.inst = get_inst();
   }
