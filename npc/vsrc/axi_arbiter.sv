@@ -29,7 +29,7 @@ always@(posedge i_clock)begin
         if(out.rlast && out.rvalid && out.rready) read_state <= IDLE_READ;
       end
       MEM1_READ:begin
-        if(out.rvalid && out.rready) read_state <= IDLE_READ;
+        if(out.rlast && out.rvalid && out.rready) read_state <= IDLE_READ;
       end
       default: begin
         read_state <= IDLE_READ;

@@ -40,6 +40,7 @@ module ysyx_24110006_LSU(
   output o_predict,
   output o_predict_err,
   output o_btb_update,
+  input i_fencei,
 `ifdef CONFIG_SIM
   input [6:0] i_op,
   output [6:0] o_op,
@@ -64,13 +65,35 @@ reg [4:0] reg_rd;
 reg result_t;
 reg reg_wen;
 reg [1:0] csr_t;
-wire mem_valid = ren&&rvalid&&rready || wen&&bvalid&&bready;
+/* wire mem_valid = ren&&rvalid&&rready || wen&&bvalid&&bready; */
 wire [31:0] i_addr = i_result;
 wire update_reg;
+logic cache_resq;
+logic cache_ready;
+logic [31:0] cache_rdata;
+logic cache_valid;
+ysyx_24110006_DCACHE mdcache(
+  .i_clock(i_clock),
+  .i_reset(i_reset),
+  .i_addr(addr),
+  .i_wdata(wdata),
+  .o_rdata(cache_rdata),
+  .i_wen(wen),
+  .i_wmask(wmask),
+  .i_fencei(i_fencei),
+  .i_valid(cache_resq),
+  .o_ready(cache_ready),
+  .o_valid(cache_valid),
+  .o_axi(o_axi)
+);
 
 always@(posedge i_clock)begin
+  if(i_vr.valid && (i_wen || i_ren) && cache_ready) cache_resq <= 1;
+  else if(cache_resq && cache_valid) cache_resq <= 0;
+end
+always@(posedge i_clock)begin
   if(i_reset) o_vr.valid <= 0;
-  else if(!(i_wen||i_ren)&&i_vr.valid &&i_vr.ready && !i_flush|| mem_valid) begin
+  else if(!(i_wen||i_ren)&&i_vr.valid &&i_vr.ready && !i_flush|| !i_vr.ready && cache_valid) begin
     o_vr.valid <= 1;
   end
   else if(o_vr.valid)begin
@@ -80,8 +103,8 @@ end
 always@(posedge i_clock)begin
   if(i_reset || i_flush) i_vr.ready <= 1;
   else if(i_vr.ready && !(i_wen||i_ren)) i_vr.ready <= 1;
-  else if(i_vr.ready && i_vr.valid && (i_wen || i_ren)) i_vr.ready <= 0;
-  else if(!i_vr.ready && mem_valid) i_vr.ready <= 1;
+  else if(i_vr.ready && i_vr.valid && (i_wen||i_ren)) i_vr.ready <= 0;
+  else if(!i_vr.ready && cache_valid) i_vr.ready <= 1;
 end
 
 assign update_reg = !i_reset && i_vr.valid && i_vr.ready && !i_flush;
@@ -107,7 +130,7 @@ wire [3:0] my_mcause = ({4{load_addr_misaligned}} & 4'd4) |
 
 always@(posedge i_clock)begin
   if(i_reset) rdata <= 0;
-  else if(rvalid&&rready) rdata <= rdata0;
+  else if(!i_vr.ready && cache_valid) rdata <= rdata0;
 end
 
 always@(posedge i_clock)begin
@@ -197,16 +220,16 @@ reg[3:0] wmask0;
 always@(*)begin
   case(addr[1:0])
     2'b00:begin
-      rdata0 = o_axi.rdata;
+      rdata0 = cache_rdata;
     end
     2'b01:begin
-      rdata0 = {8'b0, o_axi.rdata[31:8]};
+      rdata0 = {8'b0, cache_rdata[31:8]};
     end
     2'b10:begin
-      rdata0 = {16'b0, o_axi.rdata[31:16]};
+      rdata0 = {16'b0, cache_rdata[31:16]};
     end
     2'b11:begin
-      rdata0 = {24'b0, o_axi.rdata[31:24]};
+      rdata0 = {24'b0, cache_rdata[31:24]};
     end
   endcase
 end
@@ -250,88 +273,88 @@ always@(*)begin
   end
 end
 
-reg arvalid;
-wire arready;
-
-wire rvalid;
-reg rready;
-wire [1:0] rresp;
-
-reg awvalid;
-wire awready;
-
-reg wvalid;
-wire wready;
-
-wire [1:0] bresp;
-wire bvalid;
-reg bready;
-
-assign o_axi.araddr = addr;
-assign o_axi.arvalid = arvalid;
-assign arready = o_axi.arready;
-assign o_axi.arid = 0;
-assign o_axi.arlen = 0;
-assign o_axi.arsize = i_read_t[1] ? 3'b010 : i_read_t[0] ? 3'b001 : 3'b000;
-assign o_axi.arburst = 0;
-
-assign rvalid = o_axi.rvalid;
-assign rresp = o_axi.rresp;
-assign o_axi.rready = rready;
-
-assign o_axi.awaddr = addr;
-assign o_axi.awvalid = awvalid;
-assign awready = o_axi.awready;
-assign o_axi.awid = 0;
-assign o_axi.awlen = 0;
-assign o_axi.awsize = wmask == 4'b0011 ? 3'b001 : wmask == 4'b1111 ? 3'b010 : 3'b000;
-assign o_axi.awburst = 0;
-
-assign o_axi.wdata = wdata0;
-assign o_axi.wstrb = wmask0;
-assign o_axi.wvalid = wvalid;
-assign wready = o_axi.wready;
-assign o_axi.wlast = 1;
-
-assign bresp = o_axi.bresp;
-assign bvalid = o_axi.bvalid;
-assign o_axi.bready = bready;
-
-always@(posedge i_clock) begin
-  if(i_reset) arvalid <= 0;
-  else if(update_reg && !arvalid && i_ren) arvalid <= 1;
-  else if(arvalid && arready) arvalid <= 0;
-end
-
-always@(posedge i_clock)begin
+/* reg arvalid; */
+/* wire arready; */
+/**/
+/* wire rvalid; */
+/* reg rready; */
+/* wire [1:0] rresp; */
+/**/
+/* reg awvalid; */
+/* wire awready; */
+/**/
+/* reg wvalid; */
+/* wire wready; */
+/**/
+/* wire [1:0] bresp; */
+/* wire bvalid; */
+/* reg bready; */
+/**/
+/* assign o_axi.araddr = addr; */
+/* assign o_axi.arvalid = arvalid; */
+/* assign arready = o_axi.arready; */
+/* assign o_axi.arid = 0; */
+/* assign o_axi.arlen = 0; */
+/* assign o_axi.arsize = i_read_t[1] ? 3'b010 : i_read_t[0] ? 3'b001 : 3'b000; */
+/* assign o_axi.arburst = 0; */
+/**/
+/* assign rvalid = o_axi.rvalid; */
+/* assign rresp = o_axi.rresp; */
+/* assign o_axi.rready = rready; */
+/**/
+/* assign o_axi.awaddr = addr; */
+/* assign o_axi.awvalid = awvalid; */
+/* assign awready = o_axi.awready; */
+/* assign o_axi.awid = 0; */
+/* assign o_axi.awlen = 0; */
+/* assign o_axi.awsize = wmask == 4'b0011 ? 3'b001 : wmask == 4'b1111 ? 3'b010 : 3'b000; */
+/* assign o_axi.awburst = 0; */
+/**/
+/* assign o_axi.wdata = wdata0; */
+/* assign o_axi.wstrb = wmask0; */
+/* assign o_axi.wvalid = wvalid; */
+/* assign wready = o_axi.wready; */
+/* assign o_axi.wlast = 1; */
+/**/
+/* assign bresp = o_axi.bresp; */
+/* assign bvalid = o_axi.bvalid; */
+/* assign o_axi.bready = bready; */
+/**/
+/* always@(posedge i_clock) begin */
+/*   if(i_reset) arvalid <= 0; */
+/*   else if(update_reg && !arvalid && i_ren) arvalid <= 1; */
+/*   else if(arvalid && arready) arvalid <= 0; */
+/* end */
+/**/
+/* always@(posedge i_clock)begin */
   /* if(i_reset) rready <= 0; */
   /* else if(rvalid && !rready && count == 0) */
   /*   rready <= 1; */
   /* else if(rvalid && rready) */
   /*   rready <= 0; */
-  rready <= 1;
-end
-
-always@(posedge i_clock) begin
-  if(i_reset) awvalid <= 0;
-  else if(update_reg && !awvalid && i_wen) awvalid <= 1;
-  else if(awvalid && awready && wvalid && wready) awvalid <= 0;
-end
-
-always@(posedge i_clock) begin
-  if(i_reset) wvalid <= 0;
-  else if(update_reg && !wvalid && i_wen) wvalid <= 1;
-  else if(awvalid && awready && wvalid && wready) wvalid <= 0;
-end
-
-always@(posedge i_clock)begin
+/*   rready <= 1; */
+/* end */
+/**/
+/* always@(posedge i_clock) begin */
+/*   if(i_reset) awvalid <= 0; */
+/*   else if(update_reg && !awvalid && i_wen) awvalid <= 1; */
+/*   else if(awvalid && awready && wvalid && wready) awvalid <= 0; */
+/* end */
+/**/
+/* always@(posedge i_clock) begin */
+/*   if(i_reset) wvalid <= 0; */
+/*   else if(update_reg && !wvalid && i_wen) wvalid <= 1; */
+/*   else if(awvalid && awready && wvalid && wready) wvalid <= 0; */
+/* end */
+/**/
+/* always@(posedge i_clock)begin */
   /* if(i_reset) bready <= 0; */
   /* else if(bvalid && !bready && count == 0) */
   /*   bready <= 1; */
   /* else if(bvalid && bready) */
   /*   bready <= 0; */
-  bready <= 1;
-end
+/*   bready <= 1; */
+/* end */
 
 
 endmodule
