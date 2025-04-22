@@ -225,18 +225,18 @@ assign in_bid = out_bid;
 assign in_bresp = out_bresp;
 assign in_awready = out_awready;
 assign in_wready = out_wready;
-
-wire bvalid_valid;
-delayer m_bvalid(
-  .clock(clock),
-  .reset(reset),
-  .c_en(in_awvalid),
-  .d_en(out_bvalid),
-  .fin(in_bvalid && in_bready),
-  .in_data(out_bvalid),
-  .valid(in_bvalid),
-  .out_data(bvalid_valid)
-);
+assign in_bvalid = out_bvalid;
+/* wire bvalid_valid; */
+/* delayer m_bvalid( */
+/*   .clock(clock), */
+/*   .reset(reset), */
+/*   .c_en(in_awvalid), */
+/*   .d_en(out_bvalid), */
+/*   .fin(in_bvalid && in_bready), */
+/*   .in_data(out_bvalid), */
+/*   .valid(in_bvalid), */
+/*   .out_data(bvalid_valid) */
+/* ); */
 
   /* assign in_arready = state == DELAY && read_counter[delay_index] == 0out_arready; */
   /* assign out_arvalid = in_arvalid; */

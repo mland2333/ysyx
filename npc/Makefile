@@ -20,7 +20,7 @@ NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 INC_PATH += $(NPC_HOME)/vsrc
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-threads 2 
+				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-structs
 VERILATOR_CFLAGS += -DCONFIG_SIM
 LIBS += -lcapstone
 ARGS ?=
@@ -70,9 +70,9 @@ LDFLAGS += $(LIBS) -lSDL2
 CXXFLAGS += -flto
 LDFLAGS += -flto
 
-# OBJCACHE = ccache
-# CC = ccache gcc
-# CXX = ccache g++
+OBJCACHE = ccache
+CC = ccache gcc
+CXX = ccache g++
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	@rm -rf $(OBJ_DIR)
