@@ -23,8 +23,8 @@ module ysyx_24110006_LSU(
   input [3:0] i_mcause,
   output [3:0] o_mcause,
   input i_flush,
-  input i_pc,
-  output o_pc,
+  input [31:0] i_pc,
+  output [31:0] o_pc,
 `ifdef CONFIG_SIM
   input [6:0] i_op,
   output [6:0] o_op,

@@ -52,7 +52,7 @@ private:
       cpu.gpr[i] = TOP_MEMBER(mreg__DOT__rf[i]);
     }
     cpu.pc = TOP_MEMBER(sim_pc);
-    if (INTERFACE(if_vr_id)->valid)
+    if (INTERFACE(ifu_vr_idu)->valid)
       /* cpu.inst = TOP_MEMBER(mifu__DOT__inst); */
       cpu.inst = get_inst();
   }

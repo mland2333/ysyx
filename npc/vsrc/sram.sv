@@ -3,60 +3,42 @@ import "DPI-C" function int pmem_read(input int raddr);
 import "DPI-C" function void pmem_write(
   input int waddr, input int wdata, input byte wmask);
 
-module ysyx_24110006_SRAM(
+module ysyx_24110006_SRAM #(
+  parameter FIFO_DEPTH = 8
+)
+(
   input i_clock,
   input i_reset,
-
-  /* input [31:0] i_axi_araddr, */
-  /* input i_axi_arvalid, */
-  /* output o_axi_arready, */
-  /**/
+  if_axi.slave i_axi
+  /* output        o_axi_awready, */
+  /* input         i_axi_awvalid, */
+  /* input  [31:0] i_axi_awaddr, */
+  /* input  [3:0]  i_axi_awid, */
+  /* input  [7:0]  i_axi_awlen, */
+  /* input  [2:0]  i_axi_awsize, */
+  /* input  [1:0]  i_axi_awburst, */
+  /* output        o_axi_wready, */
+  /* input         i_axi_wvalid, */
+  /* input  [31:0] i_axi_wdata, */
+  /* input  [3:0]  i_axi_wstrb, */
+  /* input         i_axi_wlast, */
+  /* input         i_axi_bready, */
+  /* output        o_axi_bvalid, */
+  /* output [1:0]  o_axi_bresp, */
+  /* output [3:0]  o_axi_bid, */
+  /* output        o_axi_arready, */
+  /* input         i_axi_arvalid, */
+  /* input  [31:0] i_axi_araddr, */
+  /* input  [3:0]  i_axi_arid, */
+  /* input  [7:0]  i_axi_arlen, */
+  /* input  [2:0]  i_axi_arsize, */
+  /* input  [1:0]  i_axi_arburst, */
+  /* input         i_axi_rready, */
+  /* output        o_axi_rvalid, */
+  /* output [1:0]  o_axi_rresp, */
   /* output [31:0] o_axi_rdata, */
-  /* output o_axi_rvalid, */
-  /* output [1:0] o_axi_rresp, */
-  /* input i_axi_rready, */
-  /**/
-  /* input [31:0] i_axi_awaddr, */
-  /* input i_axi_awvalid, */
-  /* output o_axi_awready, */
-  /**/
-  /* input [31:0] i_axi_wdata, */
-  /* input [7:0] i_axi_wstrb, */
-  /* input i_axi_wvalid, */
-  /* output o_axi_wready, */
-  /**/
-  /* output [1:0] o_axi_bresp, */
-  /* output o_axi_bvalid, */
-  /* input i_axi_bready */
-  output        o_axi_awready,
-  input         i_axi_awvalid,
-  input  [31:0] i_axi_awaddr,
-  input  [3:0]  i_axi_awid,
-  input  [7:0]  i_axi_awlen,
-  input  [2:0]  i_axi_awsize,
-  input  [1:0]  i_axi_awburst,
-  output        o_axi_wready,
-  input         i_axi_wvalid,
-  input  [31:0] i_axi_wdata,
-  input  [3:0]  i_axi_wstrb,
-  input         i_axi_wlast,
-  input         i_axi_bready,
-  output        o_axi_bvalid,
-  output [1:0]  o_axi_bresp,
-  output [3:0]  o_axi_bid,
-  output        o_axi_arready,
-  input         i_axi_arvalid,
-  input  [31:0] i_axi_araddr,
-  input  [3:0]  i_axi_arid,
-  input  [7:0]  i_axi_arlen,
-  input  [2:0]  i_axi_arsize,
-  input  [1:0]  i_axi_arburst,
-  input         i_axi_rready,
-  output        o_axi_rvalid,
-  output [1:0]  o_axi_rresp,
-  output [31:0] o_axi_rdata,
-  output        o_axi_rlast,
-  output [3:0]  o_axi_rid
+  /* output        o_axi_rlast, */
+  /* output [3:0]  o_axi_rid */
 );
 /* localparam COUNT = 8'h05; */
 
@@ -99,19 +81,68 @@ reg [3:0] wstrb;
 reg bvalid;
 reg [1:0] bresp;
 
-wire arvalid = i_axi_arvalid;
-assign o_axi_arready = arready;
-assign o_axi_rdata = rdata;
-assign o_axi_rvalid = rvalid;
-assign o_axi_rresp = rresp;
-wire rready = i_axi_rready;
-wire awvalid = i_axi_awvalid;
-assign o_axi_awready = awready;
-wire wvalid = i_axi_wvalid;
-assign o_axi_wready = wready;
-assign o_axi_bresp = bresp;
-assign o_axi_bvalid = bvalid;
-wire bready = i_axi_bready;
+wire arvalid = i_axi.arvalid;
+assign i_axi.arready = arready;
+assign i_axi.rdata = rdata;
+assign i_axi.rvalid = rvalid;
+assign i_axi.rresp = rresp;
+wire rready = i_axi.rready;
+wire awvalid = i_axi.awvalid;
+assign i_axi.awready = awready;
+wire wvalid = i_axi.wvalid;
+assign i_axi.wready = wready;
+assign i_axi.bresp = bresp;
+assign i_axi.bvalid = bvalid;
+wire bready = i_axi.bready;
+
+logic [2:0] arsize;
+logic [7:0] arlen;
+logic [1:0] arburst;
+logic [7:0] rtrans_nums;
+logic rlast;
+always_ff@(posedge i_clock)begin
+  if(arvalid && arready) begin
+    arsize <= i_axi.arsize;
+    arlen <= i_axi.arlen;
+    arburst <= i_axi.arburst;
+  end
+end
+always@(posedge i_clock)begin
+  if(i_reset || rtrans_nums == arlen) rtrans_nums <= 0;
+  else if(rvalid && rready) rtrans_nums <= rtrans_nums + 1;
+end
+
+always_ff@(posedge i_clock)begin
+  if(i_reset) rvalid <= 0;
+  else begin
+    if(!rvalid && in_trans) rvalid <= 1;
+    else if(rvalid && rready) rvalid <= 0;
+  end
+end
+
+always_ff@(posedge i_clock)begin
+  if(i_reset) rlast <= 0;
+  else if(in_trans && rtrans_nums == arlen) rlast <= 1;
+  else if(rlast && rvalid && rready) rlast <= 0;
+end
+/* typedef struct { */
+/*   logic [2:0] arsize; */
+/*   logic [7:0] arlen; */
+/*   logic [1:0] arburst; */
+/*   logic [31:0] araddr; */
+/* } read_task_t; */
+/* localparam FIFO_INDEX_WIDTH = $clog2(FIFO_DEPTH); */
+/* read_task_t rfifo [8]; */
+/**/
+/* logic [FIFO_INDEX_WIDTH-1:0] rfifo_rptr, rfifo_wptr; */
+/* logic is_empty; */
+/* always_ff@(posedge i_clock)begin */
+/*   if(i_reset) begin */
+/*     rfifo_rptr <= 0; */
+/*     rfifo_wptr <= 0; */
+/*     is_empty <= 1; */
+/*   end */
+/* end */
 
 //arready
 always@(posedge i_clock)begin

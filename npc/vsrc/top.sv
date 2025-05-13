@@ -88,7 +88,7 @@ module ysyx_24110006_top (
   assign branch = bru_vr_wbu.valid & bru_branch;
   assign csr_flush = bru_vr_wbu.valid & bru_csr_t[0];
   assign flush = exu_flush | exception | branch | csr_flush;
-  assign upc = exception ? csr_upc : (branch | branch_btb_update) ? bru_upc : exu_upc;
+  assign upc = exception ? csr_upc : (branch | branch_btb_update | csr_flush) ? bru_upc : exu_upc;
   assign jal_btb_update = exu_btb_update;
   assign branch_btb_update = bru_btb_update & bru_vr_wbu.valid & branch;
   assign btb_update = jal_btb_update | branch_btb_update;
@@ -113,7 +113,7 @@ module ysyx_24110006_top (
   wire [31:0] exu_result, bru_result, lsu_result, wbu_result;
   wire idu_reg_wen, exu_reg_wen, lsu_reg_wen, bru_reg_wen, wbu_reg_wen;
 
-  wire [31:0] pc, ifu_pc, idu_pc, exu_pc, bru_pc;
+  wire [31:0] pc, ifu_pc, idu_pc, exu_pc, bru_pc, lsu_pc, wbu_pc;
   wire [31:0] exu_upc, bru_upc, csr_upc;
 
   wire [31:0] ifu_inst;
@@ -153,9 +153,11 @@ module ysyx_24110006_top (
   wire jump = bru_jump | bru_exception | mret;
   assign csr_wdata = bru_result;
   wire lsu_wen, lsu_ren;
+
+`ifdef CONFIG_SIM
   reg [31:0] sim_pc;
   wire sim_branch;
-`ifdef CONFIG_SIM
+  wire wbu_op  /*verilator public_flat*/;
   wire is_diff_skip;
   wire [31:0] lsu_addr;
 `ifndef CONFIG_YSYXSOC
@@ -168,8 +170,7 @@ module ysyx_24110006_top (
   always @(posedge clock) begin
     if (reset) sim_pc <= 0;
     else begin
-      if (wbu_valid)
-        sim_pc <= (bru_jump | sim_branch) ? bru_upc : wbu_exception ? upc : bru_pc + 4;
+      if (wbu_valid) sim_pc <= (bru_jump | sim_branch) ? bru_upc : wbu_exception ? upc : wbu_pc + 4;
     end
   end
 
@@ -312,7 +313,7 @@ module ysyx_24110006_top (
       .i_csr_r(idu_csr),
       .i_mret(idu_mret),
       .i_csr_w(bru_csr),
-      .i_pc(bru_pc),
+      .i_pc(wbu_pc),
       .i_exception(exception),
       .i_mcause(wbu_mcause),
       .i_wdata(wbu_result),
@@ -328,7 +329,7 @@ module ysyx_24110006_top (
       .i_rs2(idu_rs2),
       .i_reg_src1(reg_src1),
       .i_reg_src2(reg_src2),
-      .i_lsu_data(lsu_result),
+      .i_lsu_data(wbu_result),
       .i_exu_data(exu_result),
       .i_exu_load(exu_mem_ren),
       .i_lsu_load(lsu_ren),
@@ -453,7 +454,7 @@ module ysyx_24110006_top (
 `endif
       .i_vr(alloc_vr_bru),
       .o_vr(bru_vr_wbu),
-      .i_flush(exception | branch)
+      .i_flush(exception | branch | csr_flush)
   );
   ysyx_24110006_LSU mlsu (
       .i_clock(clock),
@@ -485,7 +486,7 @@ module ysyx_24110006_top (
 `endif
       .i_vr(alloc_vr_lsu),
       .o_vr(lsu_vr_wbu),
-      .i_flush(exception | branch),
+      .i_flush(exception | branch | csr_flush),
 
       .o_axi(lsu_axi.master)
   );
@@ -513,7 +514,11 @@ module ysyx_24110006_top (
       .i_bru_exception(bru_exception),
       .i_lsu_exception(lsu_exception),
       .o_exception(wbu_exception),
-
+`ifdef CONFIG_SIM
+      .i_bru_op(bru_op),
+      .i_lsu_op(lsu_op),
+      .o_op(wbu_op),
+`endif
       .i_vr_bru(bru_vr_wbu),
       .i_vr_lsu(lsu_vr_wbu),
       .o_valid(wbu_valid)

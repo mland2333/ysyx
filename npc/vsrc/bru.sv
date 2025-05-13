@@ -87,14 +87,14 @@ module ysyx_24110006_BRU (
     if (update_reg) op <= i_op;
   end
   assign o_op = op;
-  assign o_sim_branch = branch;
+  assign o_sim_branch = branch & o_vr.valid;
 `endif
 
   reg jump;
   always @(posedge i_clock) begin
     if (update_reg) jump <= i_jump;
   end
-  assign o_jump = jump;
+  assign o_jump = jump && o_vr.valid;
   reg [31:0] pc;
   always @(posedge i_clock) begin
     if (update_reg) pc <= i_pc;
@@ -127,7 +127,7 @@ module ysyx_24110006_BRU (
   end
   assign o_reg_wen = reg_wen;
   assign o_reg_rd  = reg_rd;
-  assign o_csr_t   = csr_t;
+  assign o_csr_t   = o_vr.valid ? csr_t : 0;
   wire zero = branch_mid[`ZERO];
   wire cmp = branch_mid[`CMP];
   wire branch = branch_mid[`BEQ] & zero | branch_mid[`BNE] & ~zero | branch_mid[`BLT] & cmp | branch_mid[`BGE] & ~cmp;
