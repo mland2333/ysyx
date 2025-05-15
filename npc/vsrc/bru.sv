@@ -115,8 +115,8 @@ module ysyx_24110006_BRU (
     if (update_reg) predict <= i_predict;
   end
   assign o_predict = predict;
-  assign o_predict_err = predict && !branch;
-  assign o_btb_update = !predict && branch_mid[`BRANCH_BACK];
+  assign o_predict_err = predict && !branch && branch_mid[`BRANCH];
+  assign o_btb_update = !predict && branch_mid[`BRANCH_BACK] && branch_mid[`BRANCH];
   always @(posedge i_clock) begin
     if (update_reg) begin
       reg_rd  <= i_reg_rd;
