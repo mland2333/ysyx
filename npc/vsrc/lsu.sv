@@ -12,40 +12,24 @@ module ysyx_24110006_LSU(
   input[3:0] i_wmask,
   input[2:0] i_read_t,
   input [4:0] i_reg_rd,
-  input [1:0] i_csr_t,
-  input i_result_t,
   input i_reg_wen,
-  input [31:0] i_result,
-  output [1:0] o_csr_t,
+  input [31:0] i_addr,
   output o_reg_wen,
-  output [31:0] o_result,
+  output logic [31:0] o_result,
   output [4:0] o_reg_rd,
-  input i_jump,
-  output o_jump,
-  input [31:0] i_pc,
-  output [31:0] o_pc,
   output o_ren,
-  input [`BRANCH_MID] i_branch_mid,
-  input [11:0] i_csr,
-  output [11:0] o_csr,
   input i_exception,
   output o_exception,
   input [3:0] i_mcause,
   output [3:0] o_mcause,
   input i_flush,
-  input [31:0] i_upc,
-  output [31:0] o_upc,
-  output o_branch,
-  input i_predict,
-  output o_predict,
-  output o_predict_err,
-  output o_btb_update,
+  input [31:0] i_pc,
+  output [31:0] o_pc,
 `ifdef CONFIG_SIM
   input [6:0] i_op,
   output [6:0] o_op,
   output o_wen,
   output [31:0] o_addr,
-  output o_sim_branch,
 `endif
   if_pipeline_vr.in i_vr,
   if_pipeline_vr.out o_vr,
@@ -58,19 +42,16 @@ reg [31:0] addr;
 reg [31:0] wdata;
 reg [3:0] wmask;
 reg [2:0] read_t;
-reg [31:0] result;
 /* reg [3:0] alu_t; */
 reg [4:0] reg_rd;
-reg result_t;
 reg reg_wen;
 reg [1:0] csr_t;
 wire mem_valid = ren&&rvalid&&rready || wen&&bvalid&&bready;
-wire [31:0] i_addr = i_result;
 wire update_reg;
 
 always@(posedge i_clock)begin
   if(i_reset) o_vr.valid <= 0;
-  else if(!(i_wen||i_ren)&&i_vr.valid &&i_vr.ready && !i_flush|| mem_valid) begin
+  else if(mem_valid) begin
     o_vr.valid <= 1;
   end
   else if(o_vr.valid)begin
@@ -79,11 +60,9 @@ always@(posedge i_clock)begin
 end
 always@(posedge i_clock)begin
   if(i_reset || i_flush) i_vr.ready <= 1;
-  else if(i_vr.ready && !(i_wen||i_ren)) i_vr.ready <= 1;
-  else if(i_vr.ready && i_vr.valid && (i_wen || i_ren)) i_vr.ready <= 0;
+  else if(i_vr.ready && i_vr.valid && !i_flush) i_vr.ready <= 0;
   else if(!i_vr.ready && mem_valid) i_vr.ready <= 1;
 end
-
 assign update_reg = !i_reset && i_vr.valid && i_vr.ready && !i_flush;
 reg exception;
 always@(posedge i_clock)begin
@@ -115,11 +94,11 @@ always@(posedge i_clock)begin
 end
 assign o_ren = ren;
 
-reg [31:0] upc;
+reg [31:0] pc;
 always@(posedge i_clock)begin
-  if(update_reg) upc <= i_upc;
+  if(update_reg) pc <= i_pc;
 end
-assign o_upc = upc;
+assign o_pc = pc;
 `ifdef CONFIG_SIM
 
 reg [6:0] op;
@@ -132,39 +111,8 @@ always@(posedge i_clock)begin
 end
 assign o_wen = wen;
 assign o_addr = addr;
-assign o_sim_branch = branch;
 `endif
 
-reg jump;
-always@(posedge i_clock)begin
-  if(update_reg) jump <= i_jump;
-end
-assign o_jump = jump;
-reg [31:0] pc;
-always@(posedge i_clock)begin
-  if(update_reg) pc <= i_pc;
-end
-assign o_pc = pc;
-
-reg [11:0] csr;
-always@(posedge i_clock)begin
-  if(update_reg)
-    csr <= i_csr;
-end
-assign o_csr = csr;
-reg [`BRANCH_MID] branch_mid;
-always@(posedge i_clock)begin
-  if(update_reg)
-    branch_mid <= i_branch_mid;
-end
-reg predict;
-always@(posedge i_clock)begin
-  if(update_reg)
-    predict <= i_predict;
-end
-assign o_predict = predict;
-assign o_predict_err = predict && !branch;
-assign o_btb_update = !predict && branch_mid[`BRANCH_BACK];
 always@(posedge i_clock)begin
   if(update_reg)begin
     ren <= i_ren;
@@ -174,21 +122,12 @@ always@(posedge i_clock)begin
     wmask <= i_wmask;
     read_t <= i_read_t;
     reg_rd <= i_reg_rd;
-    result <= i_result;
-    result_t <= i_result_t;
     reg_wen <= i_reg_wen;
-    csr_t <= i_csr_t;
   end
 end
+
 assign o_reg_wen = reg_wen;
 assign o_reg_rd = reg_rd;
-assign o_csr_t = csr_t;
-wire zero = branch_mid[`ZERO];
-wire cmp = branch_mid[`CMP];
-wire branch = branch_mid[`BEQ] & zero | branch_mid[`BNE] & ~zero | branch_mid[`BLT] & cmp | branch_mid[`BGE] & ~cmp;
-assign o_branch = (predict ^ branch) & (branch_mid[`BRANCH]);
-reg [31:0] o_rdata;
-assign o_result = result_t ? o_rdata : result;
 
 reg[31:0] rdata, rdata0;
 reg[31:0] wdata0;
@@ -213,12 +152,12 @@ end
 
 always @(*) begin
   case (read_t)
-    3'b000:  o_rdata = {{24{rdata[7]}}, rdata[7:0]};
-    3'b001:  o_rdata = {{16{rdata[15]}}, rdata[15:0]};
-    3'b010:  o_rdata = rdata;
-    3'b100:  o_rdata = {24'b0, rdata[7:0]};
-    3'b101:  o_rdata = {16'b0, rdata[15:0]};
-    default: o_rdata = rdata;
+    3'b000:  o_result = {{24{rdata[7]}}, rdata[7:0]};
+    3'b001:  o_result = {{16{rdata[15]}}, rdata[15:0]};
+    3'b010:  o_result = rdata;
+    3'b100:  o_result = {24'b0, rdata[7:0]};
+    3'b101:  o_result = {16'b0, rdata[15:0]};
+    default: o_result = rdata;
   endcase
 end
 

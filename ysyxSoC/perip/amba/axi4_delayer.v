@@ -138,25 +138,105 @@ assign out_arburst = in_arburst;
 assign out_rready = in_rready; 
 assign in_rid = out_rid; 
 assign in_rresp = out_rresp;
+/**/
+/* localparam NUMS = 4; */
+/* wire [NUMS-1:0] valid; */
+/* reg [NUMS-1:0] tasks; */
+/* reg [$clog2(NUMS)-1:0] task_index; */
+/* reg [$clog2(NUMS)-1:0] delay_index; */
+/* wire [31:0] rdata_buffer[NUMS]; */
+/* reg [31:0] rdata; */
+/* reg rvalid; */
+/* always@(posedge clock)begin */
+/*   if(reset) begin */
+/*     task_index <= 0; */
+/*     delay_index <= 0; */
+/*   end */
+/*   else begin */
+/*     if(out_rvalid) task_index <= task_index + 1; */
+/*     if(in_rvalid && in_rready) delay_index <= delay_index + 1; */
+/*   end */
+/* end */
+/**/
+/* always@(posedge clock)begin */
+/*   if(reset) tasks <= 0; */
+/*   else begin */
+/*     if(out_rvalid) tasks[task_index] <= 1; */
+/*     if(in_rvalid && in_rready) tasks[delay_index] <= 0; */
+/*   end */
+/* end */
+/**/
+/* genvar i; */
+/* generate */
+/*   for(i=0; i<NUMS; i=i+1)begin : m_counter */
+/*     delayer */
+/*     #( .WIDTH(32) ) */
+/*     m_delayer( */
+/*       .clock(clock), */
+/*       .reset(reset || in_rlast && in_rvalid && in_rready), */
+/*       .c_en(in_arvalid), */
+/*       .d_en(out_rvalid && task_index == i), */
+/*       .fin(in_rvalid && in_rready), */
+/*       .in_data(out_rdata), */
+/*       .valid(valid[i]), */
+/*       .out_data(rdata_buffer[i]) */
+/*     ); */
+/*   end */
+/* endgenerate */
+/**/
+/* reg [31:0] r_rdata; */
+/* reg r_valid; */
+/* always@(*)begin */
+/*   integer i; */
+/*   r_rdata = 0; */
+/*   r_valid = 0; */
+/*   for(i=0; i<NUMS; i=i+1)begin */
+/*     r_rdata = r_rdata | ({32{valid[i]}} & rdata_buffer[i]); */
+/*     r_valid = r_valid | valid[i]; */
+/*   end */
+/* end */
+/* assign in_rdata = r_rdata; */
+/* assign in_rvalid = r_valid; */
+/**/
+/* wire rlast_valid; */
+/* delayer m_rlast( */
+/*   .clock(clock), */
+/*   .reset(reset), */
+/*   .c_en(in_arvalid), */
+/*   .d_en(out_rlast && out_rvalid), */
+/*   .fin(in_rvalid && in_rready), */
+/*   .in_data(out_rlast), */
+/*   .valid(in_rlast), */
+/*   .out_data(rlast_valid) */
+/* ); */
 
-localparam NUMS = 4;
-wire [NUMS-1:0] valid;
-reg [NUMS-1:0] tasks;
-reg [$clog2(NUMS)-1:0] task_index;
-reg [$clog2(NUMS)-1:0] delay_index;
-wire [31:0] rdata_buffer[NUMS];
-reg [31:0] rdata;
-reg rvalid;
-always@(posedge clock)begin
-  if(reset) begin
-    task_index <= 0;
-    delay_index <= 0;
-  end
-  else begin
-    if(out_rvalid) task_index <= task_index + 1;
-    if(in_rvalid && in_rready) delay_index <= delay_index + 1;
-  end
-end
+/* assign out_awvalid = in_awvalid; */
+/* assign out_awid = in_awid; */
+/* assign out_awaddr = in_awaddr; */
+/* assign out_awlen = in_awlen; */
+/* assign out_awsize = in_awsize; */
+/* assign out_awburst = in_awburst; */
+/* assign out_wvalid = in_wvalid; */
+/* assign out_wdata = in_wdata; */
+/* assign out_wstrb = in_wstrb; */
+/* assign out_wlast = in_wlast; */
+/* assign out_bready = in_bready; */
+/* assign in_bid = out_bid; */
+/* assign in_bresp = out_bresp; */
+/* assign in_awready = out_awready; */
+/* assign in_wready = out_wready; */
+/**/
+/* wire bvalid_valid; */
+/* delayer m_bvalid( */
+/*   .clock(clock), */
+/*   .reset(reset), */
+/*   .c_en(in_awvalid), */
+/*   .d_en(out_bvalid), */
+/*   .fin(in_bvalid && in_bready), */
+/*   .in_data(out_bvalid), */
+/*   .valid(in_bvalid), */
+/*   .out_data(bvalid_valid) */
+/* ); */
 
 always@(posedge clock)begin
   if(reset) tasks <= 0;
@@ -238,7 +318,7 @@ assign in_bvalid = out_bvalid;
 /*   .out_data(bvalid_valid) */
 /* ); */
 
-  /* assign in_arready = state == DELAY && read_counter[delay_index] == 0out_arready; */
+  /* assign in_arready = out_arready; */
   /* assign out_arvalid = in_arvalid; */
   /* assign out_arid = in_arid; */
   /* assign out_araddr = in_araddr; */
