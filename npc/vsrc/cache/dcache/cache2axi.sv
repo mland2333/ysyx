@@ -2,60 +2,54 @@ module ysyx_24110006_CACHE2AXI(
   input i_clock,
   input i_reset,
   //cache <--> axi
-  input i_rq_mem,
-  input i_wen_mem,
-  output logic o_rq_ack,
-  input [31:0] i_addr,
-  output logic [31:0] o_rdata_mem,
-  output logic o_rdata_valid,
-  input i_rdata_ready,
-  output logic o_fin_r,
-  input [31:0] i_wdata_mem,
-  input i_wdata_valid,
-  output logic o_wdata_ready,
-  output logic o_fin_w,
-  input i_wlast,
+  if_dcache_axi.slave i_dcache,
   //axi <--> mem
   if_axi.master o_axi
 );
-assign o_rdata_mem = o_axi.rdata;
-assign o_rdata_valid = o_axi.rvalid;
-assign o_fin_r = o_axi.rlast;
-assign o_fin_w = o_axi.bvalid;
+
+assign i_dcache.rdata_mem = o_axi.rdata;
+assign i_dcache.rdata_valid = o_axi.rvalid;
+assign i_dcache.fin_r = o_axi.rlast;
+assign i_dcache.fin_w = o_axi.bvalid;
+
 always_ff@(posedge i_clock)begin
   if(i_reset) arvalid <= 0;
-  else if(i_rq_mem && !i_wen_mem) arvalid <= 1;
+  else if(i_dcache.rq_mem && !i_dcache.wen_mem) arvalid <= 1;
   else if(arvalid && arready) arvalid <= 0;
 end
+
 always_ff@(posedge i_clock)begin
   if(i_reset) awvalid <= 0;
-  else if(i_rq_mem && i_wen_mem) awvalid <= 1;
+  else if(i_dcache.rq_mem && i_dcache.wen_mem) awvalid <= 1;
   else if(awvalid && awready) awvalid <= 0;
 end
+
 always_ff@(posedge i_clock)begin
   if(i_reset) wvalid <= 0;
-  else if(i_rq_mem && i_wen_mem) wvalid <= 1;
+  else if(i_dcache.rq_mem && i_dcache.wen_mem) wvalid <= 1;
   else if(wvalid && wready) wvalid <= 0;
 end
 
 always_ff@(posedge i_clock)begin
-  if(i_reset) o_rq_ack <= 0;
-  else if(arvalid && arready || awvalid && awready) o_rq_ack <= 1;
-  else if(o_rq_ack) o_rq_ack <= 0;
+  if(i_reset) i_dcache.rq_ack <= 0;
+  else if(arvalid && arready || awvalid && awready) i_dcache.rq_ack <= 1;
+  else if(i_dcache.rq_ack) i_dcache.rq_ack <= 0;
 end
 
 logic arvalid, arready, rvalid, rready, rlast;
 logic awvalid, wvalid, awready, wready, wlast, bvalid, bready;
 logic [1:0] rresp, bresp;
 logic [3:0] wstrb;
-logic [31:0] awaddr, araddr;
+logic [31:0] awaddr, araddr, axi_wdata;
+
 assign rready = 1;
 assign bready = 1;
-assign axi_wdata = i_wdata_mem;
-assign wlast = i_wlast;
+assign axi_wdata = i_dcache.wdata_mem;
+assign wlast = i_dcache.wlast;
 assign wstrb = 4'b1111;
-assign awaddr = i_addr;
-assign araddr = i_addr;
+assign awaddr = i_dcache.addr;
+assign araddr = i_dcache.addr;
+assign i_dcache.wdata_ready = wready;
 
 assign o_axi.araddr = araddr;
 assign o_axi.arvalid = arvalid;

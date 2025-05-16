@@ -19,8 +19,9 @@ endif
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 INC_PATH += $(NPC_HOME)/vsrc
+INC_PATH += $(NPC_HOME)/vsrc/config
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-structs
+				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-structs -DDUMP_INTERFACE_HIERARCHY
 VERILATOR_CFLAGS += -DCONFIG_SIM
 LIBS += -lcapstone
 ARGS ?=

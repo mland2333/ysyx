@@ -139,24 +139,24 @@ assign out_rready = in_rready;
 assign in_rid = out_rid; 
 assign in_rresp = out_rresp;
 /**/
-/* localparam NUMS = 4; */
-/* wire [NUMS-1:0] valid; */
-/* reg [NUMS-1:0] tasks; */
-/* reg [$clog2(NUMS)-1:0] task_index; */
-/* reg [$clog2(NUMS)-1:0] delay_index; */
-/* wire [31:0] rdata_buffer[NUMS]; */
-/* reg [31:0] rdata; */
-/* reg rvalid; */
-/* always@(posedge clock)begin */
-/*   if(reset) begin */
-/*     task_index <= 0; */
-/*     delay_index <= 0; */
-/*   end */
-/*   else begin */
-/*     if(out_rvalid) task_index <= task_index + 1; */
-/*     if(in_rvalid && in_rready) delay_index <= delay_index + 1; */
-/*   end */
-/* end */
+localparam NUMS = 4;
+wire [NUMS-1:0] valid;
+reg [NUMS-1:0] tasks;
+reg [$clog2(NUMS)-1:0] task_index;
+reg [$clog2(NUMS)-1:0] delay_index;
+wire [31:0] rdata_buffer[NUMS];
+reg [31:0] rdata;
+reg rvalid;
+always@(posedge clock)begin
+  if(reset) begin
+    task_index <= 0;
+    delay_index <= 0;
+  end
+  else begin
+    if(out_rvalid) task_index <= task_index + 1;
+    if(in_rvalid && in_rready) delay_index <= delay_index + 1;
+  end
+end
 /**/
 /* always@(posedge clock)begin */
 /*   if(reset) tasks <= 0; */

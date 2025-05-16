@@ -153,7 +153,7 @@ module ysyx_24110006_top (
   wire jump = bru_jump | bru_exception | mret;
   assign csr_wdata = bru_result;
   wire lsu_wen, lsu_ren;
-
+  
 `ifdef CONFIG_SIM
   reg [31:0] sim_pc;
   wire sim_branch;
@@ -199,9 +199,12 @@ module ysyx_24110006_top (
   if_pipeline_vr lsu_vr_wbu ();
   if_pipeline_vr bru_vr_wbu ();
   if_axi_read ifu_axi ();
+  if_lsu_adapter lsu_adapter();
+  if_lsu_adapter lsu_adapter_axi();
   if_axi lsu_axi ();
   if_axi xbar_axi ();
   if_axi mem_axi ();
+  
 `ifdef CONFIG_YSYXSOC
   assign io_master_awvalid = mem_axi.awvalid;
   assign io_master_awaddr  = mem_axi.awaddr;
@@ -487,8 +490,17 @@ module ysyx_24110006_top (
       .i_vr(alloc_vr_lsu),
       .o_vr(lsu_vr_wbu),
       .i_flush(exception | branch | csr_flush),
-
-      .o_axi(lsu_axi.master)
+      .o_lsu_rq(lsu_adapter)
+  );
+  ysyx_24110006_LSU_ADAPTER mlsu_adapter (
+      .i_lsu_adapter(lsu_adapter),
+      .o_lsu_adapter(lsu_adapter_axi)
+  );
+  ysyx_24110006_LSU2AXI mlsu2axi (
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_lsu_adapter(lsu_adapter_axi),
+      .o_axi(lsu_axi)
   );
   ysyx_24110006_WBU mwbu (
       .i_bru_result(bru_result),

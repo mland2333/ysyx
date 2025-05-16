@@ -10,28 +10,9 @@ module ysyx_24110006_MDCACHE #(
     input i_clock,
     input i_reset,
     //lsu <--> cache
-    input i_rq,
-    input i_wen,
-    input [31:0] i_addr,
-    input [31:0] i_wdata,
-    input [3:0] i_wmask,
-    output [31:0] o_rdata,
-    output o_ack,
-    output o_ready,
+    if_lsu_dcache.slave i_lsu,
     //cache <--> axi
-    output o_rq_mem,
-    output o_wen_mem,
-    input i_rq_ack,
-    input [31:0] i_rdata_mem,
-    input i_rdata_valid,
-    output o_rdata_ready,
-    input i_fin_r,
-    output [31:0] o_wdata_mem,
-    output o_wdata_valid,
-    input i_wdata_ready,
-    input i_fin_w,
-    output o_wlast
-
+    if_dcache_axi.master o_axi
 );
   localparam BLOCK_SIZE = DATA_PER_CACHELINE * 4;
   localparam NUM_SETS = NUM_BLOCKS / NUM_WAYS;
@@ -69,8 +50,8 @@ module ysyx_24110006_MDCACHE #(
               for (int k = 0; k < 4; k++) begin
                 if (cache_wmask[k]) cache[i].data[j*32+k*8] <= cache_wdata[k*8+:8];
               end
-            end else if (i_rdata_valid) begin
-              cache[i].data[j*32+:32] <= i_rdata_mem;
+            end else if (o_axi.rdata_valid) begin
+              cache[i].data[j*32+:32] <= o_axi.rdata_mem;
             end
           end
         end
@@ -83,7 +64,7 @@ module ysyx_24110006_MDCACHE #(
         cache[i].valid <= 0;
       end
     end else begin
-      if (i_rdata_valid) cache[cache_index].valid[cache_offset] <= 1;
+      if (o_axi.rdata_valid) cache[cache_index].valid[cache_offset] <= 1;
       else if (s0_valid && s1_ready && !hit) cache[cache_index].valid <= 0;
     end
   end
@@ -93,7 +74,7 @@ module ysyx_24110006_MDCACHE #(
         cache[i].dirty <= 0;
       end
     end else begin
-      if (i_rdata_valid) cache[cache_index].dirty <= 1;
+      if (o_axi.rdata_valid) cache[cache_index].dirty <= 1;
       else if (state == mem) cache[cache_index].dirty <= 0;
     end
   end
@@ -108,7 +89,8 @@ module ysyx_24110006_MDCACHE #(
     else if (s0_valid && s1_ready && !hit) stall <= 1;
     else if (stall && s1_valid && s1_hit) stall <= 0;
   end
-  assign o_ready = s0_ready || s1_ready;
+  assign i_lsu.ready = s0_ready || s1_ready;
+  
   //stage0
   logic s0_wen;
   logic [31:0] s0_addr, s0_wdata;
@@ -129,24 +111,24 @@ module ysyx_24110006_MDCACHE #(
     else if (stall && hit) stall <= 1;
   end
   always_ff @(posedge i_clock) begin
-    if (i_rq && o_ready) begin
-      s0_wen   <= i_wen;
-      s0_addr  <= i_addr;
-      s0_wdata <= i_wdata;
-      s0_wmask <= i_wmask;
+    if (i_lsu.rq && i_lsu.ready) begin
+      s0_wen   <= i_lsu.wen;
+      s0_addr  <= i_lsu.addr;
+      s0_wdata <= i_lsu.wdata;
+      s0_wmask <= i_lsu.wmask;
     end
   end
   logic s0_valid, s0_ready;
   always_ff @(posedge i_clock) begin
     if (i_reset) s0_valid <= 0;
-    else if (i_rq) s0_valid <= 1;
+    else if (i_lsu.rq) s0_valid <= 1;
     else if (s0_valid && s1_ready) s0_valid <= 0;
   end
 
   always_ff @(posedge i_clock) begin
     if (i_reset) s0_ready <= 1;
-    else if (i_rq && !s1_ready) s0_ready <= 0;
-    else if (!s0_ready && s1_ready && !i_rq) s0_ready <= 1;
+    else if (i_lsu.rq && !s1_ready) s0_ready <= 0;
+    else if (!s0_ready && s1_ready && !i_lsu.rq) s0_ready <= 1;
   end
 
   //stage1
@@ -202,6 +184,7 @@ module ysyx_24110006_MDCACHE #(
       s2_wmask <= s1_wmask;
     end
   end
+  
   //miss state
   typedef enum logic [2:0] {
     idle,
@@ -226,13 +209,13 @@ module ysyx_24110006_MDCACHE #(
           else state <= read_mem;
         end
         write_mem: begin
-          if (i_fin_w) begin
+          if (o_axi.fin_w) begin
             if (fencei_fin) state <= ready;
             else if (!fencei) state <= read_mem;
           end
         end
         read_mem: begin
-          if (i_fin_r) state <= ready;
+          if (o_axi.fin_r) state <= ready;
         end
         ready: begin
           state <= idle;
@@ -243,38 +226,60 @@ module ysyx_24110006_MDCACHE #(
       endcase
     end
   end
+  
+  // Map interface signals for AXI
+  logic o_rq_mem, o_wen_mem;
+  logic o_rdata_ready, o_wdata_valid, o_wlast;
+  logic [31:0] o_wdata_mem;
+  
   always_ff @(posedge i_clock) begin
     if (i_reset) o_rq_mem <= 0;
     else begin
       if (state == mem) o_rq_mem <= 1;
-      else if (o_rq_mem && i_rq_ack) o_rq_mem <= 0;
+      else if (o_rq_mem && o_axi.rq_ack) o_rq_mem <= 0;
     end
   end
+  
   always_ff @(posedge i_clock) begin
     if (i_reset) o_wen_mem <= 0;
     else begin
       if (state == mem && s1_wen) o_wen_mem <= 1;
-      else if (o_wen_mem && o_rq_mem && i_rq_ack) o_wen_mem <= 0;
+      else if (o_wen_mem && o_rq_mem && o_axi.rq_ack) o_wen_mem <= 0;
     end
   end
+  
   assign o_rdata_ready = 1;
   assign o_wdata_valid = 1;
-
   assign o_wdata_mem = cache_line.data[write_index*32+:32];
   assign o_wlast = write_num == DATA_PER_CACHELINE;
+  
   logic [DATA_OFFSET_WIDTH-1:0] read_index, write_index, write_num;
   always_ff @(posedge i_clock) begin
-    if (i_reset || i_fin_r) read_index <= 0;
+    if (i_reset || o_axi.fin_r) read_index <= 0;
     else if (state == mem && !s1_wen) read_index <= s1_offset;
-    else if (i_rdata_valid) read_index <= read_index + 1;
+    else if (o_axi.rdata_valid) read_index <= read_index + 1;
   end
+  
   always_ff @(posedge i_clock) begin
-    if (i_reset || i_fin_w) write_index <= 0;
+    if (i_reset || o_axi.fin_w) write_index <= 0;
     else if (state == mem && s1_wen) write_index <= s1_offset;
-    else if (i_wdata_ready && o_wdata_valid) write_index <= write_index + 1;
+    else if (o_axi.wdata_ready && o_wdata_valid) write_index <= write_index + 1;
   end
+  
   always_ff @(posedge i_clock) begin
     if (i_reset || state == mem && s1_wen) write_num <= 0;
-    else if (i_wdata_ready && o_wdata_valid) write_num <= write_num + 1;
+    else if (o_axi.wdata_ready && o_wdata_valid) write_num <= write_num + 1;
   end
+  
+  // Connect interface signals
+  assign i_lsu.rdata = rdata;
+  assign i_lsu.ack = s1_valid && hit;
+  
+  assign o_axi.rq_mem = o_rq_mem;
+  assign o_axi.wen_mem = o_wen_mem;
+  assign o_axi.addr = s1_addr;
+  assign o_axi.wdata_mem = o_wdata_mem;
+  assign o_axi.wdata_valid = o_wdata_valid;
+  assign o_axi.wlast = o_wlast;
+  assign o_axi.rdata_ready = o_rdata_ready;
 endmodule
