@@ -19,7 +19,7 @@ module ysyx_24110006_DCACHE #(
   localparam TAG_WIDTH = 32 - INDEX_WIDTH - OFFSET_WIDTH;
   localparam DATA_WIDTH = BLOCK_SIZE * 8;
   localparam DATA_OFFSET_WIDTH = $clog2(DATA_PER_CACHELINE);
-
+  localparam NUM_INDEX_WIDTH = $clog2(NUM_BLOCKS);
   typedef struct packed {
     logic [TAG_WIDTH-1:0] tag;
     logic [DATA_WIDTH-1:0] data;
@@ -55,6 +55,7 @@ module ysyx_24110006_DCACHE #(
   typedef enum logic [2:0] {
     idle,
     judge,
+    flush,
     read_mem,
     write_mem,
     fencei
@@ -66,8 +67,8 @@ module ysyx_24110006_DCACHE #(
     else begin
       case (state)
         idle: begin
-          /* if (i_fencei) state <= fencei; */
-          if (i_lsu_rq.rq) begin
+          if (fencei) state <= flush;
+          else if (i_lsu_rq.rq) begin
             state <= judge;
           end
         end
@@ -85,8 +86,8 @@ module ysyx_24110006_DCACHE #(
         read_mem: begin
           if (o_axi_rq.valid) state <= judge;
         end
-        fencei: begin
-          /* if(fencei_fin) state <= idle; */
+        flush: begin
+          if(fencei_fin) state <= idle;
         end
         default: begin
           state <= idle;
