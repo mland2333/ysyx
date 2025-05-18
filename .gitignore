@@ -5,8 +5,7 @@
 !/nexus-am/*
 !/nanos-lite/*
 !/navy-apps/*
-!/cachesim/*.cpp
-!/cachesim/*.py
+npc/result/
 !Makefile
 !README.md
 !.gitignore
@@ -14,5 +13,4 @@
 /fceux-am
 /nvboard
 /am-kernels
-*.dat
 

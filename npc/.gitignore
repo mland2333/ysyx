@@ -4,11 +4,10 @@
 !Makefile
 !*.mk
 !*.[cSh]
-!/vsrc/*.v
+!*.v
 !*.cc
 !*.cpp
 !*.hpp
-!*.py
 !.gitignore
 !README.md
 !*.nxdc

@@ -14,7 +14,6 @@
 ***************************************************************************************/
 
 #include <common.h>
-#include <stdio.h>
 
 void init_monitor(int, char *[]);
 void am_init_monitor();
@@ -31,9 +30,6 @@ int main(int argc, char *argv[]) {
 
   /* Start engine. */
   engine_start();
-#ifdef CONFIG_CACHESIM
-  extern FILE* cache_fd;
-  fclose(cache_fd);
-#endif
+
   return is_exit_status_bad();
 }

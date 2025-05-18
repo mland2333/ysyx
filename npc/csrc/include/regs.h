@@ -1,6 +1,3 @@
-#pragma once
-#define REG_NUMS 32
-
 class RegName{
 public:
   inline static const char* regs[32] = {

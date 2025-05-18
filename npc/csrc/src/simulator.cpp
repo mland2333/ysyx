@@ -1,9 +1,7 @@
 #include "simulator.h"
 #include <cstdio>
 #include <getopt.h>
-#ifdef CONFIG_NVBOARD
 #include <nvboard.h>
-#endif
 
 Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gtk){
   top = new TOP_NAME;
@@ -14,16 +12,16 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
     top->trace(tfp, 0);
     tfp->open("dump.fst");
   }
-#ifdef CONFIG_NVBOARD
-  void nvboard_bind_all_pins(TOP_NAME *);
-  nvboard_bind_all_pins(top);
-  nvboard_init();
-#endif
+  if (is_nvboard) {
+    void nvboard_bind_all_pins(TOP_NAME *);
+    nvboard_bind_all_pins(top);
+    nvboard_init();
+  }
 }
 
 void Simulator::step_and_dump_wave() {
   top->eval();
-  if (is_gtk && cpu.pc >= PC_BEGIN) {
+  if (is_gtk) {
     contextp->timeInc(1);
     tfp->dump(contextp->time());
   }
@@ -37,9 +35,7 @@ void Simulator::single_cycle() {
 }
 
 SIM_STATE Simulator::exec_once(){
-#ifdef CONFIG_NVBOARD
-  nvboard_update();
-#endif
+  if (is_nvboard) nvboard_update();
   single_cycle();
   cpu_update();
   return state;
@@ -48,9 +44,8 @@ SIM_STATE Simulator::exec_once(){
 int Simulator::run() {
 
   while (true) {
-#ifdef CONFIG_NVBOARD
-    nvboard_update();
-#endif
+    if (is_nvboard)
+      nvboard_update();
     single_cycle();
   }
   return 0;
