@@ -87,7 +87,7 @@ module ysyx_24110006_DCACHE_OLD #(
     else if (stall && s1_valid && s1_hit) stall <= 0;
   end
   assign i_lsu.ready = s0_ready || s1_ready;
-  
+
   //stage0
   logic s0_wen, s0_ren;
   logic [31:0] s0_addr, s0_wdata;
@@ -184,7 +184,7 @@ module ysyx_24110006_DCACHE_OLD #(
       s2_wmask <= s1_wmask;
     end
   end
-  
+
   //miss state
   typedef enum logic [2:0] {
     idle,
@@ -226,12 +226,12 @@ module ysyx_24110006_DCACHE_OLD #(
       endcase
     end
   end
-  
+
   // Map interface signals for AXI
   logic o_rq_mem, o_wen_mem;
   logic o_rdata_ready, o_wdata_valid, o_wlast;
   logic [31:0] o_wdata_mem;
-  
+
   always_ff @(posedge i_clock) begin
     if (i_reset) o_rq_mem <= 0;
     else begin
@@ -239,7 +239,7 @@ module ysyx_24110006_DCACHE_OLD #(
       else if (o_rq_mem && o_axi.rq_ack) o_rq_mem <= 0;
     end
   end
-  
+
   always_ff @(posedge i_clock) begin
     if (i_reset) o_wen_mem <= 0;
     else begin
@@ -247,34 +247,34 @@ module ysyx_24110006_DCACHE_OLD #(
       else if (o_wen_mem && o_rq_mem && o_axi.rq_ack) o_wen_mem <= 0;
     end
   end
-  
+
   assign o_rdata_ready = 1;
   assign o_wdata_valid = 1;
   assign o_wdata_mem = cache_line.data[write_index*32+:32];
   assign o_wlast = write_num == DATA_PER_CACHELINE;
-  
+
   logic [DATA_OFFSET_WIDTH-1:0] read_index, write_index, write_num;
   always_ff @(posedge i_clock) begin
     if (i_reset || o_axi.fin_r) read_index <= 0;
     else if (state == mem && !s1_wen) read_index <= s1_offset;
     else if (o_axi.rdata_valid) read_index <= read_index + 1;
   end
-  
+
   always_ff @(posedge i_clock) begin
     if (i_reset || o_axi.fin_w) write_index <= 0;
     else if (state == mem && s1_wen) write_index <= s1_offset;
     else if (o_axi.wdata_ready && o_wdata_valid) write_index <= write_index + 1;
   end
-  
+
   always_ff @(posedge i_clock) begin
     if (i_reset || state == mem && s1_wen) write_num <= 0;
     else if (o_axi.wdata_ready && o_wdata_valid) write_num <= write_num + 1;
   end
-  
+
   // Connect interface signals
   assign i_lsu.rdata = rdata;
   assign i_lsu.ack = s1_valid && hit;
-  
+
   assign o_axi.rq_mem = o_rq_mem;
   assign o_axi.wen_mem = o_wen_mem;
   assign o_axi.addr = s1_addr;

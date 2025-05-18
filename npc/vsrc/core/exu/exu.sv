@@ -240,5 +240,5 @@ reg [31:0] upc;
 
 assign o_upc = upc + imm;
 assign o_jump = JAL | JALR | csr_t[1];
-assign o_reg_wen = !(S || B);
+assign o_reg_wen = !(S || B || FENCE);
 endmodule

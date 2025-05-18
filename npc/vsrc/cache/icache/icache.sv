@@ -19,6 +19,7 @@ module ysyx_24110006_ICACHE#(
   if_pipeline_vr.out o_vr,
 
   input i_flush,
+  input i_fencei_fin,
   output o_exception,
   output [3:0] o_mcause,
   if_axi_read.master o_axi
@@ -167,8 +168,14 @@ localparam direct_t = 3'b010;
 localparam axi_flush_t = 3'b011;
 localparam direct_flush_t = 3'b100;
 localparam ready_t = 3'b101;
+localparam wait_fin_t = 3'b110;
 reg [2:0] state;
-
+reg is_fencei;
+always@(posedge i_clock)begin
+  if(i_reset) is_fencei <= 0;
+  else if(i_fencei) is_fencei <= 1;
+  else if(is_fencei && i_fencei_fin) is_fencei <= 0;
+end
 always@(posedge i_clock)begin
   if(i_reset) state <= idle_t;
   else begin
@@ -188,13 +195,22 @@ always@(posedge i_clock)begin
         else if(i_flush) state <= direct_flush_t;
       end
       axi_flush_t:begin
-        if(o_axi.rlast) state <= idle_t;
+        if(o_axi.rlast) begin
+          if(is_fencei) state <= wait_fin_t;
+          else state <= idle_t;
+        end
       end
       direct_flush_t:begin
-        if(o_axi.rvalid) state <= idle_t;
+        if(o_axi.rvalid) begin
+          if(is_fencei) state <= wait_fin_t;
+          else state <= idle_t;
+        end
       end
       ready_t:begin
         state <= idle_t;
+      end
+      wait_fin_t:begin
+        if(i_fencei_fin) state <= idle_t;
       end
       default:begin
         state <= idle_t;

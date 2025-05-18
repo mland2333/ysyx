@@ -190,7 +190,7 @@ module ysyx_24110006_top (
 
   wire reg_valid;
 `endif
-
+  logic fencei_fin;
   if_pipeline_vr ifu_vr_idu ();
   if_pipeline_vr idu_vr_exu ();
   if_pipeline_vr exu_vr_alloc ();
@@ -259,6 +259,7 @@ module ysyx_24110006_top (
       .i_btb_update(btb_update),
       .o_vr(ifu_vr_idu),
       .i_flush(flush),
+      .i_fencei_fin(fencei_fin),
       .o_axi(ifu_axi.master)
   );
 
@@ -507,6 +508,8 @@ module ysyx_24110006_top (
   ysyx_24110006_DCACHE mdcache (
       .i_clock(clock),
       .i_reset(reset),
+      .i_flush(fencei && !predict_err),
+      .o_fin(fencei_fin),
       .i_lsu_rq(lsu_dcache.slave),
       .o_axi_rq(dcache_bridge.master)
   );

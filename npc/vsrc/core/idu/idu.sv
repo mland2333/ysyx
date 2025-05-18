@@ -74,7 +74,7 @@ end
 assign o_predict = predict;
 wire I = o_op[6:2] == 5'b00100;
 wire R = o_op[6:2] == 5'b01100;
-wire L = o_op[6:2] == 5'b00000;
+wire L = o_op[6:0] == 7'b0000011;
 wire S = o_op[6:2] == 5'b01000;
 wire JAL = o_op[6:2] == 5'b11011;
 wire JALR = o_op[6:2] == 5'b11001;
@@ -115,7 +115,7 @@ assign o_imm = imm;
 assign o_reg_wen = I|R|L|JAL|JALR|AUIPC|LUI;
 assign o_csr = inst[31:20];
 assign o_mret = inst == 32'h30200073;
-`ifndef CONFIG_YOSYS
+`ifdef CONFIG_SIM
 always@(posedge i_clock)begin
   if(o_vr.valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE) && !i_flush) begin
     $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", o_op, o_pc);

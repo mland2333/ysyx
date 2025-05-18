@@ -7,6 +7,8 @@ module ysyx_24110006_DCACHE #(
 ) (
     input i_clock,
     input i_reset,
+    input i_flush,
+    output logic o_fin,
     //lsu <--> cache
     if_lsu_dcache.slave i_lsu_rq,
     //cache <--> axi
@@ -30,9 +32,10 @@ module ysyx_24110006_DCACHE #(
   logic [TAG_WIDTH-1:0] tag;
   logic [INDEX_WIDTH-1:0] index;
   logic [OFFSET_WIDTH-3:0] offset;
-
+  logic in_flush;
+  assign in_flush = state == flush || state == flush_write;
   assign tag = addr[31-:TAG_WIDTH];
-  assign index = addr[OFFSET_WIDTH+:INDEX_WIDTH];
+  assign index = in_flush ? flush_index : addr[OFFSET_WIDTH+:INDEX_WIDTH];
   assign offset = addr[OFFSET_WIDTH-1:2];
   logic wen, ren;
   logic [31:0] addr, wdata;
@@ -56,9 +59,9 @@ module ysyx_24110006_DCACHE #(
     idle,
     judge,
     flush,
+    flush_write,
     read_mem,
-    write_mem,
-    fencei
+    write_mem
   } state_t;
   state_t state;
 
@@ -67,7 +70,7 @@ module ysyx_24110006_DCACHE #(
     else begin
       case (state)
         idle: begin
-          if (fencei) state <= flush;
+          if (i_flush) state <= flush;
           else if (i_lsu_rq.rq) begin
             state <= judge;
           end
@@ -87,7 +90,14 @@ module ysyx_24110006_DCACHE #(
           if (o_axi_rq.valid) state <= judge;
         end
         flush: begin
-          if(fencei_fin) state <= idle;
+          if (cache_line.valid && cache_line.dirty) state <= flush_write;
+          else if (flush_index == NUM_BLOCKS-1) state <= idle;
+        end
+        flush_write: begin
+          if (o_axi_rq.valid) begin
+            if(flush_index == NUM_BLOCKS-1) state <= idle;
+            else state <= flush;
+          end
         end
         default: begin
           state <= idle;
@@ -95,25 +105,31 @@ module ysyx_24110006_DCACHE #(
       endcase
     end
   end
-
   always_ff@(posedge i_clock)begin
-    if(i_reset) o_axi_rq.rq <= 0;
-    else if(state == judge && !hit) o_axi_rq.rq <= 1;
-    else if(o_axi_rq.rq && o_axi_rq.ack) o_axi_rq.rq <= 0;
+    if(i_reset) o_fin <= 0;
+    else if(in_flush && !(cache_line.valid && cache_line.dirty) && flush_index == NUM_BLOCKS-1) o_fin <= 1;
+    else if(o_fin) o_fin <= 0;
   end
-  always_ff@(posedge i_clock)begin
-    if(i_reset) o_axi_rq.wen <= 0;
-    else if(state == judge && !hit && dirty) o_axi_rq.wen <= 1;
-    else if(o_axi_rq.rq && o_axi_rq.ack) o_axi_rq.wen <= 0;
+  logic need_flush;
+  assign need_flush = (state == flush) && cache_line.valid && cache_line.dirty;
+  always_ff @(posedge i_clock) begin
+    if (i_reset) o_axi_rq.rq <= 0;
+    else if (state == judge && !hit || need_flush) o_axi_rq.rq <= 1;
+    else if (o_axi_rq.rq && o_axi_rq.ack) o_axi_rq.rq <= 0;
+  end
+  always_ff @(posedge i_clock) begin
+    if (i_reset) o_axi_rq.wen <= 0;
+    else if (state == judge && !hit && dirty || need_flush) o_axi_rq.wen <= 1;
+    else if (o_axi_rq.rq && o_axi_rq.ack) o_axi_rq.wen <= 0;
   end
   assign o_axi_rq.ready = 1;
-  assign o_axi_rq.addr = addr;
+  assign o_axi_rq.addr = in_flush ? {cache[index].tag, index, (32 - TAG_WIDTH - INDEX_WIDTH)'(0)} : addr;
   assign o_axi_rq.w_cache_line = cache_line.data;
-  always_ff@(posedge i_clock)begin
-    if(state == read_mem && o_axi_rq.valid) cache[index].data <= o_axi_rq.r_cache_line;
-    else if(i_lsu_rq.rq && hit) begin
-      for(int i = 0; i<4; i++)begin
-        if(wmask[i]) cache[index].data[offset*32+i*4 +: 8] <= wdata[i*8 +: 8];
+  always_ff @(posedge i_clock) begin
+    if (state == read_mem && o_axi_rq.valid) cache[index].data <= o_axi_rq.r_cache_line;
+    else if (state == judge && hit) begin
+      for (int i = 0; i < 4; i++) begin
+        if (wmask[i]) cache[index].data[offset*32+i*8+:8] <= wdata[i*8+:8];
       end
     end
   end
@@ -125,6 +141,7 @@ module ysyx_24110006_DCACHE #(
     end else begin
       if (state == read_mem && o_axi_rq.valid) cache[index].valid <= 1;
       else if (state == judge && !hit) cache[index].valid <= 0;
+      else if (state == flush) cache[flush_index].valid <= 0;
     end
   end
   always_ff @(posedge i_clock) begin
@@ -135,6 +152,7 @@ module ysyx_24110006_DCACHE #(
     end else begin
       if (state == read_mem && o_axi_rq.valid) cache[index].dirty <= 0;
       else if (state == judge && hit && wen) cache[index].dirty <= 1;
+      else if (state == flush) cache[flush_index].dirty <= 0;
     end
   end
   always_ff @(posedge i_clock) begin
@@ -146,16 +164,22 @@ module ysyx_24110006_DCACHE #(
       if (state == read_mem && o_axi_rq.valid) cache[index].tag <= tag;
     end
   end
-  always_ff@(posedge i_clock)begin
-    if(i_reset) i_lsu_rq.valid <= 0;
-    else if(state == judge && hit) i_lsu_rq.valid <= 1;
-    else if(i_lsu_rq.valid && i_lsu_rq.ready) i_lsu_rq.valid <= 0;
+  always_ff @(posedge i_clock) begin
+    if (i_reset) i_lsu_rq.valid <= 0;
+    else if (state == judge && hit) i_lsu_rq.valid <= 1;
+    else if (i_lsu_rq.valid && i_lsu_rq.ready) i_lsu_rq.valid <= 0;
   end
-  always_ff@(posedge i_clock)begin
-    if(i_reset) i_lsu_rq.ack <= 0;
-    else if(i_lsu_rq.rq && !i_lsu_rq.ack) i_lsu_rq.ack <= 1;
-    else if(i_lsu_rq.ack) i_lsu_rq.ack <= 0;
+  always_ff @(posedge i_clock) begin
+    if (i_reset) i_lsu_rq.ack <= 0;
+    else if (i_lsu_rq.rq && !i_lsu_rq.ack) i_lsu_rq.ack <= 1;
+    else if (i_lsu_rq.ack) i_lsu_rq.ack <= 0;
   end
 
+  logic [NUM_INDEX_WIDTH-1:0] flush_index;
+  always_ff @(posedge i_clock) begin
+    if (i_reset) flush_index <= 0;
+    else if (state == flush && !(cache_line.valid && cache_line.dirty))
+      flush_index <= flush_index + 1;
+  end
 
 endmodule

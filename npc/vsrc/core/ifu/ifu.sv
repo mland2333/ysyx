@@ -16,6 +16,7 @@ module ysyx_24110006_IFU(
   input i_predict_err,
   input i_btb_update,
   input i_flush,
+  input i_fencei_fin,
   if_pipeline_vr.out o_vr,
   if_axi_read.master o_axi
 );
@@ -35,6 +36,7 @@ ysyx_24110006_ICACHE micache(
   .i_predict_err(i_predict_err),
   .i_btb_update(i_btb_update),
   .i_flush(i_flush),
+  .i_fencei_fin(i_fencei_fin),
   .o_vr(o_vr),
   .o_axi(o_axi)
 );
