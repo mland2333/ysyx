@@ -4,11 +4,12 @@
 #include <dlfcn.h>
 #include <cstdint>
 #include <assert.h>
+#include <iostream>
 void (*ref_difftest_memcpy)(uint64_t addr, void *buf, size_t n, bool direction) = nullptr;
 void (*ref_difftest_regcpy)(void *dut, bool direction) = nullptr;
 void (*ref_difftest_exec)(uint64_t n) = nullptr;
 
-void Diff::init_difftest(const char *ref_so_file, long img_size, int port){
+void Diff::init_difftest(const char *ref_so_file, int port){
   assert(ref_so_file != nullptr);
 
   void *handle;
@@ -34,27 +35,36 @@ void Diff::init_difftest(const char *ref_so_file, long img_size, int port){
       "If it is not necessary, you can turn it off in menuconfig.", ref_so_file);
 
   ref_difftest_init(port);
-  ref_difftest_memcpy(0x80000000, (void*)mem_->mem_, img_size, DIFFTEST_TO_REF);
-  ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
+  ref_difftest_memcpy(area->base, (void*)area->mem, area->img_size, DIFFTEST_TO_REF);
+  ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
 }
 
 bool Diff::difftest_step() {
-  if (first_inst) {
-    ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF);
-    first_inst = false;
+  /* if (diff_skip){ */
+    /* ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF); */
+    /* diff_skip = diff_skip_buf; */
+    /* return true; */
+  /* } */
+  if (diff_skip_buf[read_index]) {
+    ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
+    diff_skip_buf[read_index] = false;
+    read_index = (read_index+1)%BUF_NUMS;
+    /* std::cout << "跳过\n"; */
     return true;
   }
+  diff_nums ++;
+  /* std::cout << "diff\n"; */
   ref_difftest_exec(1);
   ref_difftest_regcpy((void*)ref_cpu, DIFFTEST_TO_DUT);
   int i;
-  if((i = cpu_->check(ref_cpu)) != 0){
+  if((i = cpu->check(ref_cpu)) != 0){
     if (i == -1) {
       printf("difftest失败, 寄存器为：pc, 地址：0x%x\ncpu.pc = 0x%x\nref_gpr.pc = 0x%x\n",
-          cpu_->pc, cpu_->pc, ref_cpu->pc);
+          cpu->pc, cpu->pc, ref_cpu->pc);
     }
     else {
       printf("difftest失败, 寄存器为：%s, 地址：0x%x\ncpu.gpr[%d] = 0x%x\nref_gpr[%d] = 0x%x\n",
-           RegName::regs[i], cpu_->pc, i, cpu_->gpr[i], i, ref_cpu->gpr[i]);
+           RegName::regs[i], cpu->pc, i, cpu->gpr[i], i, ref_cpu->gpr[i]);
     }
     return false;
   }

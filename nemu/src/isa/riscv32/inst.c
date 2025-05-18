@@ -231,8 +231,10 @@ static int decode_exec(Decode *s) {
       case 0x305: R(rd) = cpu.csr[MTVEC]; break;
       case 0x341: R(rd) = cpu.csr[MEPC]; break;
       case 0x342: R(rd) = cpu.csr[MCAUSE]; break;
+      case 0xffffff11: R(rd) = 0x79737978; break;
+      case 0xffffff12: R(rd) = 0x16fe3b6; break;
   });
-  
+  INSTPAT("0000000 00000 00000 001 00000 00011 11", fencei , R, );
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));
   INSTPAT_END();
 

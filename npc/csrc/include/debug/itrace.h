@@ -10,6 +10,7 @@ class Itrace{
   int buffer_index = 0;
 public:
   Itrace();
+  ~Itrace();
   void insert_buffer();
   void print_buffer();
   void trace(uint32_t pc, uint32_t inst);
