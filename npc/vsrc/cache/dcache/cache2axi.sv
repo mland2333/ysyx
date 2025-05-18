@@ -2,83 +2,105 @@ module ysyx_24110006_CACHE2AXI(
   input i_clock,
   input i_reset,
   //cache <--> axi
-  if_dcache_axi.slave i_dcache,
+  if_dcache_axi.slave i_dcache_rq,
   //axi <--> mem
-  if_axi.master o_axi
+  if_axi.master o_axi_rq
 );
 
-assign i_dcache.rdata_mem = o_axi.rdata;
-assign i_dcache.rdata_valid = o_axi.rvalid;
-assign i_dcache.fin_r = o_axi.rlast;
-assign i_dcache.fin_w = o_axi.bvalid;
+always_ff@(posedge i_clock)begin
+  if(i_reset) i_dcache_rq.ack <= 0;
+  else if(i_dcache_rq.rq && !i_dcache_rq.ack) i_dcache_rq.ack <= 1;
+  else if(i_dcache_rq.ack) i_dcache_rq.ack <= 0;
+end
+always_ff@(posedge i_clock)begin
+  if(i_reset) i_dcache_rq.valid <= 0;
+  else if(rvalid && rready && rlast || bvalid && bready) i_dcache_rq.valid <= 1;
+  else if(i_dcache_rq.valid && i_dcache_rq.ready) i_dcache_rq.valid <= 0;
+end
+
+logic [`CACHE_LINE_WIDTH-1:0] w_cache_line;
+logic [`CACHE_LINE_WIDTH-1:0] r_cache_line;
+always_ff@(posedge i_clock)begin
+  if(i_dcache_rq.rq && i_dcache_rq.wen) w_cache_line <= i_dcache_rq.w_cache_line;
+end
+always_ff@(posedge i_clock)begin
+  if(o_axi_rq.rvalid && o_axi_rq.rready) r_cache_line[read_cache_index*32+:32] <= rdata;
+end
+assign i_dcache_rq.r_cache_line = r_cache_line;
 
 always_ff@(posedge i_clock)begin
   if(i_reset) arvalid <= 0;
-  else if(i_dcache.rq_mem && !i_dcache.wen_mem) arvalid <= 1;
+  else if(i_dcache_rq.rq && i_dcache_rq.ack && !i_dcache_rq.wen) arvalid <= 1;
   else if(arvalid && arready) arvalid <= 0;
 end
 
 always_ff@(posedge i_clock)begin
   if(i_reset) awvalid <= 0;
-  else if(i_dcache.rq_mem && i_dcache.wen_mem) awvalid <= 1;
+  else if(i_dcache_rq.rq && i_dcache_rq.ack && i_dcache_rq.wen) awvalid <= 1;
   else if(awvalid && awready) awvalid <= 0;
 end
 
 always_ff@(posedge i_clock)begin
   if(i_reset) wvalid <= 0;
-  else if(i_dcache.rq_mem && i_dcache.wen_mem) wvalid <= 1;
-  else if(wvalid && wready) wvalid <= 0;
+  else if(i_dcache_rq.rq && i_dcache_rq.ack && i_dcache_rq.wen) wvalid <= 1;
+  else if(wlast && wvalid && wready) wvalid <= 0;
+end
+assign wdata = w_cache_line[write_cache_index*32+:32];
+localparam int BURST_LEN = `CACHE_LINE_WIDTH / 32;
+localparam int ADDR_WIDTH = 32 - $clog2(BURST_LEN) - 2;
+logic [BURST_LEN-1:0] read_cache_index, write_cache_index;
+always_ff@(posedge i_clock)begin
+  if(i_reset || rlast) read_cache_index <= 0;
+  else if(rvalid && rready) read_cache_index <= read_cache_index + 1;
+end
+always_ff@(posedge i_clock)begin
+  if(i_reset || (wlast && wvalid && wready)) write_cache_index <= 0;
+  else if(wvalid && wready) write_cache_index <= write_cache_index + 1;
 end
 
-always_ff@(posedge i_clock)begin
-  if(i_reset) i_dcache.rq_ack <= 0;
-  else if(arvalid && arready || awvalid && awready) i_dcache.rq_ack <= 1;
-  else if(i_dcache.rq_ack) i_dcache.rq_ack <= 0;
-end
 
 logic arvalid, arready, rvalid, rready, rlast;
 logic awvalid, wvalid, awready, wready, wlast, bvalid, bready;
 logic [1:0] rresp, bresp;
 logic [3:0] wstrb;
-logic [31:0] awaddr, araddr, axi_wdata;
+logic [31:0] awaddr, araddr, wdata, rdata;
 
 assign rready = 1;
 assign bready = 1;
-assign axi_wdata = i_dcache.wdata_mem;
-assign wlast = i_dcache.wlast;
 assign wstrb = 4'b1111;
-assign awaddr = i_dcache.addr;
-assign araddr = i_dcache.addr;
-assign i_dcache.wdata_ready = wready;
+assign awaddr = {i_dcache_rq.addr[31:32-ADDR_WIDTH], (32-ADDR_WIDTH)'(0)};
+assign araddr = {i_dcache_rq.addr[31:32-ADDR_WIDTH], (32-ADDR_WIDTH)'(0)};
+assign rdata = o_axi_rq.rdata;
+assign wlast = write_cache_index == BURST_LEN-1;
 
-assign o_axi.araddr = araddr;
-assign o_axi.arvalid = arvalid;
-assign arready = o_axi.arready;
-assign o_axi.arid = 0;
-assign o_axi.arlen = 8'(BURST_LEN-1);
-assign o_axi.arsize = 3'b010;
-assign o_axi.arburst = 2'b10;
+assign o_axi_rq.araddr = araddr;
+assign o_axi_rq.arvalid = arvalid;
+assign arready = o_axi_rq.arready;
+assign o_axi_rq.arid = 0;
+assign o_axi_rq.arlen = 8'(BURST_LEN-1);
+assign o_axi_rq.arsize = 3'b010;
+assign o_axi_rq.arburst = 2'b01;
 
-assign rvalid = o_axi.rvalid;
-assign rresp = o_axi.rresp;
-assign o_axi.rready = rready;
-assign rlast = o_axi.rlast;
+assign rvalid = o_axi_rq.rvalid;
+assign rresp = o_axi_rq.rresp;
+assign o_axi_rq.rready = rready;
+assign rlast = o_axi_rq.rlast;
 
-assign o_axi.awaddr = awaddr;
-assign o_axi.awvalid = awvalid;
-assign o_axi.wvalid = wvalid;
-assign awready = o_axi.awready;
-assign wready = o_axi.wready;
-assign o_axi.wdata = axi_wdata;
-assign o_axi.wlast = wlast;
-assign o_axi.wstrb = wstrb;
-assign o_axi.awid = 0;
-assign o_axi.awlen = 8'(BURST_LEN-1);
-assign o_axi.awsize = 3'b010;
-assign o_axi.awburst = 2'b10;
+assign o_axi_rq.awaddr = awaddr;
+assign o_axi_rq.awvalid = awvalid;
+assign o_axi_rq.wvalid = wvalid;
+assign awready = o_axi_rq.awready;
+assign wready = o_axi_rq.wready;
+assign o_axi_rq.wdata = wdata;
+assign o_axi_rq.wlast = wlast;
+assign o_axi_rq.wstrb = wstrb;
+assign o_axi_rq.awid = 0;
+assign o_axi_rq.awlen = 8'(BURST_LEN-1);
+assign o_axi_rq.awsize = 3'b010;
+assign o_axi_rq.awburst = 2'b01;
 
-assign o_axi.bready = bready;
-assign bvalid = o_axi.bvalid;
-assign bresp = o_axi.bresp;
+assign o_axi_rq.bready = bready;
+assign bvalid = o_axi_rq.bvalid;
+assign bresp = o_axi_rq.bresp;
 
 endmodule

@@ -3,6 +3,7 @@ interface if_lsu_adapter ();
   logic rq;
   logic ren;
   logic wen;
+  logic ready;
   logic [2:0] read_t;
   logic [31:0] addr;
   logic [31:0] wdata;
@@ -10,12 +11,13 @@ interface if_lsu_adapter ();
 
   // adapter -> lsu signals
   logic [31:0] rdata;
+  logic ack;
   logic valid;
 
   // Master port (LSU side)
-  modport master(output wen, ren, rq, read_t, addr, wdata, wmask, input rdata, valid);
+  modport master(output wen, ren, rq, read_t, addr, wdata, wmask, ready, input rdata, valid, ack);
 
   // Slave port (ADAPTER side)
-  modport slave(input wen, ren, rq, read_t, addr, wdata, wmask, output rdata, valid);
+  modport slave(input wen, ren, rq, read_t, addr, wdata, wmask, ready, output rdata, valid, ack);
 endinterface
 

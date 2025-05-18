@@ -1,30 +1,18 @@
-interface if_dcache_axi();
+`include "common_config.sv"
+interface if_dcache_axi ();
   // dcache -> cache2axi signals
   logic rq;
   logic wen;
+  logic ready;
   logic [31:0] addr;
-  logic [31:0] wdata;
-  logic wdata_valid;
-  logic wlast;
-  logic rdata_ready;
-  
+  logic [`CACHE_LINE_WIDTH-1:0] w_cache_line;
   // cache2axi -> dcache signals
-  logic rq_ack;
-  logic [31:0] rdata;
-  logic rdata_valid;
-  logic fin_r;
-  logic wdata_ready;
-  logic fin_w;
-  
-  // Master port (DCACHE side)
-  modport master(
-    output rq, wen, addr, wdata, wdata_valid, wlast, rdata_ready,
-    input rq_ack, rdata, rdata_valid, fin_r, wdata_ready, fin_w
-  );
-  
-  // Slave port (CACHE2AXI side)
-  modport slave(
-    input rq, wen, addr, wdata, wdata_valid, wlast, rdata_ready,
-    output rq_ack, rdata, rdata_valid, fin_r, wdata_ready, fin_w
-  );
-endinterface 
+  logic [`CACHE_LINE_WIDTH-1:0] r_cache_line;
+  logic ack;
+  logic valid;
+
+  modport master(output rq, wen, ready, addr, w_cache_line, input r_cache_line, ack, valid);
+  modport slave(input rq, wen, ready, addr, w_cache_line, output r_cache_line, ack, valid);
+
+endinterface
+

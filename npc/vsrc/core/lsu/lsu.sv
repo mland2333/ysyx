@@ -189,7 +189,7 @@ module ysyx_24110006_LSU (
   always @(posedge i_clock) begin
     if (i_reset) rq <= 0;
     else if (i_vr.valid && i_vr.ready && !i_flush) rq <= 1;
-    else if (rq) rq <= 0;
+    else if (rq && o_lsu_rq.ack) rq <= 0;
   end
   assign o_lsu_rq.wen = wen;
   assign o_lsu_rq.ren = ren;
@@ -198,7 +198,7 @@ module ysyx_24110006_LSU (
   assign o_lsu_rq.addr = addr;
   assign o_lsu_rq.wdata = wdata0;
   assign o_lsu_rq.wmask = wmask;
-
+  assign o_lsu_rq.ready = 1;
 
   /* assign o_axi.araddr = addr; */
   /* assign o_axi.arvalid = arvalid; */

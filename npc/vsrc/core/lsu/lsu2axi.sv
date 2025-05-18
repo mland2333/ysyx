@@ -22,7 +22,7 @@ module ysyx_24110006_LSU2AXI (
   wire [1:0] bresp;
   wire bvalid;
   reg bready;
-
+  assign i_lsu_adapter.ack = 1;
   // Memory transaction completion
   assign i_lsu_adapter.valid = (i_lsu_adapter.ren && rvalid && rready) || (i_lsu_adapter.wen && bvalid && bready);
 

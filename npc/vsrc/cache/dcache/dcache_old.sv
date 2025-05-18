@@ -1,8 +1,5 @@
-//目标：
-//1、与访存接口分离
-//2、流水线访问
-//3、非阻塞访问
-module ysyx_24110006_MDCACHE #(
+//与访存接口分离
+module ysyx_24110006_DCACHE_OLD #(
     parameter NUM_BLOCKS = 64,
     parameter NUM_WAYS = 1,
     parameter DATA_PER_CACHELINE = 8
@@ -34,10 +31,10 @@ module ysyx_24110006_MDCACHE #(
   logic [OFFSET_WIDTH-3:0] cache_offset;
   logic [31:0] cache_wdata;
   logic [3:0] cache_wmask;
-  assign cache_tag = stall ? s0_tag : s1_tag;
-  assign cache_index = stall ? s0_index : s1_index;
-  assign cache_offset = stall ? s0_offset : state == write_mem ? write_offset : s1_offset;
-  assign cache_wdata = stall ? s0_wdata : s1_wdata;
+  assign cache_tag = stall ? s1_tag : s0_tag;
+  assign cache_index = stall ? s1_index : s0_index;
+  assign cache_offset = stall ? (state == write_mem ? write_offset : s1_offset) : s0_offset;
+  assign cache_wdata = stall ? s1_wdata : s0_wdata;
   assign cache_line = cache[cache_index];
 
   logic [31:0] rdata;
@@ -92,7 +89,7 @@ module ysyx_24110006_MDCACHE #(
   assign i_lsu.ready = s0_ready || s1_ready;
   
   //stage0
-  logic s0_wen;
+  logic s0_wen, s0_ren;
   logic [31:0] s0_addr, s0_wdata;
   logic [3:0] s0_wmask;
   logic [TAG_WIDTH-1:0] s0_tag;
@@ -113,6 +110,7 @@ module ysyx_24110006_MDCACHE #(
   always_ff @(posedge i_clock) begin
     if (i_lsu.rq && i_lsu.ready) begin
       s0_wen   <= i_lsu.wen;
+      s0_ren   <= i_lsu.ren;
       s0_addr  <= i_lsu.addr;
       s0_wdata <= i_lsu.wdata;
       s0_wmask <= i_lsu.wmask;
@@ -144,7 +142,7 @@ module ysyx_24110006_MDCACHE #(
     else if (s0_valid && !hit && s1_ready) s1_ready <= 0;
     else if (!s1_ready && hit) s1_ready <= 1;
   end
-  logic s1_wen;
+  logic s1_wen, s1_ren;
   logic [31:0] s1_addr, s1_wdata;
   logic [3:0] s1_wmask;
   logic [TAG_WIDTH-1:0] s1_tag;
@@ -156,6 +154,7 @@ module ysyx_24110006_MDCACHE #(
   always_ff @(posedge i_clock) begin
     if (s0_valid && s1_ready) begin
       s1_wen   <= s0_wen;
+      s1_ren   <= s0_ren;
       s1_addr  <= s0_addr;
       s1_wdata <= s0_wdata;
       s1_wmask <= s0_wmask;
@@ -173,12 +172,13 @@ module ysyx_24110006_MDCACHE #(
     else if (s2_ready && s1_miss) s2_ready <= 0;
   end
 
-  logic s2_wen;
+  logic s2_wen, s2_ren;
   logic [31:0] s2_addr, s1_wdata;
   logic [3:0] s2_wmask;
   always_ff @(posedge i_clock) begin
     if (s1_valid && s2_ready) begin
       s2_wen   <= s1_wen;
+      s2_ren   <= s1_ren;
       s2_addr  <= s1_addr;
       s2_wdata <= s1_wdata;
       s2_wmask <= s1_wmask;

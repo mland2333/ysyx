@@ -200,6 +200,9 @@ module ysyx_24110006_top (
   if_pipeline_vr bru_vr_wbu ();
   if_axi_read ifu_axi ();
   if_lsu_adapter lsu_adapter();
+  if_lsu_dcache lsu_dcache();
+  if_dcache_axi dcache_bridge();
+  if_axi dcache_axi ();
   if_lsu_adapter lsu_adapter_axi();
   if_axi lsu_axi ();
   if_axi xbar_axi ();
@@ -490,18 +493,37 @@ module ysyx_24110006_top (
       .i_vr(alloc_vr_lsu),
       .o_vr(lsu_vr_wbu),
       .i_flush(exception | branch | csr_flush),
-      .o_lsu_rq(lsu_adapter)
+      .o_lsu_rq(lsu_adapter.master)
   );
   ysyx_24110006_LSU_ADAPTER mlsu_adapter (
-      .i_lsu_adapter(lsu_adapter),
-      .o_lsu_adapter(lsu_adapter_axi)
+      .i_lsu_adapter(lsu_adapter.slave),
+`ifdef CONFIG_DCACHE
+      .o_lsu_dcache(lsu_dcache.master)
+`else
+      .o_lsu_adapter(lsu_adapter_axi.master)
+`endif
   );
+`ifdef CONFIG_DCACHE
+  ysyx_24110006_DCACHE mdcache (
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_lsu_rq(lsu_dcache.slave),
+      .o_axi_rq(dcache_bridge.master)
+  );
+  ysyx_24110006_CACHE2AXI mcache2axi(
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_dcache_rq(dcache_bridge.slave),
+      .o_axi_rq(dcache_axi.master)
+  );
+`else
   ysyx_24110006_LSU2AXI mlsu2axi (
       .i_clock(clock),
       .i_reset(reset),
-      .i_lsu_adapter(lsu_adapter_axi),
-      .o_axi(lsu_axi)
+      .i_dcache_rq(lsu_adapter_axi.slave),
+      .o_axi_rq(lsu_axi.master)
   );
+`endif
   ysyx_24110006_WBU mwbu (
       .i_bru_result(bru_result),
       .i_lsu_result(lsu_result),
@@ -542,7 +564,11 @@ module ysyx_24110006_top (
       .i_flush(flush),
       .o_busy(arbiter_ifu_read),
       .ifu(ifu_axi.slave),
+`ifdef CONFIG_DCACHE
+      .lsu(dcache_axi.slave),
+`else
       .lsu(lsu_axi.slave),
+`endif
       .out(xbar_axi.master)
   );
 
