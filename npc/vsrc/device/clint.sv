@@ -33,6 +33,7 @@ assign in.arready = arready;
 assign in.rdata = rdata;
 assign in.rvalid = rvalid;
 assign in.rresp = rresp;
+assign in.rlast = 1;
 wire rready = in.rready;
 
 always@(posedge i_clock)begin

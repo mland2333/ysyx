@@ -139,7 +139,7 @@ assign out_rready = in_rready;
 assign in_rid = out_rid; 
 assign in_rresp = out_rresp;
 /**/
-localparam NUMS = 4;
+localparam NUMS = 8;
 wire [NUMS-1:0] valid;
 reg [NUMS-1:0] tasks;
 reg [$clog2(NUMS)-1:0] task_index;

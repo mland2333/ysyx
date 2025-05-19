@@ -499,10 +499,9 @@ module ysyx_24110006_top (
   ysyx_24110006_LSU_ADAPTER mlsu_adapter (
       .i_lsu_adapter(lsu_adapter.slave),
 `ifdef CONFIG_DCACHE
-      .o_lsu_dcache(lsu_dcache.master)
-`else
-      .o_lsu_adapter(lsu_adapter_axi.master)
+      .o_lsu_dcache(lsu_dcache.master),
 `endif
+      .o_lsu_adapter(lsu_adapter_axi.master)
   );
 `ifdef CONFIG_DCACHE
   ysyx_24110006_DCACHE mdcache (
@@ -519,14 +518,14 @@ module ysyx_24110006_top (
       .i_dcache_rq(dcache_bridge.slave),
       .o_axi_rq(dcache_axi.master)
   );
-`else
+`endif
   ysyx_24110006_LSU2AXI mlsu2axi (
       .i_clock(clock),
       .i_reset(reset),
-      .i_dcache_rq(lsu_adapter_axi.slave),
-      .o_axi_rq(lsu_axi.master)
+      .i_lsu_adapter(lsu_adapter_axi.slave),
+      .o_axi(lsu_axi.master)
   );
-`endif
+
   ysyx_24110006_WBU mwbu (
       .i_bru_result(bru_result),
       .i_lsu_result(lsu_result),
@@ -568,10 +567,9 @@ module ysyx_24110006_top (
       .o_busy(arbiter_ifu_read),
       .ifu(ifu_axi.slave),
 `ifdef CONFIG_DCACHE
-      .lsu(dcache_axi.slave),
-`else
-      .lsu(lsu_axi.slave),
+      .dcache(dcache_axi.slave),
 `endif
+      .lsu(lsu_axi.slave),
       .out(xbar_axi.master)
   );
 
