@@ -123,7 +123,7 @@ module ysyx_24110006_DCACHE #(
     else if (o_axi_rq.rq && o_axi_rq.ack) o_axi_rq.wen <= 0;
   end
   assign o_axi_rq.ready = 1;
-  assign o_axi_rq.addr = in_flush ? {cache[index].tag, index, (32 - TAG_WIDTH - INDEX_WIDTH)'(0)} : addr;
+  assign o_axi_rq.addr = in_flush || state == write_mem ? {cache[index].tag, index, (32 - TAG_WIDTH - INDEX_WIDTH)'(0)} : addr;
   assign o_axi_rq.w_cache_line = cache_line.data;
   always_ff @(posedge i_clock) begin
     if (state == read_mem && o_axi_rq.valid) cache[index].data <= o_axi_rq.r_cache_line;
@@ -150,7 +150,7 @@ module ysyx_24110006_DCACHE #(
         cache[i].dirty <= 0;
       end
     end else begin
-      if (state == read_mem && o_axi_rq.valid) cache[index].dirty <= 0;
+      if ((state == write_mem || state == read_mem) && o_axi_rq.valid) cache[index].dirty <= 0;
       else if (state == judge && hit && wen) cache[index].dirty <= 1;
       else if (state == flush) cache[flush_index].dirty <= 0;
     end

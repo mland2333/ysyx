@@ -197,7 +197,7 @@ module ysyx_24110006_LSU (
   assign o_lsu_rq.read_t = read_t;
   assign o_lsu_rq.addr = addr;
   assign o_lsu_rq.wdata = wdata0;
-  assign o_lsu_rq.wmask = wmask;
+  assign o_lsu_rq.wmask = wmask0;
   assign o_lsu_rq.ready = 1;
 
   /* assign o_axi.araddr = addr; */

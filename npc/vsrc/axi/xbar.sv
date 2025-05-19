@@ -39,8 +39,8 @@ assign in.arready = r_is_read_clint ? clint.arready : mem.arready;
 assign in.rdata = r_is_read_clint ? clint.rdata : mem.rdata;
 assign in.rvalid = r_is_read_clint ? clint.rvalid : mem.rvalid;
 assign in.rresp = r_is_read_clint ? clint.rresp : mem.rresp;
-assign in.rid = r_is_read_clint ? 0 : mem.rid;
-assign in.rlast = r_is_read_clint ? 0 : mem.rlast;
+assign in.rid = r_is_read_clint ? clint.rid : mem.rid;
+assign in.rlast = r_is_read_clint ? clint.rlast : mem.rlast;
 
 assign mem.araddr = is_read_clint ? 0 : in.araddr;
 assign mem.arvalid = is_read_clint ? 0 : in.arvalid;
