@@ -9,5 +9,5 @@
 `define CMP 6
 `define BGE 7
 
-`define CACHE_LINE_WIDTH 256
+`define CACHE_LINE_WIDTH 128
 

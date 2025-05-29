@@ -16,7 +16,5 @@ fsbl:
   addi a1, a1, 0x4
   j fsbl
 ssbl:
-  fence.i
   call _bootloader
-  fence.i
   call _trm_init

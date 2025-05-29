@@ -28,7 +28,7 @@ ARGS ?=
 
 CXXFLAGS += -DCONFIG_ICACHE
 VERILATOR_CFLAGS += -sv
-VERILATOR_CFLAGS += -DCONFIG_DCACHE
+# VERILATOR_CFLAGS += -DCONFIG_DCACHE
 # VERILATOR_CFLAGS += -DCONFIG_ICACHE
 # VERILATOR_CFLAGS += -DCONFIG_PIPELINE
 # VERILATOR_CFLAGS += -DCONFIG_FORWARD
@@ -55,7 +55,9 @@ endif
 
 ifdef CONFIG_YSYXSOC
 VSRCS += $(YSYX_HOME)/ysyxSoC/build/ysyxSoCFull.v
-VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
+VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
+# VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
+VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
 VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
 else
 VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
