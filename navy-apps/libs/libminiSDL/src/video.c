@@ -19,8 +19,8 @@ void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_
   
   int dst_x = dstrect ? dstrect->x : 0;
   int dst_y = dstrect ? dstrect->y : 0;
-  int width = width_ > (dst->w - width_) ? (dst->w - width_) : width_;
-  int height = height_ > (dst->h - height_) ? (dst->h - height_) : height_;
+  int width = width_ > (dst->w - dst_x) ? (dst->w - dst_x) : width_;
+  int height = height_ > (dst->h - dst_y) ? (dst->h - dst_y) : height_;
   for (int i = 0; i < height; i++) {
     uint8_t* src_pixel = (uint8_t*)src->pixels + (src_y + i) * src->pitch + src_x * bpp;
     uint8_t* dst_pixel = (uint8_t*)dst->pixels + (dst_y + i) * dst->pitch + dst_x * bpp;
