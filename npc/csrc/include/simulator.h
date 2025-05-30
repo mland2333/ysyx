@@ -1,37 +1,46 @@
 #pragma once
 
 #include <cstdint>
-#include "VysyxSoCFull_ysyxSoCFull.h"
-#include "VysyxSoCFull__Syms.h"
+
 #define STRING_HELPER(x) #x
 #define STRING(x) STRING_HELPER(x)
 #define CONCAT_HELPER(x, y) x##y
 #define CONCAT(x, y) CONCAT_HELPER(x, y)
-
-#define HEADER_FILE(x) STRING(x.h)
+#define CONCAT_BY(x, y, z) CONCAT(CONCAT(x, z), y)
+#define ADDH(x) x.h
+#define HEADER_FILE(x) STRING(ADDH(x))
 #define ROOT_HEADER_FILE(x) STRING(CONCAT(x, ___024root.h))
+#define SV_HEADER_FILE_HELPER(x) STRING(CONCAT_BY(TOP_NAME, x, _))
+#define SV_HEADER_FILE(x) SV_HEADER_FILE_HELPER(x)
 
 #include HEADER_FILE(TOP_NAME)
-#include ROOT_HEADER_FILE(TOP_NAME)
+// #include ROOT_HEADER_FILE(TOP_NAME)
+#include SV_HEADER_FILE(ADDH(__024root))
+#include SV_HEADER_FILE(ADDH(if_pipeline_vr))
+#include SV_HEADER_FILE(ADDH(TOP_NAME_NOTV))
+#include SV_HEADER_FILE(ADDH(_Syms))
 #include "regs.h"
 #include "verilated_fst_c.h"
-#include <VysyxSoCFull_if_pipeline_vr.h>
 #include <args.h>
 #include <cpu.h>
 #include <iostream>
 #include <verilated.h>
+
 #ifdef CONFIG_YSYXSOC
 #define TOP_PREFIX                                                             \
-  top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__top__DOT__
+  top->rootp->vlSymsp->TOP__ysyxSoCFull__asic__cpu__cpu__top
 #define INTERFACE_PREFIX                                                       \
   top->rootp->__PVT__ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__top__DOT__
 #define PC_BEGIN 0xa0000000
 #else
-#define TOP_PREFIX top->rootp->ysyx_24110006__DOT__
+#define TOP_PREFIX top->rootp->ysyx_24110006->top
 #define PC_BEGIN 0x80000000
 #endif
 #define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
 #define INTERFACE(member) CONCAT(INTERFACE_PREFIX, member)
+#define ARROW_MEMBER(obj, member) obj->member
+#define GET_MEMBER(obj, member) ARROW_MEMBER(obj, member)
+
 #ifdef CONFIG_RISCV32E
 #define REG_NUMS 16
 #else
@@ -50,9 +59,9 @@ private:
   uint64_t old_clk = 0;
   void cpu_update(){
     for(int i = 1; i<REG_NUMS; i++)
-      cpu.gpr[i] = top->rootp->vlSymsp->TOP__ysyxSoCFull__asic__cpu__cpu__top.__PVT__mreg__DOT__rf[i];
-    cpu.pc = top->rootp->vlSymsp->TOP__ysyxSoCFull__asic__cpu__cpu__top.sim_pc;
-    cpu.inst = top->rootp->vlSymsp->TOP__ysyxSoCFull__asic__cpu__cpu__top.sim_inst;
+      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, __PVT__mreg__DOT__rf[i]);
+    cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc);
+    cpu.inst = GET_MEMBER(TOP_PREFIX, sim_inst);
   }
 public:
   TOP_NAME *top;

@@ -1,237 +1,399 @@
 `ifndef CONFIG_YSYXSOC
 import "DPI-C" function int pmem_read(input int raddr);
 import "DPI-C" function void pmem_write(
-  input int waddr, input int wdata, input byte wmask);
-
-module ysyx_24110006_SRAM #(
-  parameter FIFO_DEPTH = 8
-)
-(
-  input i_clock,
-  input i_reset,
-  if_axi.slave i_axi
-  /* output        o_axi_awready, */
-  /* input         i_axi_awvalid, */
-  /* input  [31:0] i_axi_awaddr, */
-  /* input  [3:0]  i_axi_awid, */
-  /* input  [7:0]  i_axi_awlen, */
-  /* input  [2:0]  i_axi_awsize, */
-  /* input  [1:0]  i_axi_awburst, */
-  /* output        o_axi_wready, */
-  /* input         i_axi_wvalid, */
-  /* input  [31:0] i_axi_wdata, */
-  /* input  [3:0]  i_axi_wstrb, */
-  /* input         i_axi_wlast, */
-  /* input         i_axi_bready, */
-  /* output        o_axi_bvalid, */
-  /* output [1:0]  o_axi_bresp, */
-  /* output [3:0]  o_axi_bid, */
-  /* output        o_axi_arready, */
-  /* input         i_axi_arvalid, */
-  /* input  [31:0] i_axi_araddr, */
-  /* input  [3:0]  i_axi_arid, */
-  /* input  [7:0]  i_axi_arlen, */
-  /* input  [2:0]  i_axi_arsize, */
-  /* input  [1:0]  i_axi_arburst, */
-  /* input         i_axi_rready, */
-  /* output        o_axi_rvalid, */
-  /* output [1:0]  o_axi_rresp, */
-  /* output [31:0] o_axi_rdata, */
-  /* output        o_axi_rlast, */
-  /* output [3:0]  o_axi_rid */
+  input int  waddr,
+  input int  wdata,
+  input byte wmask
 );
-/* localparam COUNT = 8'h05; */
 
-/* reg[7:0] out; */
-/* always@(is_begin)begin */
-/*   if(i_reset || out==0) begin out <= COUNT;end */
-/*   else if(is_begin)begin */
-/*     out[6:0] <= out[7:1]; */
-/*     out[7] <= out[4]^out[3]^out[2]^out[0]; */
-/*   end */
-/* end */
-/**/
-/* reg [7:0] count; */
-/* reg is_begin; */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) is_begin <= 0; */
-/*   else if(arvalid && !arready || awvalid && !awready) is_begin <= 1; */
-/*   else if(count == 0) is_begin <= 0; */
-/* end */
-/**/
-/* always@(posedge i_clock)begin */
-/*   if(i_reset) count <= COUNT; */
-/*   else if(is_begin && count != 0) */
-/*     count <= count - 1; */
-/*   else if(count == 0) */
-/*     count <= out; */
-/* end */
+module ysyx_24110006_SRAM (
+    input i_clock,
+    input i_reset,
+    if_axi.slave i_axi
+);
 
-reg [31:0] araddr;
-reg arready;
-reg [31:0] rdata;
-reg rvalid;
-reg [1:0] rresp;
-reg [31:0] awaddr;
-reg awready;
-reg [31:0] wdata;
-reg wready;
-reg [3:0] wstrb;
-reg bvalid;
-reg [1:0] bresp;
+  // AXI信号定义
+  wire        arvalid = i_axi.arvalid;
+  wire [31:0] araddr = i_axi.araddr;
+  wire [ 2:0] arsize = i_axi.arsize;
+  wire [ 7:0] arlen = i_axi.arlen;
+  wire [ 1:0] arburst = i_axi.arburst;
+  wire        rready = i_axi.rready;
 
-wire arvalid = i_axi.arvalid;
-assign i_axi.arready = arready;
-assign i_axi.rdata = rdata;
-assign i_axi.rvalid = rvalid;
-assign i_axi.rresp = rresp;
-wire rready = i_axi.rready;
-wire awvalid = i_axi.awvalid;
-assign i_axi.awready = awready;
-wire wvalid = i_axi.wvalid;
-assign i_axi.wready = wready;
-assign i_axi.bresp = bresp;
-assign i_axi.bvalid = bvalid;
-wire bready = i_axi.bready;
+  wire        awvalid = i_axi.awvalid;
+  wire [31:0] awaddr = i_axi.awaddr;
+  wire [ 2:0] awsize = i_axi.awsize;
+  wire [ 7:0] awlen = i_axi.awlen;
+  wire [ 1:0] awburst = i_axi.awburst;
 
-logic [2:0] arsize;
-logic [7:0] arlen;
-logic [1:0] arburst;
-logic [7:0] rtrans_nums;
-logic rlast;
-always_ff@(posedge i_clock)begin
-  if(arvalid && arready) begin
-    arsize <= i_axi.arsize;
-    arlen <= i_axi.arlen;
-    arburst <= i_axi.arburst;
-  end
-end
-always@(posedge i_clock)begin
-  if(i_reset || rtrans_nums == arlen) rtrans_nums <= 0;
-  else if(rvalid && rready) rtrans_nums <= rtrans_nums + 1;
-end
+  wire        wvalid = i_axi.wvalid;
+  wire [31:0] wdata = i_axi.wdata;
+  wire [ 3:0] wstrb = i_axi.wstrb;
+  wire        wlast = i_axi.wlast;
 
-always_ff@(posedge i_clock)begin
-  if(i_reset) rvalid <= 0;
-  else begin
-    if(!rvalid && in_trans) rvalid <= 1;
-    else if(rvalid && rready) rvalid <= 0;
-  end
-end
+  wire        bready = i_axi.bready;
 
-always_ff@(posedge i_clock)begin
-  if(i_reset) rlast <= 0;
-  else if(in_trans && rtrans_nums == arlen) rlast <= 1;
-  else if(rlast && rvalid && rready) rlast <= 0;
-end
-/* typedef struct { */
-/*   logic [2:0] arsize; */
-/*   logic [7:0] arlen; */
-/*   logic [1:0] arburst; */
-/*   logic [31:0] araddr; */
-/* } read_task_t; */
-/* localparam FIFO_INDEX_WIDTH = $clog2(FIFO_DEPTH); */
-/* read_task_t rfifo [8]; */
-/**/
-/* logic [FIFO_INDEX_WIDTH-1:0] rfifo_rptr, rfifo_wptr; */
-/* logic is_empty; */
-/* always_ff@(posedge i_clock)begin */
-/*   if(i_reset) begin */
-/*     rfifo_rptr <= 0; */
-/*     rfifo_wptr <= 0; */
-/*     is_empty <= 1; */
-/*   end */
-/* end */
+  // 读通道状态机
+  typedef enum logic [1:0] {
+    R_IDLE,
+    R_ADDR,
+    R_DATA
+  } read_state_t;
 
-//arready
-always@(posedge i_clock)begin
-  /* if(i_reset) arready <= 0; */
-  /* else if(arvalid && count == 0 && !arready) */
-  /*   arready <= 1; */
-  /* else if(arvalid && arready) */
-  /*   arready <= 0; */
-  arready <= 1;
-end
-//araddr
-always@(posedge i_clock)begin
-  if(i_reset) araddr <= 0;
-  else if(arvalid && arready)begin
-    araddr <= i_axi_araddr;
-  end
-end
-//rdata
-always@(posedge i_clock)begin
-  if(i_reset) rdata <= 0;
-  else if(arvalid && arready)begin
-    rdata <= pmem_read(i_axi_araddr);
-  end
-end
-//rvalid
-always@(posedge i_clock)begin
-  if(i_reset) rvalid <= 0;
-  else if(arvalid && arready && !rvalid)begin
-    rvalid <= 1;
-  end
-  else if(rvalid && rready) begin
-    rvalid <= 0;
-  end
-end
-//awready
-always@(posedge i_clock)begin
-  /* if(i_reset) awready <= 0; */
-  /* else if(awvalid && count == 0 && !awready) */
-  /*   awready <= 1; */
-  /* else if(awvalid && awready) */
-  /*   awready <= 0; */
-  awready <= 1;
-end
-//awaddr
-always@(posedge i_clock)begin
-  if(i_reset) awaddr <= 0;
-  else if(awvalid && awready)begin
-    awaddr <= i_axi_awaddr;
-  end
-end
-//wready
-always@(posedge i_clock)begin
-  /* if(i_reset) wready <= 0; */
-  /* else if(wvalid && count == 0 && !wready) */
-  /*   wready <= 1; */
-  /* else if(wvalid && wready) */
-  /*   wready <= 0; */
-  wready <= 1;
-end
-//wdata
-always@(posedge i_clock)begin
-  if(i_reset) wdata <= 0;
-  else if(wvalid && wready)begin
-    wdata <= i_axi_wdata;
-  end
-end
-//wstrb
-always@(posedge i_clock)begin
-  if(i_reset) wstrb <= 0;
-  else if(wvalid && wready)begin
-    wstrb <= i_axi_wstrb;
-  end
-end
+  read_state_t r_state, r_next_state;
 
-always@(posedge i_clock)begin
-  if(awvalid && awready && wvalid && wready && !bvalid)begin
-    pmem_write(i_axi_awaddr, i_axi_wdata, {4'b0, i_axi_wstrb});
+  // 写通道状态机 - 修改为支持独立的地址和数据通道
+  typedef enum logic [2:0] {
+    W_IDLE,
+    W_ADDR_ONLY,  // 只收到地址
+    W_DATA_ONLY,  // 只收到数据
+    W_BOTH,       // 地址和数据都收到
+    W_RESP
+  } write_state_t;
+
+  write_state_t w_state, w_next_state;
+
+  // 读通道寄存器
+  reg [31:0] r_araddr;
+  reg [ 2:0] r_arsize;
+  reg [ 7:0] r_arlen;
+  reg [ 1:0] r_arburst;
+  reg [ 7:0] r_beat_cnt;
+  reg [31:0] r_current_addr;
+
+  // 写通道寄存器
+  reg [31:0] w_awaddr;
+  reg [ 2:0] w_awsize;
+  reg [ 7:0] w_awlen;
+  reg [ 1:0] w_awburst;
+  reg [ 7:0] w_beat_cnt;
+  reg [31:0] w_current_addr;
+
+  // 写通道控制信号
+  reg        w_addr_received;
+  reg        w_data_received;
+  reg        w_can_write;
+
+  // 输出寄存器
+  reg        arready_r;
+  reg [31:0] rdata_r;
+  reg        rvalid_r;
+  reg        rlast_r;
+  reg [ 1:0] rresp_r;
+
+  reg        awready_r;
+  reg        wready_r;
+  reg        bvalid_r;
+  reg [ 1:0] bresp_r;
+
+  // 连接输出
+  assign i_axi.arready = arready_r;
+  assign i_axi.rdata   = rdata_r;
+  assign i_axi.rvalid  = rvalid_r;
+  assign i_axi.rlast   = rlast_r;
+  assign i_axi.rresp   = rresp_r;
+
+  assign i_axi.awready = awready_r;
+  assign i_axi.wready  = wready_r;
+  assign i_axi.bvalid  = bvalid_r;
+  assign i_axi.bresp   = bresp_r;
+
+  // 地址计算函数
+  function automatic [31:0] next_addr(input [31:0] addr, input [2:0] size, input [1:0] burst);
+    case (burst)
+      2'b00:   next_addr = addr;  // FIXED
+      2'b01: begin  // INCR
+        case (size)
+          3'b000:  next_addr = addr + 1;  // 1 byte
+          3'b001:  next_addr = addr + 2;  // 2 bytes
+          3'b010:  next_addr = addr + 4;  // 4 bytes
+          default: next_addr = addr + 4;
+        endcase
+      end
+      2'b10: begin  // WRAP
+        // 简化实现，当作INCR处理
+        case (size)
+          3'b000:  next_addr = addr + 1;
+          3'b001:  next_addr = addr + 2;
+          3'b010:  next_addr = addr + 4;
+          default: next_addr = addr + 4;
+        endcase
+      end
+      default: next_addr = addr;
+    endcase
+  endfunction
+
+  // 读通道状态机
+  always_ff @(posedge i_clock) begin
+    if (i_reset) begin
+      r_state <= R_IDLE;
+    end else begin
+      r_state <= r_next_state;
+    end
   end
-end
-//bvlid
-always@(posedge i_clock)begin
-  if(i_reset) bvalid <= 0;
-  else if(awvalid && awready && wvalid && wready && !bvalid)begin
-    bvalid <= 1;
+
+  always_comb begin
+    r_next_state = r_state;
+    unique case (r_state)
+      R_IDLE: begin
+        if (arvalid) begin
+          r_next_state = R_ADDR;
+        end
+      end
+      R_ADDR: begin
+        r_next_state = R_DATA;
+      end
+      R_DATA: begin
+        if (rvalid_r && rready && rlast_r) begin
+          r_next_state = R_IDLE;
+        end
+      end
+    endcase
   end
-  else if(bvalid && bready) begin
-    bvalid <= 0;
+
+  // 读地址通道
+  always_ff @(posedge i_clock) begin
+    if (i_reset) begin
+      arready_r <= 1'b0;
+      r_araddr <= 32'b0;
+      r_arsize <= 3'b0;
+      r_arlen <= 8'b0;
+      r_arburst <= 2'b0;
+      r_current_addr <= 32'b0;
+    end else begin
+      unique case (r_state)
+        R_IDLE: begin
+          arready_r <= 1'b1;
+          if (arvalid && arready_r) begin
+            r_araddr <= araddr;
+            r_arsize <= arsize;
+            r_arlen <= arlen;
+            r_arburst <= arburst;
+            r_current_addr <= araddr;
+            arready_r <= 1'b0;
+          end
+        end
+        R_ADDR: begin
+          arready_r <= 1'b0;
+        end
+        R_DATA: begin
+          arready_r <= 1'b0;
+          if (rvalid_r && rready && !rlast_r) begin
+            r_current_addr <= next_addr(r_current_addr, r_arsize, r_arburst);
+          end
+        end
+      endcase
+    end
   end
-end
+
+  // 读数据通道
+  always_ff @(posedge i_clock) begin
+    if (i_reset) begin
+      rvalid_r <= 1'b0;
+      rdata_r <= 32'b0;
+      rlast_r <= 1'b0;
+      rresp_r <= 2'b00;
+      r_beat_cnt <= 8'b0;
+    end else begin
+      unique case (r_state)
+        R_IDLE: begin
+          rvalid_r <= 1'b0;
+          rlast_r <= 1'b0;
+          r_beat_cnt <= 8'b0;
+        end
+        R_ADDR: begin
+          // 开始第一次读取
+          rdata_r <= pmem_read(r_current_addr);
+          rvalid_r <= 1'b1;
+          rlast_r <= (r_arlen == 8'b0);
+          rresp_r <= 2'b00;  // OKAY
+          r_beat_cnt <= 8'b0;
+        end
+        R_DATA: begin
+          if (rvalid_r && rready) begin
+            if (rlast_r) begin
+              rvalid_r <= 1'b0;
+              rlast_r  <= 1'b0;
+            end else begin
+              // 准备下一个数据
+              r_beat_cnt <= r_beat_cnt + 1;
+              rdata_r <= pmem_read(next_addr(r_current_addr, r_arsize, r_arburst));
+              rlast_r <= (r_beat_cnt + 1 == r_arlen);
+            end
+          end
+        end
+      endcase
+    end
+  end
+
+  // 写通道状态机 - 支持地址和数据的任意顺序
+  always_ff @(posedge i_clock) begin
+    if (i_reset) begin
+      w_state <= W_IDLE;
+    end else begin
+      w_state <= w_next_state;
+    end
+  end
+
+  always_comb begin
+    w_next_state = w_state;
+    unique case (w_state)
+      W_IDLE: begin
+        if (awvalid && wvalid) begin
+          // 地址和数据同时到达
+          w_next_state = W_BOTH;
+        end else if (awvalid) begin
+          // 只有地址到达
+          w_next_state = W_ADDR_ONLY;
+        end else if (wvalid) begin
+          // 只有数据到达
+          w_next_state = W_DATA_ONLY;
+        end
+      end
+      W_ADDR_ONLY: begin
+        if (wvalid) begin
+          // 数据到达，可以开始写入
+          w_next_state = W_BOTH;
+        end
+      end
+      W_DATA_ONLY: begin
+        if (awvalid) begin
+          // 地址到达，可以开始写入
+          w_next_state = W_BOTH;
+        end
+      end
+      W_BOTH: begin
+        if (w_can_write && wlast) begin
+          w_next_state = W_RESP;
+        end
+      end
+      W_RESP: begin
+        if (bvalid_r && bready) begin
+          w_next_state = W_IDLE;
+        end
+      end
+    endcase
+  end
+
+  // 写地址通道 - 独立处理
+  always_ff @(posedge i_clock) begin
+    if (i_reset) begin
+      awready_r <= 1'b1;  // 始终准备接收地址
+      w_awaddr <= 32'b0;
+      w_awsize <= 3'b0;
+      w_awlen <= 8'b0;
+      w_awburst <= 2'b0;
+      w_current_addr <= 32'b0;
+      w_addr_received <= 1'b0;
+    end else begin
+      // 地址通道独立处理
+      if (awvalid && awready_r && !w_addr_received) begin
+        w_awaddr <= awaddr;
+        w_awsize <= awsize;
+        w_awlen <= awlen;
+        w_awburst <= awburst;
+        w_current_addr <= awaddr;
+        w_addr_received <= 1'b1;
+        awready_r <= 1'b0;  // 一次事务只接收一次地址
+      end
+
+      // 事务完成后重置
+      if (w_state == W_RESP && bvalid_r && bready) begin
+        w_addr_received <= 1'b0;
+        awready_r <= 1'b1;
+      end
+    end
+  end
+
+  // 写数据通道 - 独立处理
+  always_ff @(posedge i_clock) begin
+    if (i_reset) begin
+      wready_r <= 1'b0;
+      w_beat_cnt <= 8'b0;
+      w_data_received <= 1'b0;
+      w_can_write <= 1'b0;
+    end else begin
+      // 只有当地址和数据都准备好时才能写入
+      w_can_write <= w_addr_received && (w_state == W_BOTH || w_state == W_DATA_ONLY);
+
+      unique case (w_state)
+        W_IDLE: begin
+          wready_r <= 1'b1;  // 准备接收数据
+          w_beat_cnt <= 8'b0;
+          w_data_received <= 1'b0;
+        end
+        W_ADDR_ONLY: begin
+          wready_r <= 1'b1;  // 等待数据
+        end
+        W_DATA_ONLY: begin
+          wready_r <= 1'b0;  // 等待地址，暂停接收数据
+        end
+        W_BOTH: begin
+          wready_r <= 1'b1;  // 可以接收数据
+          if (w_can_write) begin
+            // 执行写操作
+            pmem_write(w_current_addr, wdata, {4'b0, wstrb});
+
+            if (wlast) begin
+              wready_r <= 1'b0;
+              w_data_received <= 1'b1;
+            end else begin
+              w_beat_cnt <= w_beat_cnt + 1;
+              w_current_addr <= next_addr(w_current_addr, w_awsize, w_awburst);
+            end
+          end
+        end
+        W_RESP: begin
+          wready_r <= 1'b0;
+        end
+      endcase
+    end
+  end
+
+  // 写响应通道
+  always_ff @(posedge i_clock) begin
+    if (i_reset) begin
+      bvalid_r <= 1'b0;
+      bresp_r  <= 2'b00;
+    end else begin
+      unique case (w_state)
+        W_BOTH: begin
+          if (wlast && w_can_write) begin
+            bvalid_r <= 1'b1;
+            bresp_r  <= 2'b00;  // OKAY
+          end
+        end
+        W_RESP: begin
+          if (bvalid_r && bready) begin
+            bvalid_r <= 1'b0;
+          end
+        end
+        default: begin
+          if (w_state == W_IDLE) begin
+            bvalid_r <= 1'b0;
+          end
+        end
+      endcase
+    end
+  end
+
+  /* // 性能监控 */
+  /* always_ff @(posedge i_clock) begin */
+  /*     if (!i_reset) begin */
+  /*         // 每个时钟周期计数 */
+  /*         $c("perf_trigger_event_by_name(\"EVENT_CYCLE\");"); */
+  /**/
+  /*         // 读操作完成时触发指令提交事件 */
+  /*         if (rvalid_r && rready && rlast_r) begin */
+  /*             $c("perf_trigger_event_by_name(\"EVENT_INST_COMMIT\");"); */
+  /*         end */
+  /**/
+  /*         // 写操作完成时也触发指令提交事件 */
+  /*         if (w_state == W_BOTH && wvalid && wready_r && wlast && w_can_write) begin */
+  /*             $c("perf_trigger_event_by_name(\"EVENT_INST_COMMIT\");"); */
+  /*         end */
+  /*     end */
+  /* end */
 
 endmodule
 `endif

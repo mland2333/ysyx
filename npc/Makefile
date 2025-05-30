@@ -9,7 +9,7 @@ ifdef CONFIG_YSYXSOC
 TOPNAME = ysyxSoCFull
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl
-VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -Wno-WIDTHEXPAND -DCONFIG_YSYXSOC
+VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -DCONFIG_YSYXSOC
 CXXFLAGS += -DCONFIG_YSYXSOC
 
 else
@@ -21,7 +21,7 @@ INC_PATH += $(NPC_HOME)/csrc/include
 INC_PATH += $(NPC_HOME)/vsrc
 INC_PATH += $(NPC_HOME)/vsrc/config
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-structs -DDUMP_INTERFACE_HIERARCHY
+				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-structs -DDUMP_INTERFACE_HIERARCHY -Wno-WIDTHEXPAND
 VERILATOR_CFLAGS += -DCONFIG_SIM
 LIBS += -lcapstone
 ARGS ?=
@@ -60,7 +60,9 @@ VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
 VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
 VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
 else
-VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
+VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
+VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
+# VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
 endif
 
 CDIRS := $(shell find $(abspath ./csrc) -mindepth 1 -type d)
@@ -69,7 +71,7 @@ CSRCS += $(shell find $(abspath ./csrc) -maxdepth 1 -name "*.c" -or -name "*.cc"
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
-CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g
+CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -DTOP_NAME_NOTV="$(TOPNAME)" -g
 LDFLAGS += $(LIBS) -lSDL2
 CXXFLAGS += -flto
 LDFLAGS += -flto

@@ -4,7 +4,11 @@
 #ifdef CONFIG_NVBOARD
 #include <nvboard.h>
 #endif
-
+#ifdef CONFIG_YSYXSOC
+  static const char* fst_file = "soc.fst";
+#else
+  static const char* fst_file = "npc.fst";
+#endif
 Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gtk){
   top = new TOP_NAME;
   if (is_gtk) {
@@ -12,7 +16,7 @@ Simulator::Simulator(Args& args) :is_nvboard(args.is_nvboard), is_gtk(args.is_gt
     contextp = new VerilatedContext;
     tfp = new VerilatedFstC;
     top->trace(tfp, 0);
-    tfp->open("dump.fst");
+    tfp->open(fst_file);
   }
 #ifdef CONFIG_NVBOARD
   void nvboard_bind_all_pins(TOP_NAME *);

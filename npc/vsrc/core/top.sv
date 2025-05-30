@@ -80,16 +80,8 @@ module ysyx_24110006_top (
 );
 
   wire [31:0] upc, bru_upc;
-  wire jal_btb_update;
-  wire branch_btb_update;
-  wire btb_update;
-  wire predict_err;
-  wire [31:0] btb_pc;
   wire wbu_valid;
   wire exception, branch, exu_flush, csr_flush, flush, stall, bru_branch;
-  /* assign exception = wbu_exception; */
-  /* assign branch = bru_branch; */
-  /* assign csr_flush = bru_vr_wbu.valid & bru_csr_t[1]; */
   assign exception = csr_einfo.exception;
   assign flush = exu_flush | exception | branch | csr_flush;
   assign upc = exception ? csr_rdata.upc : (branch | csr_flush) ? bru_upc : exu_flush ? exu2bru.upc : 0;
@@ -97,9 +89,6 @@ module ysyx_24110006_top (
   wire arbiter_ifu_read;
   wire fencei;
 
-  /* wire [31:0] forward_src1, forward_src2; */
-  /* assign src1 = forward_src1; */
-  /* assign src2 = forward_src2; */
   wire bru_jump;
   wire lsu_wen, lsu_ren;
 
@@ -110,7 +99,7 @@ module ysyx_24110006_top (
   wire [31:0] wbu_pc;
   pipe::sim_t ifu_sim, idu_sim, exu_sim, bru_sim, lsu_sim, wbu_sim;
 `ifndef CONFIG_YSYXSOC
-  assign is_diff_skip = clint_rvalid || uart_bvalid || wbu_valid && (exu_mem_ren || exu_mem_wen) && exu_result >= 32'ha0000000;
+  assign is_diff_skip = clint_axi.rvalid || uart_axi.bvalid || lsu_vr_wbu.valid && (lsu_addr < 32'h80000000 || lsu_addr >= 32'h90000000);
 `else
   assign is_diff_skip = clint_axi.rvalid || lsu_vr_wbu.valid &&(lsu_addr >= 32'h10000000 && lsu_addr < 32'h10001000 || lsu_addr >= 32'h02000000 && lsu_addr < 32'h03000000);
 `endif
@@ -139,9 +128,6 @@ module ysyx_24110006_top (
   always @(posedge clock) npc_upc <= exu2bru.upc;
   always_ff @(posedge clock) begin
     if (wbu_valid) begin
-      /* update_pc(sim_pc); */
-      /* update_inst(wbu_sim.inst); */
-      /* if(reg_winfo.wen) update_reg(reg_winfo.rd, reg_winfo.wdata); */
       fetch_inst();
     end
   end
@@ -224,7 +210,7 @@ module ysyx_24110006_top (
       .o_icache_rq(ifu_icache),
       .i_upc(upc),
       .i_fencei(fencei),
-      .i_pc(btb_pc),
+      .i_pc(wbu_pc),
       .o_vr(ifu_vr_idu),
 `ifdef CONFIG_SIM
       .o_sim(ifu_sim),
@@ -463,13 +449,13 @@ module ysyx_24110006_top (
   ysyx_24110006_SRAM msram (
       .i_clock(clock),
       .i_reset(reset),
-      .in(mem_axi.slave)
+      .i_axi(mem_axi.slave)
   );
 
   ysyx_24110006_UART muart (
       .i_clock(clock),
       .i_reset(reset),
-      .in(uart_axi.slave)
+      .i_axi_w(uart_axi.slave)
   );
 `endif
 

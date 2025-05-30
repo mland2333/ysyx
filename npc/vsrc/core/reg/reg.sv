@@ -11,11 +11,11 @@ module ysyx_24110006_RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 32) (
 `ifdef RISCV32E
   `define HIGH_BIT 3
   `define INDEX 3:0
-  localparam REG_NUM = 2**4;
+  localparam int REG_NUM = 2**4;
 `else
   `define HIGH_BIT 4
   `define INDEX 4:0
-  localparam REG_NUM = 2**5;
+  localparam int REG_NUM = 2**5;
 `endif
   reg [DATA_WIDTH-1:0] rf [REG_NUM];
   always @(posedge i_clock) begin
@@ -39,20 +39,18 @@ module ysyx_24110006_RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 32) (
   logic [4:0] raddr1, raddr2;
   assign raddr1 = rinfo.rs1;
   assign raddr2 = rinfo.rs2;
-  always@(*)begin
-    integer i;
+  always_comb begin
     rdata1_low = 0;
     rdata2_low = 0;
-    for(i=1; i<REG_NUM/2; i=i+1)begin
+    for(int i=1; i<REG_NUM/2; i++)begin
       rdata1_low = rdata1_low | ({32{raddr1[`INDEX] == i}} & rf[i]);
       rdata2_low = rdata2_low | ({32{raddr2[`INDEX] == i}} & rf[i]);
     end
   end
-  always@(*)begin
-    integer i;
+  always_comb begin
     rdata1_high = 0;
     rdata2_high = 0;
-    for(i=REG_NUM/2; i<REG_NUM; i=i+1)begin
+    for(int i=REG_NUM/2; i<REG_NUM; i++)begin
       rdata1_high = rdata1_high | ({32{raddr1[`INDEX] == i}} & rf[i]);
       rdata2_high = rdata2_high | ({32{raddr2[`INDEX] == i}} & rf[i]);
     end
