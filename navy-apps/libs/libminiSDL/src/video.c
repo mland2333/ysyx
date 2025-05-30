@@ -7,45 +7,58 @@
 #include <unistd.h>
 #include <stdio.h>
 void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
-  assert(dst && src);
-  assert(dst->format->BitsPerPixel == src->format->BitsPerPixel);
-  /* printf("enter blit\n"); */
-  int bytes_per_pixel = src->format->BytesPerPixel;
+  assert(src && dst);
+  assert(src->format->BitsPerPixel == dst->format->BitsPerPixel);
 
-  int src_x = (srcrect) ? srcrect->x : 0;
-  int src_y = (srcrect) ? srcrect->y : 0;
-  int src_w = (srcrect) ? srcrect->w : src->w;
-  int src_h = (srcrect) ? srcrect->h : src->h;
+  int bpp = src->format->BytesPerPixel;
 
-  int dst_x = (dstrect) ? dstrect->x : 0;
-  int dst_y = (dstrect) ? dstrect->y : 0;
-  uint8_t* srcpixel = src->pixels;
-  uint8_t* dstpixel = dst->pixels;
-  for (int i = 0; i < src_h; i++) {
-    uint8_t* src_pixel = src->pixels + (src_y + i) * src_w * bytes_per_pixel + src_x * bytes_per_pixel;
-    uint8_t* dst_pixel = dst->pixels + (src_y + i) * src_w * bytes_per_pixel + src_x * bytes_per_pixel;
-    // printf("dst = %x, src = %x\n", &dst->pixels, &src->pixels);
-    memcpy(dst_pixel, src_pixel, src_w * bytes_per_pixel);
+  int src_x = srcrect ? srcrect->x : 0;
+  int src_y = srcrect ? srcrect->y : 0;
+  int width  = srcrect ? srcrect->w : src->w;
+  int height = srcrect ? srcrect->h : src->h;
+
+  int dst_x = dstrect ? dstrect->x : 0;
+  int dst_y = dstrect ? dstrect->y : 0;
+
+  for (int i = 0; i < height; i++) {
+    uint8_t* src_pixel = (uint8_t*)src->pixels + (src_y + i) * src->pitch + src_x * bpp;
+    uint8_t* dst_pixel = (uint8_t*)dst->pixels + (dst_y + i) * dst->pitch + dst_x * bpp;
+    memcpy(dst_pixel, src_pixel, width * bpp);
   }
-  /* printf("quit blit\n"); */
 }
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
-  printf("enter fill\n");
-  int bytes_per_pixel = dst->format->BytesPerPixel;
-  int dst_x = (dstrect) ? dstrect->x : 0;
-  int dst_y = (dstrect) ? dstrect->y : 0;
-  int dst_w = (dstrect) ? dstrect->w : dst->w;
-  int dst_h = (dstrect) ? dstrect->h : dst->h;
-  uint32_t _color = color;
-  for (int i = 0; i < dst_h; i++){
-    for (int j = 0; j < dst_w; j++){
-      uint8_t *dst_pixel = dst->pixels + (dst_y + i) * dst_w * bytes_per_pixel + (dst_x + j) * bytes_per_pixel;
-      *(uint32_t*)dst_pixel = color;
+  if (!dst) return;
+
+  int bpp = dst->format->BytesPerPixel;
+  int x0 = dstrect ? dstrect->x : 0;
+  int y0 = dstrect ? dstrect->y : 0;
+  int w  = dstrect ? dstrect->w : dst->w;
+  int h  = dstrect ? dstrect->h : dst->h;
+
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      uint8_t *pixel = (uint8_t *)dst->pixels + (y0 + y) * dst->pitch + (x0 + x) * bpp;
+      switch (bpp) {
+        case 1:
+          *pixel = (uint8_t)color;
+          break;
+        case 2:
+          *(uint16_t*)pixel = (uint16_t)color;
+          break;
+        case 3:
+          pixel[0] = color & 0xFF;
+          pixel[1] = (color >> 8) & 0xFF;
+          pixel[2] = (color >> 16) & 0xFF;
+          break;
+        case 4:
+          *(uint32_t*)pixel = color;
+          break;
+      }
     }
   }
-  printf("quit fill\n");
 }
+
 
 void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
   if (w == 0) w = s->w;
