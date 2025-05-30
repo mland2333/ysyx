@@ -25,6 +25,10 @@ int main(const char *args);
 void load_data(){
   char* src = _data_load_start;
   char* dst = _data_start;
+  /* printf("_data_load_start = 0x%x\n", _data_load_start); */
+  /* printf("_data_load_end = 0x%x\n", _data_load_end); */
+  /* printf("_data_start = 0x%x\n", _data_start); */
+  /* printf("_data_end = 0x%x\n", _data_end); */
   while(dst != _data_end){
     *dst = *src;
     src++;
@@ -64,6 +68,7 @@ void uart_init(){
 }
 
 void _trm_init() {
+  /* load_data(); */
   uart_init();
   /* unsigned int mvendorid, marchid; */
   /* asm volatile("csrr %0, mvendorid" : "=r"(mvendorid)); */

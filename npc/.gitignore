@@ -12,5 +12,4 @@
 !.gitignore
 !README.md
 !*.nxdc
-!*.sv
 build/

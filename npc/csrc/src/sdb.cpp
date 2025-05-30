@@ -63,6 +63,8 @@ Sdb::Sdb(Args& args_, Simulator* sim_, Memory* mem_) : args(args_),
 
 SIM_STATE Sdb::exec_once(){
   SIM_STATE state = sim->exec_once();
+  if (args.is_perf && sim->cpu.pc >= PC_BEGIN)
+    perf.trace(sim);
   if (args.is_itrace && is_time_to_trace){
     itrace->trace(sim->cpu.pc, sim->cpu.inst);
     /* if (args.is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump()); */
@@ -105,7 +107,7 @@ int Sdb::run(){
   if (args.is_batch) {
     uint64_t now = Utils::get_time();
     result = cmd_c(this, nullptr);
-    // perf.timer += Utils::get_time() - now;
+    perf.timer += Utils::get_time() - now;
   }
   else {
     std::cout << "(npc) ";
@@ -118,7 +120,7 @@ int Sdb::run(){
         sdb_args = nullptr;
       uint64_t now = Utils::get_time();
       result = sdb_map_[cmd](this, sdb_args);
-      // perf.timer += Utils::get_time() - now;
+      perf.timer += Utils::get_time() - now;
       if (result != SIM_STATE::NORMAL) {
         break;
       }
@@ -141,7 +143,7 @@ int Sdb::run(){
 }
 
 Sdb::~Sdb(){
-  // if (args.is_perf) perf.print_summary();
+  if (args.is_perf) perf.statistic();
   if (args.is_ftrace) delete ftrace;
   if (args.is_itrace) delete itrace;
   if (args.is_diff) delete diff;

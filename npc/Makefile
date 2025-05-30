@@ -9,7 +9,7 @@ ifdef CONFIG_YSYXSOC
 TOPNAME = ysyxSoCFull
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
 INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl
-VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -DCONFIG_YSYXSOC
+VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -Wno-WIDTHEXPAND -DCONFIG_YSYXSOC
 CXXFLAGS += -DCONFIG_YSYXSOC
 
 else
@@ -19,21 +19,18 @@ endif
 NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 INC_PATH += $(NPC_HOME)/vsrc
-INC_PATH += $(NPC_HOME)/vsrc/config
 VERILATOR_CFLAGS += -MMD --build -cc  \
-				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-structs -DDUMP_INTERFACE_HIERARCHY -Wno-WIDTHEXPAND
+				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-threads 2 
 VERILATOR_CFLAGS += -DCONFIG_SIM
 LIBS += -lcapstone
 ARGS ?=
 
 CXXFLAGS += -DCONFIG_ICACHE
-VERILATOR_CFLAGS += -sv
-# VERILATOR_CFLAGS += -DCONFIG_DCACHE
-# VERILATOR_CFLAGS += -DCONFIG_ICACHE
-# VERILATOR_CFLAGS += -DCONFIG_PIPELINE
-# VERILATOR_CFLAGS += -DCONFIG_FORWARD
-# VERILATOR_CFLAGS += -DCONFIG_ICACHE_PIPELINE
-# VERILATOR_CFLAGS += -DCONFIG_BTB
+VERILATOR_CFLAGS += -DCONFIG_ICACHE
+VERILATOR_CFLAGS += -DCONFIG_PIPELINE
+VERILATOR_CFLAGS += -DCONFIG_FORWARD
+VERILATOR_CFLAGS += -DCONFIG_ICACHE_PIPELINE
+VERILATOR_CFLAGS += -DCONFIG_BTB
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 BIN = $(BUILD_DIR)/$(TOPNAME)
@@ -55,14 +52,10 @@ endif
 
 ifdef CONFIG_YSYXSOC
 VSRCS += $(YSYX_HOME)/ysyxSoC/build/ysyxSoCFull.v
-VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
-# VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
-VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
+VSRCS += $(shell find $(abspath ./vsrc) -name "*.v")
 VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
 else
-VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
-VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
-# VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
+VSRCS += $(shell find $(abspath ./vsrc) -name "*.v")
 endif
 
 CDIRS := $(shell find $(abspath ./csrc) -mindepth 1 -type d)
@@ -71,14 +64,14 @@ CSRCS += $(shell find $(abspath ./csrc) -maxdepth 1 -name "*.c" -or -name "*.cc"
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
-CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -DTOP_NAME_NOTV="$(TOPNAME)" -g
+CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -g
 LDFLAGS += $(LIBS) -lSDL2
 CXXFLAGS += -flto
 LDFLAGS += -flto
 
-OBJCACHE = ccache
-CC = ccache gcc
-CXX = ccache g++
+# OBJCACHE = ccache
+# CC = ccache gcc
+# CXX = ccache g++
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	@rm -rf $(OBJ_DIR)
