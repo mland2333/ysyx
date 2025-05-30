@@ -10,10 +10,9 @@ static int fbdev = -1;
 static int screen_w = 0, screen_h = 0;
 struct timeval st;
 uint32_t NDL_GetTicks() {
-  
   struct timeval now_st;
   gettimeofday(&now_st, NULL);
-  return (now_st.tv_usec - st.tv_usec) / 100;
+  return (now_st.tv_sec - st.tv_sec) * 1000 + (now_st.tv_usec - st.tv_usec)/1000;
 }
 
 int NDL_PollEvent(char *buf, int len) {
