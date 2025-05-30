@@ -21,7 +21,7 @@ void hello_fun(void *arg) {
 extern void naive_uload(PCB *pcb, const char *filename);
 void init_proc() {
   switch_boot_pcb();
-  naive_uload(NULL, "/bin/nslider");
+  naive_uload(NULL, "/bin/timer-test");
 
   Log("Initializing processes...");
 
