@@ -13,7 +13,7 @@ uint32_t NDL_GetTicks() {
   
   struct timeval now_st;
   gettimeofday(&now_st, NULL);
-  return (st.tv_usec - now_st.tv_usec) / 100;
+  return (st.tv_usec - now_st.tv_usec);
 }
 
 int NDL_PollEvent(char *buf, int len) {
