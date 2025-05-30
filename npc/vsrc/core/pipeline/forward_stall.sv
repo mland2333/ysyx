@@ -6,15 +6,22 @@ module ysyx_24110006_FORWARD_STALL(
   input [31:0] i_reg_src2,
   input [31:0] i_lsu_data,
   input [31:0] i_exu_data,
-  input i_exu_load,
-  input i_lsu_load,
-  input i_exu_valid,
+  input [31:0] i_bru_data,
+  /* input i_exu_load, */
+  /* input i_lsu_load, */
+  input i_exu2bru_valid,
+  input i_exu2lsu_valid,
   input i_lsu_valid,
+  input i_bru_valid,
   input i_lsu_ready,
-  input [4:0] i_exu_rd,
+  input [4:0] i_exu2bru_rd,
+  input [4:0] i_exu2lsu_rd,
   input [4:0] i_lsu_rd,
-  input i_exu_wen, 
+  input [4:0] i_bru_rd,
+  input i_exu2bru_wen,
+  input i_exu2lsu_wen,
   input i_lsu_wen,
+  input i_bru_wen,
   output [31:0] o_src1,
   output [31:0] o_src2,
   output o_stall
@@ -35,19 +42,22 @@ wire LUI = op[6:2] == 5'b01101;
 wire B = op[6:2] == 5'b11000;
 wire CSR = op[6:2] == 5'b11100;
 wire FENCE = op[6:2] == 5'b00011;
-wire exu_rd_active = i_exu_valid;
+wire exu2lsu_rd_active = i_exu2lsu_valid;
 wire lsu_rd_active = !i_lsu_ready;
-wire rs1_exu_forward = rs1 != 0 && (rs1 == i_exu_rd && i_exu_wen && i_exu_valid && !i_exu_load);
+wire bru_rd_active = i_bru_valid;
+wire rs1_exu_forward = rs1 != 0 && (rs1 == i_exu2bru_rd && i_exu2bru_wen && i_exu2bru_valid);
 wire rs1_lsu_forward = rs1 != 0 && (rs1 == i_lsu_rd && i_lsu_wen && i_lsu_valid);
-wire rs2_exu_forward = rs2 != 0 && (rs2 == i_exu_rd && i_exu_wen && i_exu_valid && !i_exu_load);
+wire rs1_bru_forward = rs1 != 0 && (rs1 == i_bru_rd && i_bru_wen && i_bru_valid);
+wire rs2_exu_forward = rs2 != 0 && (rs2 == i_exu2bru_rd && i_exu2bru_wen && i_exu2bru_valid);
 wire rs2_lsu_forward = rs2 != 0 && (rs2 == i_lsu_rd && i_lsu_wen && i_lsu_valid);
-assign o_src1 = rs1_exu_forward ? i_exu_data : rs1_lsu_forward ? i_lsu_data : i_reg_src1;
-assign o_src2 = rs2_exu_forward ? i_exu_data : rs2_lsu_forward ? i_lsu_data : i_reg_src2;
+wire rs2_bru_forward = rs2 != 0 && (rs2 == i_bru_rd && i_bru_wen && i_bru_valid);
+assign o_src1 = rs1_exu_forward ? i_exu_data : rs1_lsu_forward ? i_lsu_data : rs1_bru_forward ? i_bru_data : i_reg_src1;
+assign o_src2 = rs2_exu_forward ? i_exu_data : rs2_lsu_forward ? i_lsu_data : rs2_bru_forward ? i_bru_data : i_reg_src2;
 
-wire rs1_exu_stall = rs1 != 0 && (rs1 == i_exu_rd && i_exu_wen && exu_rd_active && i_exu_load);
-wire rs1_lsu_stall = rs1 != 0 && (rs1 == i_lsu_rd && i_lsu_wen && lsu_rd_active && i_lsu_load);
-wire rs2_exu_stall = rs2 != 0 && (rs2 == i_exu_rd && i_exu_wen && exu_rd_active && i_exu_load);
-wire rs2_lsu_stall = rs2 != 0 && (rs2 == i_lsu_rd && i_lsu_wen && lsu_rd_active && i_lsu_load);
+wire rs1_exu_stall = rs1 != 0 && (rs1 == i_exu2lsu_rd && i_exu2lsu_wen && exu2lsu_rd_active);
+wire rs1_lsu_stall = rs1 != 0 && (rs1 == i_lsu_rd && i_lsu_wen && lsu_rd_active);
+wire rs2_exu_stall = rs2 != 0 && (rs2 == i_exu2lsu_rd && i_exu2lsu_wen && exu2lsu_rd_active);
+wire rs2_lsu_stall = rs2 != 0 && (rs2 == i_lsu_rd && i_lsu_wen && lsu_rd_active);
 
 wire rs1_stall = rs1_exu_stall || rs1_lsu_stall;
 wire rs2_stall = rs2_exu_stall || rs2_lsu_stall;

@@ -27,7 +27,7 @@ always@(posedge i_clock)begin
   else begin
     case(read_state)
       IDLE_READ:begin
-        if(ifu.arvalid && !i_flush) read_state <= MEM0_READ;
+        if(ifu.arvalid) read_state <= MEM0_READ;
         else if(lsu.arvalid) read_state <= MEM1_READ;
       end
       MEM0_READ:begin
@@ -55,9 +55,9 @@ assign out.arsize = is_read0 ? ifu.arsize : is_read1 ? lsu.arsize : 0;
 assign out.arburst = is_read0 ? ifu.arburst : is_read1 ? lsu.arburst : 0;
 assign out.rready = is_read0 ? ifu.rready : is_read1 ? lsu.rready : 0;
 
-assign ifu.arready = is_read0 ? out.arready : i_flush;
-assign ifu.rvalid = is_read0 ? out.rvalid : i_flush;
-assign ifu.rlast = is_read0 ? out.rlast : i_flush;
+assign ifu.arready = is_read0 ? out.arready : 0;
+assign ifu.rvalid = is_read0 ? out.rvalid : 0;
+assign ifu.rlast = is_read0 ? out.rlast : 0;
 assign ifu.rdata = is_read0 ? out.rdata : 0;
 assign ifu.rresp = is_read0 ? out.rresp : 0;
 assign ifu.rid = is_read0 ? out.rid : 0;

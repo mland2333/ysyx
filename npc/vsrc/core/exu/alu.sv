@@ -55,70 +55,62 @@ endmodule
 
 
 module ysyx_24110006_ALU(
-  input [31:0] i_a,
-  input [31:0] i_b,
-  input i_sub,
-  input i_sign,
-  input [`ALU_TYPE-1:0] i_alu_t,
-  output reg [31:0] o_r,
-  output o_cmp,
-  /* output o_zero, */
-  /* output [1:0] o_branch_mid, */
-  output [31:0] o_add_r
+  input alu::op_t op,
+  output alu::result_t result
 );
 
   wire signed [31:0] a, b;
-  assign a = i_a;
+  assign a = op.a;
 
   wire cout;
-  wire [4:0] shift_num = i_b[4:0];
+  wire [4:0] shift_num = op.b[4:0];
   wire[31:0] add_r;
-  wire cmp = i_sign ? (i_a[31]&i_b[31] | add_r[31]&(i_a[31]^i_b[31])) : ~cout;
-  assign {cout, add_r} = i_a + i_b + {31'b0, i_sub};
+  wire cmp = op.sign ? (op.a[31]&op.b[31] | add_r[31]&(op.a[31]^op.b[31])) : ~cout;
+  assign {cout, add_r} = op.a + op.b + {31'b0, op.sub};
 
-  /* wire [2:0] shift_op = {i_alu_t[`ALU_SRA], i_alu_t[`ALU_SRL], i_alu_t[`ALU_SLL]}; */
-  /* wire [2:0] logic_op = {i_alu_t[`ALU_XOR], i_alu_t[`ALU_OR ], i_alu_t[`ALU_AND]}; */
+  /* wire [2:0] shift_op = {op.alu_t[`ALU_SRA], op.alu_t[`ALU_SRL], op.alu_t[`ALU_SLL]}; */
+  /* wire [2:0] logic_op = {op.alu_t[`ALU_XOR], op.alu_t[`ALU_OR ], op.alu_t[`ALU_AND]}; */
   /* wire [31:0] shift_r; */
   /* wire [31:0] logic_r; */
   /* wire [31:0] slt_r = {31'b0, cmp}; */
   /* ysyx_24110006_SHIFT mshifter( */
-  /*   .a(i_a), */
+  /*   .a(op.a), */
   /*   .shamt(shift_num), */
   /*   .op(shift_op), */
   /*   .result(shift_r) */
   /* ); */
   /* ysyx_24110006_LOGIC mlogic( */
-  /*   .a(i_a), */
-  /*   .b(i_b), */
+  /*   .a(op.a), */
+  /*   .b(op.b), */
   /*   .op(logic_op), */
   /*   .result(logic_r) */
   /* ); */
-  /* wire is_logic = i_alu_t[`ALU_XOR] | i_alu_t[`ALU_OR ] | i_alu_t[`ALU_AND]; */
-  /* wire is_shift = i_alu_t[`ALU_SLL] | i_alu_t[`ALU_SRL] | i_alu_t[`ALU_SRA]; */
-  /* wire is_add   = i_alu_t[`ALU_ADD]; */
-  /* wire is_slt   = i_alu_t[`ALU_SLT]; */
+  /* wire is_logic = op.alu_t[`ALU_XOR] | op.alu_t[`ALU_OR ] | op.alu_t[`ALU_AND]; */
+  /* wire is_shift = op.alu_t[`ALU_SLL] | op.alu_t[`ALU_SRL] | op.alu_t[`ALU_SRA]; */
+  /* wire is_add   = op.alu_t[`ALU_ADD]; */
+  /* wire is_slt   = op.alu_t[`ALU_SLT]; */
   /**/
-  /* assign o_r = {32{is_logic}} & logic_r | */
+  /* assign result.r = {32{is_logic}} & logic_r | */
   /*              {32{is_shift}} & shift_r | */
   /*              {32{is_add  }} & add_r   | */
   /*              {32{is_slt  }} & slt_r   ; */
-  wire [31:0] sll_r = i_a << shift_num;
+  wire [31:0] sll_r = op.a << shift_num;
   wire [31:0] slt_r = {31'b0, cmp};
-  wire [31:0] xor_r = i_a ^ i_b;
+  wire [31:0] xor_r = op.a ^ op.b;
   wire [31:0] srl_r = a >> shift_num;
   wire [31:0] sra_r = a >>> shift_num;
-  wire [31:0] or_r  = i_a | i_b;
-  wire [31:0] and_r = i_a & i_b;
-  assign o_r = {32{i_alu_t[`ALU_ADD]}}&add_r |
-               {32{i_alu_t[`ALU_SLL]}}&sll_r |
-               {32{i_alu_t[`ALU_SLT]}}&slt_r |
-               {32{i_alu_t[`ALU_XOR]}}&xor_r |
-               {32{i_alu_t[`ALU_SRL]}}&srl_r |
-               {32{i_alu_t[`ALU_SRA]}}&sra_r |
-               {32{i_alu_t[`ALU_OR ]}}&or_r  |
-               {32{i_alu_t[`ALU_AND]}}&and_r;
+  wire [31:0] or_r  = op.a | op.b;
+  wire [31:0] and_r = op.a & op.b;
+  assign result.r = {32{op.alu_t[`ALU_ADD]}}&add_r |
+               {32{op.alu_t[`ALU_SLL]}}&sll_r |
+               {32{op.alu_t[`ALU_SLT]}}&slt_r |
+               {32{op.alu_t[`ALU_XOR]}}&xor_r |
+               {32{op.alu_t[`ALU_SRL]}}&srl_r |
+               {32{op.alu_t[`ALU_SRA]}}&sra_r |
+               {32{op.alu_t[`ALU_OR ]}}&or_r  |
+               {32{op.alu_t[`ALU_AND]}}&and_r;
 
-  assign o_add_r = add_r;
-  assign o_cmp = cmp;
-  /* assign o_zero = add_r == 0; */
+  assign result.add_r = add_r;
+  assign result.cmp = cmp;
+  /* assign result.zero = add_r == 0; */
 endmodule

@@ -2,54 +2,32 @@
 module ysyx_24110006_BRU (
     input i_clock,
     input i_reset,
-
-    input [1:0] i_csr_t,
-
-    input [31:0] i_result,
-    output [1:0] o_csr_t,
-    output [31:0] o_result,
-    input [4:0] i_reg_rd,
-    output [4:0] o_reg_rd,
-    input i_reg_wen,
-    output o_reg_wen,
-    input [31:0] i_pc,
-    output [31:0] o_pc,
-    input [31:0] i_upc,
+    input pipe::exu2bru_t from_exu,
+    output pipe::wbu_t to_wbu,
+    output pipe::csr_winfo_t to_csr,
+    output pipe::csr_einfo_t csr_einfo,
     output [31:0] o_upc,
-    input i_jump,
     output o_jump,
-
-    input [`BRANCH_MID] i_branch_mid,
-    input [11:0] i_csr,
-    output [11:0] o_csr,
-    input i_exception,
-    output o_exception,
-    input [3:0] i_mcause,
-    output [3:0] o_mcause,
     input i_flush,
-
     output o_branch,
-    input i_predict,
-    output o_predict,
-    output o_predict_err,
-    output o_btb_update,
+    output o_csr_flush,
+    /* input i_predict, */
+    /* output o_predict, */
+    /* output o_predict_err, */
+    /* output o_btb_update, */
 `ifdef CONFIG_SIM
-    input [6:0] i_op,
-    output [6:0] o_op,
     output o_sim_branch,
+    input pipe::sim_t i_sim,
+    output pipe::sim_t o_sim,
 `endif
     if_pipeline_vr.in i_vr,
     if_pipeline_vr.out o_vr
 );
-
-  reg ren;
-  reg wen;
-  reg [31:0] result;
-  reg [4:0] reg_rd;
-  reg result_t;
-  reg reg_wen;
-  reg [1:0] csr_t;
-  wire update_reg;
+  pipe::exu2bru_t exu_data;
+  logic update_reg;
+  always @(posedge i_clock) begin
+    if (update_reg) exu_data <= from_exu;
+  end
 
   always @(posedge i_clock) begin
     if (i_reset) o_vr.valid <= 0;
@@ -64,75 +42,43 @@ module ysyx_24110006_BRU (
   end
 
   assign update_reg = !i_reset && i_vr.valid && i_vr.ready && !i_flush;
-  reg exception;
-  always @(posedge i_clock) begin
-    if (update_reg) exception <= i_exception;
-  end
-  assign o_exception = exception;
-  reg [3:0] mcause;
-  always @(posedge i_clock) begin
-    if (update_reg) mcause <= i_mcause;
-  end
-  assign o_mcause = mcause;
 
-  reg [31:0] upc;
-  always @(posedge i_clock) begin
-    if (update_reg) upc <= i_upc;
-  end
-  assign o_upc = upc;
 `ifdef CONFIG_SIM
 
-  reg [6:0] op;
   always @(posedge i_clock) begin
-    if (update_reg) op <= i_op;
+    if (update_reg) o_sim <= i_sim;
   end
-  assign o_op = op;
   assign o_sim_branch = branch & o_vr.valid;
+  always_ff @(posedge i_clock) begin
+    if (update_reg) o_sim <= i_sim;
+  end
 `endif
+  /* reg predict; */
+  /* always @(posedge i_clock) begin */
+  /*   if (update_reg) predict <= i_predict; */
+  /* end */
+  /* assign o_predict = predict; */
+  /* assign o_predict_err = predict && !branch && branch_mid[`BRANCH]; */
+  /* assign o_btb_update = !predict && branch_mid[`BRANCH_BACK] && branch_mid[`BRANCH]; */
+  /* assign o_csr_t = o_vr.valid ? exu_data.csr_t : 0; */
+  wire zero = exu_data.branch_mid[`ZERO];
+  wire cmp = exu_data.branch_mid[`CMP];
+  wire branch = exu_data.branch_mid[`BEQ] & zero | exu_data.branch_mid[`BNE] & ~zero | exu_data.branch_mid[`BLT] & cmp | exu_data.branch_mid[`BGE] & ~cmp;
+  assign o_branch = branch & (exu_data.branch_mid[`BRANCH]) & o_vr.valid;
+  assign o_jump = exu_data.jump && o_vr.valid;
+  assign o_csr_flush = exu_data.csr_t[0] & o_vr.valid;
+  assign o_upc = exu_data.upc;
+  assign to_wbu.result = exu_data.result;
+  assign to_wbu.reg_wen = exu_data.reg_wen;
+  assign to_wbu.reg_rd = exu_data.reg_rd;
+  assign to_wbu.pc = exu_data.pc;
 
-  reg jump;
-  always @(posedge i_clock) begin
-    if (update_reg) jump <= i_jump;
-  end
-  assign o_jump = jump && o_vr.valid;
-  reg [31:0] pc;
-  always @(posedge i_clock) begin
-    if (update_reg) pc <= i_pc;
-  end
-  assign o_pc = pc;
+  assign csr_einfo.pc = exu_data.pc;
+  assign csr_einfo.exception = exu_data.exception;
+  assign csr_einfo.mcause = exu_data.mcause;
 
-  reg [11:0] csr;
-  always @(posedge i_clock) begin
-    if (update_reg) csr <= i_csr;
-  end
-  assign o_csr = csr;
-  reg [`BRANCH_MID] branch_mid;
-  always @(posedge i_clock) begin
-    if (update_reg) branch_mid <= i_branch_mid;
-  end
-  reg predict;
-  always @(posedge i_clock) begin
-    if (update_reg) predict <= i_predict;
-  end
-  assign o_predict = predict;
-  assign o_predict_err = predict && !branch && branch_mid[`BRANCH];
-  assign o_btb_update = !predict && branch_mid[`BRANCH_BACK] && branch_mid[`BRANCH];
-  always @(posedge i_clock) begin
-    if (update_reg) begin
-      reg_rd  <= i_reg_rd;
-      result  <= i_result;
-      reg_wen <= i_reg_wen;
-      csr_t   <= i_csr_t;
-    end
-  end
-  assign o_reg_wen = reg_wen;
-  assign o_reg_rd  = reg_rd;
-  assign o_csr_t   = o_vr.valid ? csr_t : 0;
-  wire zero = branch_mid[`ZERO];
-  wire cmp = branch_mid[`CMP];
-  wire branch = branch_mid[`BEQ] & zero | branch_mid[`BNE] & ~zero | branch_mid[`BLT] & cmp | branch_mid[`BGE] & ~cmp;
-  assign o_branch = (predict ^ branch) & (branch_mid[`BRANCH]);
-  assign o_result = result;
-
+  assign to_csr.csr_t = exu_data.csr_t;
+  assign to_csr.csr_w = exu_data.csr;
+  assign to_csr.wdata = exu_data.csr_wdata;
 
 endmodule

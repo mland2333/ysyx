@@ -1,69 +1,95 @@
-#pragma once
+#ifndef __PERF_H__
+#define __PERF_H__
 
-#include "simulator.h"
-#include "utils.h"
 #include <cstdint>
-#include <debug/log.h>
-#include <simulator.h>
+#include <string>
+#include <unordered_map>
+#include <array>
 
+// 使用宏定义事件列表，实现自动注册
+#define PERF_EVENTS \
+    X(EVENT_CYCLE) \
+    X(EVENT_INST_COMMIT) \
+    X(EVENT_INST_RETIRE)
 
-class Perf{
-  enum {
-    LOAD = 0,
-    STORE,
-    CSR,
-    EXECUTE,
-  };
-public:
-  uint64_t clk_nums = 0;
-  uint64_t inst_nums = 0;
-  uint64_t timer = 0;
-  uint64_t timer_begin = 0;
-  uint64_t ifu_get_inst = 0;
-  uint64_t lsu_get_data =  0;
-  uint64_t exu_finish_cal = 0;
-  uint64_t insts[4] = {};
-  uint64_t inst_clk[4] = {};
-  uint64_t clk_prev = 0;
-  uint64_t lsu_begin = 0;
-  uint64_t lsu_clk = 0;
-  uint64_t ifu_clk = 0;
-  bool is_flush = false;
-  uint64_t flush_clk_begin = 0;
-  uint64_t flush_clk = 0;
-  uint64_t flush_nums = 0;
-#ifdef CONFIG_ICACHE
-  uint64_t miss_counter = 0;
-  uint64_t hit_counter = 0;
-  uint64_t miss_time = 0;
-  uint64_t hit_time = 2;
-  uint64_t miss_time_counter = 0;
-#endif
-  int inst_type;
-  void idu_decode_inst(int inst){
-    int a = inst & 0x7f;
-      switch (a) {
-      case 0x03:
-        insts[LOAD]++;
-        inst_type = LOAD;
-        break;
-      case 0x23:
-        insts[STORE]++;
-        inst_type = STORE;
-        break;
-      case 0x73:
-        insts[CSR]++;
-        inst_type = CSR;
-        break;
-      default:
-        insts[EXECUTE]++;
-        inst_type = EXECUTE;
-      }
-  }
-  double get_ipc(){
-    return (double)inst_nums / (double)clk_nums;
-  }
-  double get_amat();
-  void trace(Simulator* sim);
-  void statistic();
+// 使用宏定义性能计数器列表
+#define PERF_COUNTERS \
+    X(PERF_CYCLE_COUNT) \
+    X(PERF_INST_COUNT) \
+    X(PERF_INST_RETIRED) \
+    X(PERF_IPC) \
+    X(PERF_CPI)
+
+// 生成事件枚举
+enum class PerfEvent : int {
+#define X(name) name,
+    PERF_EVENTS
+#undef X
+    MAX
 };
+
+// 生成性能计数器枚举
+enum class PerfCounter : int {
+#define X(name) name,
+    PERF_COUNTERS
+#undef X
+    MAX
+};
+
+// 性能计数器数据结构
+struct PerfCounterData {
+    std::string name;
+    uint64_t value = 0;
+    bool is_ratio = false;
+};
+
+// 事件数据结构
+struct PerfEventData {
+    std::string name;
+    uint64_t trigger_count = 0;
+};
+
+// 现代C++性能监控类
+class PerfMonitor {
+private:
+    std::array<PerfCounterData, static_cast<size_t>(PerfCounter::MAX)> counters_;
+    std::array<PerfEventData, static_cast<size_t>(PerfEvent::MAX)> events_;
+    std::unordered_map<std::string, PerfEvent> event_name_map_;
+    
+    void init_names();
+    void init_event_map();
+
+public:
+    PerfMonitor();
+    
+    // 事件触发接口
+    void trigger_event(PerfEvent event);
+    void trigger_event_by_name(const std::string& event_name);
+    
+    // 性能数据获取接口
+    uint64_t get_counter(PerfCounter counter) const;
+    double get_counter_ratio(PerfCounter counter) const;
+    const std::string& get_counter_name(PerfCounter counter) const;
+    const std::string& get_event_name(PerfEvent event) const;
+    
+    // 性能数据输出
+    void print_summary() const;
+    void reset_all();
+};
+
+// 全局实例
+extern PerfMonitor g_perf_monitor;
+
+// C接口兼容性（用于SystemVerilog调用）
+extern "C" {
+    void perf_init();
+    void perf_trigger_event_by_name(const char* event_name);
+    void perf_print_summary();
+    void perf_reset_all();
+}
+
+// 便捷宏定义
+#define PERF_COUNT_CYCLE() g_perf_monitor.trigger_event(PerfEvent::EVENT_CYCLE)
+#define PERF_COUNT_INST() g_perf_monitor.trigger_event(PerfEvent::EVENT_INST_COMMIT)
+
+#endif
