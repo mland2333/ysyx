@@ -36,26 +36,12 @@ void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
   int y0 = dstrect ? dstrect->y : 0;
   int w  = dstrect ? dstrect->w : dst->w;
   int h  = dstrect ? dstrect->h : dst->h;
-
-  for (int y = 0; y < h; y++) {
-    for (int x = 0; x < w; x++) {
-      uint8_t *pixel = (uint8_t *)dst->pixels + (y0 + y) * dst->pitch + (x0 + x) * bpp;
-      switch (bpp) {
-        case 1:
-          *pixel = (uint8_t)color;
-          break;
-        case 2:
-          *(uint16_t*)pixel = (uint16_t)color;
-          break;
-        case 3:
-          pixel[0] = color & 0xFF;
-          pixel[1] = (color >> 8) & 0xFF;
-          pixel[2] = (color >> 16) & 0xFF;
-          break;
-        case 4:
-          *(uint32_t*)pixel = color;
-          break;
-      }
+  int width = w > (dst->w - x0) ? (dst->w - x0) : w;
+  int height = h > (dst->h - y0) ? (dst->h - y0) : h;
+  for (int i = 0; i < height; i++) {
+    for (int j = 0; j < width; j++){
+      uint8_t* src_pixel = (uint8_t*)dst->pixels + (y0 + i) * dst->pitch + (x0 + j) * bpp;
+      *(uint32_t*)src_pixel = color;
     }
   }
 }
