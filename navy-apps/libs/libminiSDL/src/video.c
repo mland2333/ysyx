@@ -9,7 +9,7 @@
 void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_Rect *dstrect) {
   assert(src && dst);
   assert(src->format->BitsPerPixel == dst->format->BitsPerPixel);
-
+  printf("blit\n");
   int bpp = src->format->BytesPerPixel;
 
   int src_x = srcrect ? srcrect->x : 0;
@@ -30,7 +30,8 @@ void SDL_BlitSurface(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_
 
 void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
   if (!dst) return;
-
+  printf("fill color = %x\n", color);
+  color = 0xffffffff;
   int bpp = dst->format->BytesPerPixel;
   int x0 = dstrect ? dstrect->x : 0;
   int y0 = dstrect ? dstrect->y : 0;
@@ -38,10 +39,25 @@ void SDL_FillRect(SDL_Surface *dst, SDL_Rect *dstrect, uint32_t color) {
   int h  = dstrect ? dstrect->h : dst->h;
   int width = w > (dst->w - x0) ? (dst->w - x0) : w;
   int height = h > (dst->h - y0) ? (dst->h - y0) : h;
-  for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++){
-      uint8_t* src_pixel = (uint8_t*)dst->pixels + (y0 + i) * dst->pitch + (x0 + j) * bpp;
-      *(uint32_t*)src_pixel = color;
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      uint8_t *pixel = (uint8_t *)dst->pixels + (y0 + y) * dst->pitch + (x0 + x) * bpp;
+      switch (bpp) {
+        case 1:
+          *pixel = (uint8_t)color;
+          break;
+        case 2:
+          *(uint16_t*)pixel = (uint16_t)color;
+          break;
+        case 3:
+          pixel[0] = color & 0xFF;
+          pixel[1] = (color >> 8) & 0xFF;
+          pixel[2] = (color >> 16) & 0xFF;
+          break;
+        case 4:
+          *(uint32_t*)pixel = color;
+          break;
+      }
     }
   }
 }
@@ -55,6 +71,7 @@ void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
   if (y < 0) y = 0;
   if (x + w > s->w) w = s->w - x;
   if (y + h > s->h) h = s->h - y;
+  printf("update\n");
   NDL_DrawRect((uint32_t*)s->pixels, x, y, w, h);
 }
 
