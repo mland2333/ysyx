@@ -12,7 +12,6 @@ SECTIONS {
   _etext = .;
   .rodata : {
     *(.rodata*)
-    *(.srodata*)
   }
   .data.extra : {
     /* section information for finsh shell */
@@ -45,7 +44,6 @@ SECTIONS {
   }
   .data : {
     *(.data)
-    *(.sdata*)
   } : data
   edata = .;
   _data = .;
@@ -59,7 +57,6 @@ SECTIONS {
     . = ALIGN(8);
   }
   .bss : {
-  . = ALIGN(8);
 	_bss_start = .;
     *(.bss*)
     *(.sbss*)
