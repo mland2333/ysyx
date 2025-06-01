@@ -27,9 +27,10 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
     if (phdr.p_type == PT_LOAD) {
       uintptr_t vaddr = phdr.p_vaddr;
       size_t offset = phdr.p_offset;
-      size_t len = phdr.p_memsz;
+      size_t len = phdr.p_filesz;
       fs_lseek(fd, offset, 0);
       fs_read(fd, (void*)vaddr, len);
+      memset((void*)(vaddr+len), 0, phdr.p_memsz-len);
     }
   }
   

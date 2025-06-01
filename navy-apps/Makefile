@@ -47,7 +47,7 @@ ARCHIVE  = $(WORK_DIR)/build/$(NAME)-$(ISA).a
 
 ### Add default libraries for ISA != native
 ifneq ($(ISA), native)
-LIBS += libc libos libndl
+LIBS += libc libos
 CFLAGS += -U_FORTIFY_SOURCE  # fix compile error in Newlib on ubuntu
 else
 WL = -Wl,
@@ -68,7 +68,7 @@ endif
 ### Files to be linked: object files (`.o`) and libraries (`.a`)
 OBJS      = $(addprefix $(DST_DIR)/, $(addsuffix .o, $(basename $(SRCS))))
 LIBS     := $(sort $(LIBS)) # lazy evaluation ("=") causes infinite recursions
-LINKAGE   = $(OBJS) $(foreach l,$(LIBS),$(NAVY_HOME)/libs/$(l)/build/$(l)-$(ISA).a)
+LINKAGE  += $(OBJS)  # library archives are added by LIB_TEMPLATE below
 
 ## 3. General Compilation Flags
 
@@ -83,7 +83,7 @@ AR        = $(CROSS_COMPILE)ar
 INC_PATH += $(WORK_DIR)/include $(foreach l,$(LIBS_INC),$(NAVY_HOME)/libs/$(l)/include/)
 INCFLAGS += $(addprefix -I, $(INC_PATH))
 
-CFLAGS   += -MMD $(INCFLAGS) -static -D__NAVY__ \
+CFLAGS   += -O2 -MMD $(INCFLAGS) -static -D__NAVY__ \
             -D__ISA__=\"$(ISA)\" -D__ISA_$(shell echo $(ISA) | tr a-z A-Z)__ \
             -fno-asynchronous-unwind-tables -fno-builtin -fno-stack-protector
 CXXFLAGS +=  $(CFLAGS) -fno-rtti -fno-exceptions
@@ -116,9 +116,15 @@ $(DST_DIR)/%.o: %.S
 	@mkdir -p $(dir $@) && echo + AS $<
 	@$(AS) $(ASFLAGS) -c -o $@ $(realpath $<)
 
+# $(1): library name
+define LIB_TEMPLATE =
+$$(NAVY_HOME)/libs/$(1)/build/$(1)-$$(ISA).a: force
+	@$$(MAKE) -s -C $$(NAVY_HOME)/libs/$(1) archive
+LINKAGE += $$(NAVY_HOME)/libs/$(1)/build/$(1)-$$(ISA).a
+endef
+
 ### Rule (recursive make): build dependent libraries (libc, libos, ...)
-$(LIBS):
-	$(MAKE) -s -C $(NAVY_HOME)/libs/$@ archive
+$(foreach lib, $(LIBS), $(eval $(call LIB_TEMPLATE,$(lib))))
 
 ### Rule (link): objects (`*.o`) and libraries (`*.a`) -> `$(APP)`, the final ELF binary to be packed into application (ld)
 $(APP): $(LINKAGE)
@@ -141,10 +147,13 @@ ifeq ($(wildcard $(NAVY_HOME)/libs/libc/Makefile),)
 endif
 
 ### Build order control
-app: $(LIBS) $(APP)
-archive: $(LIBS) $(ARCHIVE)
-.NOTPARALLEL: app archive
-.PHONY: app archive $(LIBS)
+app: $(APP)
+archive: $(ARCHIVE)
+.PHONY: app archive
+
+### Force to rebuild a rule
+force:
+.PHONY: force
 
 ### Install an application to fsimg
 install: app
@@ -168,8 +177,8 @@ $(CLEAN_ALL):
 .PHONY: clean-all $(CLEAN_ALL)
 
 ### Build fsimg and ramdisk for Nanos-lite
-APPS = nslider menu
-TESTS = dummy hello file-test timer-test event-test bmp-test
+APPS =
+TESTS = dummy hello
 
 fsimg: $(addprefix apps/, $(APPS)) $(addprefix tests/, $(TESTS))
 	-for t in $^; do $(MAKE) -s -C $(NAVY_HOME)/$$t install; done

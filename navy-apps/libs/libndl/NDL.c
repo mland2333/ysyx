@@ -3,35 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/time.h>
-#include <fcntl.h>
+
 static int evtdev = -1;
 static int fbdev = -1;
 static int screen_w = 0, screen_h = 0;
 
 uint32_t NDL_GetTicks() {
-  struct timeval st;
-  gettimeofday(&st, NULL);
-  return st.tv_usec / 1000;
+  return 0;
 }
 
 int NDL_PollEvent(char *buf, int len) {
-  int fd = open("/dev/events", O_RDONLY);
-  int ret = read(fd, buf, len);
-  close(fd);
-  if(ret == 0) return 0;
-  /* printf("%s\n", buf); */
-  return 1;
+  return 0;
 }
-
-int NDL_WaitEvent(char *buf, int len) {
-  int fd = open("/dev/events", O_RDONLY);
-  int ret;
-  while ((ret = read(fd, buf, len)) == 0);
-  close(fd);
-  return 1;
-}
-
 
 void NDL_OpenCanvas(int *w, int *h) {
   if (getenv("NWM_APP")) {
@@ -54,26 +37,6 @@ void NDL_OpenCanvas(int *w, int *h) {
 }
 
 void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
-  int fd = open("/proc/dispinfo", O_RDONLY); 
-  char buffer[1024];  
-  ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-  close(fd);  
-  buffer[bytesRead] = '\0';
-  int width = 0, height = 0;
-  sscanf(buffer, "WIDTH: %d\nHEIGHT: %d\n", &width, &height);
-  /* printf("WIDTH=%d, w=%d, HEIGHT=%d, h=%d\n", width, w, height, h); */
-  fd = open("/dev/fb", 0);
-  /* for (int i = 0; i<h; i++) */
-  /*   for (int j = 0; j<w; i++) */
-  /*     printf("%d ", i*w+j); */
-  /* printf("\n"); */
-  if (w==0) w = width;
-  if (h==0) h = height;
-  for (int i = 0; i<h && i < height; i++){
-    lseek(fd, ((y+i)*width+x)*4, SEEK_SET);
-    write(fd, (void*)(pixels + i*w), w*sizeof(int));
-  }
-  close(fd);
 }
 
 void NDL_OpenAudio(int freq, int channels, int samples) {
