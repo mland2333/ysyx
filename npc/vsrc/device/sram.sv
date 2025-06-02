@@ -72,7 +72,7 @@ module ysyx_24110006_SRAM (
   // 写通道控制信号
   reg        w_addr_received;
   reg        w_data_received;
-  reg        w_can_write;
+  wire        w_can_write;
 
   // 输出寄存器
   reg        arready_r;
@@ -94,7 +94,7 @@ module ysyx_24110006_SRAM (
   assign i_axi.rresp   = rresp_r;
 
   assign i_axi.awready = awready_r;
-  assign i_axi.wready  = wready_r;
+  assign i_axi.wready  = w_state == W_BOTH;
   assign i_axi.bvalid  = bvalid_r;
   assign i_axi.bresp   = bresp_r;
 
@@ -122,7 +122,25 @@ module ysyx_24110006_SRAM (
       default: next_addr = addr;
     endcase
   endfunction
+  function automatic [31:0] align_address(input [31:0] addr, input [2:0] size, input [7:0] len);
+    logic [31:0] transfer_size;
+    logic [31:0] alignment_mask;
 
+    // 计算传输的总字节数
+    case (size)
+      3'b000:  transfer_size = (len + 1) * 1;  // 1 byte per beat
+      3'b001:  transfer_size = (len + 1) * 2;  // 2 bytes per beat
+      3'b010:  transfer_size = (len + 1) * 4;  // 4 bytes per beat
+      3'b011:  transfer_size = (len + 1) * 8;  // 8 bytes per beat
+      default: transfer_size = (len + 1) * 4;
+    endcase
+
+    // 创建对齐掩码（总字节数-1）
+    alignment_mask = transfer_size - 1;
+
+    // 对齐地址到传输总字节数的边界
+    align_address  = addr & (~alignment_mask);
+  endfunction
   // 读通道状态机
   always_ff @(posedge i_clock) begin
     if (i_reset) begin
@@ -169,7 +187,7 @@ module ysyx_24110006_SRAM (
             r_arsize <= arsize;
             r_arlen <= arlen;
             r_arburst <= arburst;
-            r_current_addr <= araddr;
+            r_current_addr <= align_address(araddr, arsize, arlen);
             arready_r <= 1'b0;
           end
         end
@@ -292,7 +310,7 @@ module ysyx_24110006_SRAM (
         w_awsize <= awsize;
         w_awlen <= awlen;
         w_awburst <= awburst;
-        w_current_addr <= awaddr;
+        w_current_addr <= align_address(awaddr, awsize, awlen);
         w_addr_received <= 1'b1;
         awready_r <= 1'b0;  // 一次事务只接收一次地址
       end
@@ -304,17 +322,15 @@ module ysyx_24110006_SRAM (
       end
     end
   end
-
+  assign w_can_write = w_addr_received && (w_state == W_BOTH || w_state == W_DATA_ONLY);
   // 写数据通道 - 独立处理
   always_ff @(posedge i_clock) begin
     if (i_reset) begin
       wready_r <= 1'b0;
       w_beat_cnt <= 8'b0;
       w_data_received <= 1'b0;
-      w_can_write <= 1'b0;
     end else begin
       // 只有当地址和数据都准备好时才能写入
-      w_can_write <= w_addr_received && (w_state == W_BOTH || w_state == W_DATA_ONLY);
 
       unique case (w_state)
         W_IDLE: begin

@@ -28,9 +28,7 @@
 
 #ifdef CONFIG_YSYXSOC
 #define TOP_PREFIX                                                             \
-  top->rootp->vlSymsp->TOP__ysyxSoCFull__asic__cpu__cpu__top
-#define INTERFACE_PREFIX                                                       \
-  top->rootp->__PVT__ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__top__DOT__
+  top->rootp->ysyxSoCFull->asic->cpu->cpu->top
 #define PC_BEGIN 0xa0000000
 #else
 #define TOP_PREFIX top->rootp->ysyx_24110006->top

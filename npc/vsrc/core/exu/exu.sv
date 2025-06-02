@@ -9,7 +9,6 @@ module ysyx_24110006_EXU(
   output pipe::exu2bru_t to_bru,
   output pipe::exu2lsu_t to_lsu,
   input alu::op_t from_aluop,
-  output o_fencei,
   input i_stall,
   input i_flush,
   output o_flush,
@@ -108,10 +107,6 @@ wire f101 = idu_data.func == 3'b101;
 wire f110 = idu_data.func == 3'b110;
 wire f111 = idu_data.func == 3'b111;
 
-assign o_fencei = (FENCE && f001) && flush_valid;
-
-
-/* wire branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp; */
 alu::result_t alu_result;
 ysyx_24110006_ALU malu(
   .op(alu_op),
@@ -128,11 +123,6 @@ assign branch_mid[`BNE] = is_bne;
 assign branch_mid[`BLT] = is_blt;
 assign branch_mid[`BGE] = is_bge;
 
-
-/* assign o_upc = upc + imm; */
-/* assign o_jump = JAL | JALR | csr_t[1]; */
-/* assign o_reg_wen = !(S || B || FENCE); */
-
 assign to_bru.result = CSR ? csr_data.r1 : alu_result.r;
 assign to_bru.reg_wen = !(S || B || FENCE);
 assign to_bru.jump = JAL | JALR | idu_data.csr_t[1];
@@ -145,6 +135,7 @@ assign to_bru.pc = idu_data.pc;
 assign to_bru.exception = idu_data.exception;
 assign to_bru.mcause = idu_data.mcause;
 assign to_bru.csr_wdata = alu_result.r;
+assign to_bru.fencei = FENCE && f001;
 
 assign to_lsu.ren = L;
 assign to_lsu.wen = S;

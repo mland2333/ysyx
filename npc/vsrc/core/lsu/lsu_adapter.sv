@@ -9,7 +9,11 @@ module ysyx_24110006_LSU_ADAPTER (
 );
 `ifdef CONFIG_DCACHE
   logic in_dcache;
+`ifdef CONFIG_YSYXSOC
   assign in_dcache = i_lsu_adapter.addr[31]==1 || i_lsu_adapter.addr[29:28]==2'b11 || i_lsu_adapter.addr[31:24]==8'h0f;
+`else
+  assign in_dcache = i_lsu_adapter.addr[31:28]==4'b1000;
+`endif
   assign o_lsu_dcache.rq = in_dcache ? i_lsu_adapter.rq : 0;
   assign o_lsu_dcache.ren = in_dcache ? i_lsu_adapter.ren : 0;
   assign o_lsu_dcache.wen = in_dcache ? i_lsu_adapter.wen : 0;

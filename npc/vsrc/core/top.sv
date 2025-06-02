@@ -86,8 +86,7 @@ module ysyx_24110006_top (
   assign flush = exu_flush | exception | branch | csr_flush;
   assign upc = exception ? csr_rdata.upc : (branch | csr_flush) ? bru_upc : exu_flush ? exu2bru.upc : 0;
 
-  wire arbiter_ifu_read;
-  wire fencei;
+  wire fencei, fencei_fin;
 
   wire bru_jump;
   wire lsu_wen, lsu_ren;
@@ -133,7 +132,6 @@ module ysyx_24110006_top (
   end
   wire reg_valid;
 `endif
-  logic fencei_fin;
   if_pipeline_vr ifu_vr_idu ();
   if_pipeline_vr idu_vr_exu ();
   if_pipeline_vr exu_vr_alloc ();
@@ -210,6 +208,7 @@ module ysyx_24110006_top (
       .o_icache_rq(ifu_icache),
       .i_upc(upc),
       .i_fencei(fencei),
+      .i_dcache_fencei_fin(fencei_fin),
       .i_pc(wbu_pc),
       .o_vr(ifu_vr_idu),
 `ifdef CONFIG_SIM
@@ -244,7 +243,7 @@ module ysyx_24110006_top (
       .i_sim(ifu_sim),
       .o_sim(idu_sim),
 `endif
-      .i_flush(flush),
+      .i_flush(flush | fencei),
       .i_stall(stall),
       .i_wen(exu2lsu.wen),
       .i_ren(exu2lsu.ren)
@@ -316,14 +315,13 @@ module ysyx_24110006_top (
       .from_aluop(alu_op),
       .to_bru(exu2bru),
       .to_lsu(exu2lsu),
-      .o_fencei(fencei),
 `ifdef CONFIG_SIM
       .i_sim(idu_sim),
       .o_sim(exu_sim),
 `endif
       .i_vr(idu_vr_exu),
       .o_vr(exu_vr_alloc),
-      .i_flush(flush),
+      .i_flush(flush | fencei),
       .i_stall(stall),
       .o_flush(exu_flush)
   );
@@ -344,6 +342,7 @@ module ysyx_24110006_top (
       .csr_einfo(bru_csr_einfo),
       .o_upc(bru_upc),
       .o_jump(bru_jump),
+      .o_fencei(fencei),
       .o_branch(branch),
       .o_csr_flush(csr_flush),
 `ifdef CONFIG_SIM
@@ -353,7 +352,7 @@ module ysyx_24110006_top (
 `endif
       .i_vr(alloc_vr_bru),
       .o_vr(bru_vr_wbu),
-      .i_flush(exception | branch | csr_flush)
+      .i_flush(exception | branch | csr_flush | fencei)
   );
   ysyx_24110006_LSU mlsu (
       .i_clock(clock),
@@ -370,7 +369,7 @@ module ysyx_24110006_top (
 `endif
       .i_vr(alloc_vr_lsu),
       .o_vr(lsu_vr_wbu),
-      .i_flush(exception | branch | csr_flush),
+      .i_flush(exception | branch | csr_flush | fencei),
       .o_lsu_rq(lsu_adapter.master)
   );
   ysyx_24110006_LSU_ADAPTER mlsu_adapter (
@@ -384,12 +383,12 @@ module ysyx_24110006_top (
   ysyx_24110006_DCACHE mdcache (
       .i_clock(clock),
       .i_reset(reset),
-      .i_flush(fencei && !predict_err),
+      .i_flush(fencei),
       .o_fin(fencei_fin),
       .i_lsu_rq(lsu_dcache.slave),
       .o_axi_rq(dcache_bridge.master)
   );
-  ysyx_24110006_CACHE2AXI mcache2axi (
+  ysyx_24110006_DCACHE2AXI mdcache2axi (
       .i_clock(clock),
       .i_reset(reset),
       .i_dcache_rq(dcache_bridge.slave),
@@ -425,7 +424,6 @@ module ysyx_24110006_top (
       .i_clock(clock),
       .i_reset(reset),
       .i_flush(flush),
-      .o_busy(arbiter_ifu_read),
       .ifu(icache_axi.slave),
 `ifdef CONFIG_DCACHE
       .dcache(dcache_axi.slave),

@@ -2,7 +2,6 @@ module ysyx_24110006_ARBITER(
   input i_clock,
   input i_reset,
   input i_flush,
-  output o_busy,
   if_axi_read.slave ifu,
 `ifdef CONFIG_DCACHE
   if_axi.slave dcache,
@@ -20,7 +19,6 @@ localparam MEM1_WRITE = 2'b01;
 reg [1:0] read_state;
 reg [1:0] write_state;
 reg arready;
-assign o_busy = read_state == MEM0_READ;
 
 always@(posedge i_clock)begin
   if(i_reset) read_state <= IDLE_READ;
@@ -115,7 +113,6 @@ localparam MEM2_WRITE = 2'b10;
 reg [1:0] read_state;
 reg [1:0] write_state;
 reg arready;
-assign o_busy = read_state == MEM0_READ;
 
 always@(posedge i_clock)begin
   if(i_reset) read_state <= IDLE_READ;
@@ -156,9 +153,9 @@ assign out.arsize = is_read0 ? ifu.arsize : is_read1 ? lsu.arsize :is_read2 ? dc
 assign out.arburst = is_read0 ? ifu.arburst : is_read1 ? lsu.arburst :is_read2 ? dcache.arburst : 0;
 assign out.rready = is_read0 ? ifu.rready : is_read1 ? lsu.rready :is_read2 ? dcache.rready : 0;
 
-assign ifu.arready = is_read0 ? out.arready : i_flush;
-assign ifu.rvalid = is_read0 ? out.rvalid : i_flush;
-assign ifu.rlast = is_read0 ? out.rlast : i_flush;
+assign ifu.arready = is_read0 ? out.arready : 0;
+assign ifu.rvalid = is_read0 ? out.rvalid : 0;
+assign ifu.rlast = is_read0 ? out.rlast : 0;
 assign ifu.rdata = is_read0 ? out.rdata : 0;
 assign ifu.rresp = is_read0 ? out.rresp : 0;
 assign ifu.rid = is_read0 ? out.rid : 0;

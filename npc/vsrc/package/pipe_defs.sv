@@ -70,6 +70,7 @@ package pipe;
     logic exception;
     logic [3:0] mcause;
     logic [31:0] csr_wdata;
+    logic fencei;
   } exu2bru_t;
   typedef struct packed {
     logic ren;

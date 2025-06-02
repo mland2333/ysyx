@@ -9,6 +9,7 @@ module ysyx_24110006_IFU (
     /* if_branch_ctrl.in i_branch_ctrl, */
     input i_flush,
     input i_fencei,
+    input i_dcache_fencei_fin,
     input [31:0] i_pc,
     input [31:0] i_upc,
 `ifdef CONFIG_SIM
@@ -31,6 +32,26 @@ module ysyx_24110006_IFU (
     else if(i_flush && !o_icache_rq.valid) in_flush <= 1;
     else if(in_flush && o_icache_rq.valid) in_flush <= 0;
   end
+
+  typedef enum logic [2:0] {
+    idle, in_fencei, wait_dcache, wait_icache, fencei_fin
+  } fencei_state_t;
+  fencei_state_t state;
+  always_ff@(posedge i_clock)begin
+    if(i_reset) state <= idle;
+    else begin
+      unique case(state)
+        idle:if(i_fencei) state <= in_fencei;
+        in_fencei: if(o_icache_rq.flush_fin && i_dcache_fencei_fin) state <= fencei_fin;
+                   else if(o_icache_rq.flush_fin) state <= wait_dcache;
+                   else if(i_dcache_fencei_fin) state <= wait_icache;
+        wait_dcache: if(i_dcache_fencei_fin) state <= fencei_fin;
+        wait_icache: if(o_icache_rq.flush_fin) state <= fencei_fin;
+        fencei_fin: state <= idle;
+      endcase
+    end
+  end
+
   always_ff @(posedge i_clock) begin
     if (i_reset) pc <= PC;
     else if (i_flush) begin
@@ -43,7 +64,7 @@ module ysyx_24110006_IFU (
   end
 
   always_ff @(posedge i_clock) begin
-    if (i_reset || i_flush) o_vr.valid <= 0;
+    if (i_reset || i_flush || i_fencei) o_vr.valid <= 0;
     else if (o_icache_rq.valid && !(i_flush || in_flush)) o_vr.valid <= 1;
     else if (o_vr.valid && o_vr.ready) o_vr.valid <= 0;
   end
@@ -53,7 +74,7 @@ module ysyx_24110006_IFU (
     else reset <= 0;
   end
   always_ff @(posedge i_clock) begin
-    if (i_reset) o_icache_rq.rq <= 0;
+    if (i_reset || in_flush || state != idle) o_icache_rq.rq <= 0;
     else if (o_icache_rq.rq && o_icache_rq.cache_ready) o_icache_rq.rq <= 0;
     else if (o_icache_rq.cache_ready && o_vr.ready) o_icache_rq.rq <= 1;
   end

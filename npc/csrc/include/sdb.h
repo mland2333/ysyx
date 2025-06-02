@@ -46,7 +46,7 @@ public:
   void cpu_display() { sim->cpu.display(); }
   uint32_t mem_read(uint32_t addr) {
     if (args.is_mtrace)
-      printf("pc=0x%x, raddr=0x%x, ", pc, addr);
+      printf("pc=0x%x, raddr=0x%x, ", sim->cpu.pc, addr);
     uint32_t rdata = mem->read(addr & ~0x3u);
     if (args.is_mtrace)
       printf("rdata=0x%x\n", rdata);
@@ -54,7 +54,7 @@ public:
   }
   void mem_write(uint32_t addr, uint32_t wdata, char wmask) {
     if (args.is_mtrace)
-      printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", pc, addr, wdata);
+      printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", sim->cpu.pc, addr, wdata);
     mem->write(addr & ~3u, wdata, wmask);
   }
   void quit() { sim->quit(); }

@@ -10,4 +10,4 @@
 `define BGE 7
 
 `define CACHE_LINE_WIDTH 128
-
+`define DCACHE_LINE_WIDTH 256

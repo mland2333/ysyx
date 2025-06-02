@@ -1,13 +1,13 @@
 `include "common_config.sv"
-interface if_dcache_axi ();
+interface if_dcache_rq ();
   // dcache -> cache2axi signals
   logic rq;
   logic wen;
   logic ready;
   logic [31:0] addr;
-  logic [`CACHE_LINE_WIDTH-1:0] w_cache_line;
+  logic [`DCACHE_LINE_WIDTH-1:0] w_cache_line;
   // cache2axi -> dcache signals
-  logic [`CACHE_LINE_WIDTH-1:0] r_cache_line;
+  logic [`DCACHE_LINE_WIDTH-1:0] r_cache_line;
   logic ack;
   logic valid;
 

@@ -8,6 +8,7 @@ module ysyx_24110006_BRU (
     output pipe::csr_einfo_t csr_einfo,
     output [31:0] o_upc,
     output o_jump,
+    output o_fencei,
     input i_flush,
     output o_branch,
     output o_csr_flush,
@@ -67,6 +68,7 @@ module ysyx_24110006_BRU (
   assign o_branch = branch & (exu_data.branch_mid[`BRANCH]) & o_vr.valid;
   assign o_jump = exu_data.jump && o_vr.valid;
   assign o_csr_flush = exu_data.csr_t[0] & o_vr.valid;
+  assign o_fencei = exu_data.fencei & o_vr.valid;
   assign o_upc = exu_data.upc;
   assign to_wbu.result = exu_data.result;
   assign to_wbu.reg_wen = exu_data.reg_wen;

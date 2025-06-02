@@ -5,7 +5,7 @@
 #include <nvboard.h>
 #endif
 #ifdef CONFIG_YSYXSOC
-  static const char* fst_file = "soc.fst";
+  static const char* fst_file = "dump.fst";
 #else
   static const char* fst_file = "npc.fst";
 #endif

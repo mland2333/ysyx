@@ -1,4 +1,4 @@
-module ysyx_24110006_CACHE2AXI(
+module ysyx_24110006_DCACHE2AXI(
   input i_clock,
   input i_reset,
   //cache <--> axi
@@ -18,8 +18,8 @@ always_ff@(posedge i_clock)begin
   else if(i_dcache_rq.valid && i_dcache_rq.ready) i_dcache_rq.valid <= 0;
 end
 
-logic [`CACHE_LINE_WIDTH-1:0] w_cache_line;
-logic [`CACHE_LINE_WIDTH-1:0] r_cache_line;
+logic [`DCACHE_LINE_WIDTH-1:0] w_cache_line;
+logic [`DCACHE_LINE_WIDTH-1:0] r_cache_line;
 always_ff@(posedge i_clock)begin
   if(i_dcache_rq.rq && i_dcache_rq.wen) w_cache_line <= i_dcache_rq.w_cache_line;
 end
@@ -46,7 +46,7 @@ always_ff@(posedge i_clock)begin
   else if(wlast && wvalid && wready) wvalid <= 0;
 end
 assign wdata = w_cache_line[write_cache_index*32+:32];
-localparam int BURST_LEN = `CACHE_LINE_WIDTH / 32;
+localparam int BURST_LEN = `DCACHE_LINE_WIDTH / 32;
 localparam int ADDR_WIDTH = 32 - $clog2(BURST_LEN) - 2;
 logic [BURST_LEN-1:0] read_cache_index, write_cache_index;
 always_ff@(posedge i_clock)begin
