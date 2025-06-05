@@ -86,6 +86,7 @@ module ysyx_24110006_IDU (
   assign to_exu.csr = inst[31:20];
   assign to_exu.exception = exception;
   assign to_exu.mcause = mcause;
+  assign to_exu.quit = breakpoint;
 
   assign to_reg.rs1 = inst[19:15];
   assign to_reg.rs2 = inst[24:20];

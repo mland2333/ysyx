@@ -106,15 +106,16 @@ module ysyx_24110006_top (
   logic [31:0] sim_inst /*verilator public*/;
   always_ff @(posedge clock)begin
     if(wbu_valid) begin
-      sim_pc <= (bru_jump | sim_branch) ? bru_upc : exception ? upc : wbu_pc + 4;
+      sim_pc <= (bru_jump | sim_branch) ? bru_upc : mquit ? wbu_pc : exception ? upc : wbu_pc + 4;
       sim_inst <= wbu_sim.inst;
     end
   end
-
+  wire mquit;
   always @(posedge clock) begin
     if (wbu_valid) begin
       if (is_diff_skip) diff_skip();
-      difftest();
+      if (mquit) quit();
+      else difftest();
     end
   end
   reg [63:0] mtime;
@@ -122,7 +123,8 @@ module ysyx_24110006_top (
     if (reset) mtime <= 0;
     else mtime <= mtime + 1;
   end
-  always_comb if (bru_sim.inst == 32'h100073) quit();
+  /*  */
+  /* always_comb if (mquit) quit(); */
   reg [31:0] npc_upc;
   always @(posedge clock) npc_upc <= exu2bru.upc;
   always_ff @(posedge clock) begin
@@ -132,7 +134,6 @@ module ysyx_24110006_top (
   end
   wire reg_valid;
 `endif
-  if_pipeline_vr ifu_vr_idu ();
   if_pipeline_vr idu_vr_exu ();
   if_pipeline_vr exu_vr_alloc ();
   if_pipeline_vr alloc_vr_lsu ();
@@ -142,14 +143,14 @@ module ysyx_24110006_top (
   if_axi_read icache_axi ();
   if_lsu_adapter lsu_adapter ();
   if_lsu_dcache lsu_dcache ();
-  if_dcache_axi dcache_bridge ();
+  if_dcache_rq dcache_bridge ();
   if_axi dcache_axi ();
   if_lsu_adapter lsu_adapter_axi ();
   if_axi lsu_axi ();
   if_axi xbar_axi ();
   if_axi mem_axi ();
   if_icache_rq ifu_icache ();
-  pipe::ifu2idu_t ifu2idu;
+  pipe::ifu2idu_t from_ifu, to_idu;
   if_icache_rq ifu_rq ();
   pipe::idu2aluop_t idu2aluop;
   pipe::idu2exu_t idu2exu;
@@ -166,6 +167,11 @@ module ysyx_24110006_top (
   pipe::csr_winfo_t csr_winfo;
   pipe::csr_einfo_t bru_csr_einfo, lsu_csr_einfo, csr_einfo;
   if_mem_rq icache_mem_rq ();
+`ifdef CONFIG_IBUFFER
+  if_pipeline_vr ifu_vr_ibuffer(), ibuffer_vr_idu();
+`else
+  if_pipeline_vr ifu_vr_idu();
+`endif
 `ifdef CONFIG_YSYXSOC
   assign io_master_awvalid = mem_axi.awvalid;
   assign io_master_awaddr  = mem_axi.awaddr;
@@ -204,13 +210,17 @@ module ysyx_24110006_top (
   ysyx_24110006_IFU mifu (
       .i_clock(clock),
       .i_reset(reset),
-      .to_idu(ifu2idu),
+      .to_idu(from_ifu),
       .o_icache_rq(ifu_icache),
       .i_upc(upc),
       .i_fencei(fencei),
       .i_dcache_fencei_fin(fencei_fin),
       .i_pc(wbu_pc),
+`ifdef CONFIG_IBUFFER
+      .o_vr(ifu_vr_ibuffer),
+`else
       .o_vr(ifu_vr_idu),
+`endif
 `ifdef CONFIG_SIM
       .o_sim(ifu_sim),
 `endif
@@ -229,15 +239,34 @@ module ysyx_24110006_top (
       .i_icache_rq(icache_mem_rq),
       .o_axi_rq(icache_axi)
   );
+
+`ifdef CONFIG_IBUFFER
+  ysyx_24110006_IBUFFER mibuffer(
+    .i_clock(clock),
+    .i_reset(reset),
+    .i_flush(flush),
+    .i_fencei(fencei),
+    .from_ifu(from_ifu),
+    .to_idu(to_idu),
+    .i_vr(ifu_vr_ibuffer),
+    .o_vr(ibuffer_vr_idu)
+  );
+`else
+  assign to_idu = from_ifu;
+`endif
   ysyx_24110006_IDU midu (
       .i_clock(clock),
       .i_reset(reset),
-      .from_ifu(ifu2idu),
+      .from_ifu(to_idu),
       .to_exu(idu2exu),
       .to_reg(reg_rinfo),
       .to_csr(csr_rinfo),
       .to_aluop(idu2aluop),
+`ifdef CONFIG_IBUFFER
+      .i_vr(ibuffer_vr_idu),
+`else
       .i_vr(ifu_vr_idu),
+`endif
       .o_vr(idu_vr_exu),
 `ifdef CONFIG_SIM
       .i_sim(ifu_sim),
@@ -344,6 +373,7 @@ module ysyx_24110006_top (
       .o_jump(bru_jump),
       .o_fencei(fencei),
       .o_branch(branch),
+      .o_quit(mquit),
       .o_csr_flush(csr_flush),
 `ifdef CONFIG_SIM
       .i_sim(exu_sim),

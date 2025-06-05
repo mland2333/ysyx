@@ -45,14 +45,14 @@ module ysyx_24110006_LSU2AXI (
   always_ff @(posedge i_clock) begin
     if (i_reset) awvalid <= 0;
     else if (i_lsu_adapter.rq && i_lsu_adapter.wen && !awvalid) awvalid <= 1;
-    else if (awvalid && awready && wvalid && wready) awvalid <= 0;
+    else if (awvalid && awready) awvalid <= 0;
   end
 
   // AXI write data channel
   always_ff @(posedge i_clock) begin
     if (i_reset) wvalid <= 0;
     else if (i_lsu_adapter.rq && i_lsu_adapter.wen && !wvalid) wvalid <= 1;
-    else if (awvalid && awready && wvalid && wready) wvalid <= 0;
+    else if (wvalid && wready) wvalid <= 0;
   end
 
   // AXI write response channel

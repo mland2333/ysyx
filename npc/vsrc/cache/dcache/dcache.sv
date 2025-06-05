@@ -12,7 +12,7 @@ module ysyx_24110006_DCACHE #(
     //lsu <--> cache
     if_lsu_dcache.slave i_lsu_rq,
     //cache <--> axi
-    if_dcache_axi.master o_axi_rq
+    if_dcache_rq.master o_axi_rq
 );
   localparam BLOCK_SIZE = DATA_PER_CACHELINE * 4;
   localparam NUM_SETS = NUM_BLOCKS / NUM_WAYS;

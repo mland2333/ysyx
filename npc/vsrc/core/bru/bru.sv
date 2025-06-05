@@ -11,6 +11,7 @@ module ysyx_24110006_BRU (
     output o_fencei,
     input i_flush,
     output o_branch,
+    output o_quit,
     output o_csr_flush,
     /* input i_predict, */
     /* output o_predict, */
@@ -70,6 +71,8 @@ module ysyx_24110006_BRU (
   assign o_csr_flush = exu_data.csr_t[0] & o_vr.valid;
   assign o_fencei = exu_data.fencei & o_vr.valid;
   assign o_upc = exu_data.upc;
+  assign o_quit = exu_data.quit && o_vr.valid;
+
   assign to_wbu.result = exu_data.result;
   assign to_wbu.reg_wen = exu_data.reg_wen;
   assign to_wbu.reg_rd = exu_data.reg_rd;

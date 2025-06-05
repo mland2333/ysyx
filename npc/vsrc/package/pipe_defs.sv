@@ -18,6 +18,7 @@ package pipe;
     logic [31:0] pc;
     logic exception;
     logic [3:0] mcause;
+    logic quit;
   } idu2exu_t;
   typedef struct packed {
     logic [6:0]  op;
@@ -71,6 +72,7 @@ package pipe;
     logic [3:0] mcause;
     logic [31:0] csr_wdata;
     logic fencei;
+    logic quit;
   } exu2bru_t;
   typedef struct packed {
     logic ren;

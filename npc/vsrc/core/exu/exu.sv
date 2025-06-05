@@ -42,7 +42,7 @@ wire update_reg;
 logic r_valid;
 assign r_valid = i_vr.valid & ~i_stall;
 always@(posedge i_clock)begin
-  if(i_reset) o_vr.valid <= 0;
+  if(i_reset || (i_flush && !o_flush)) o_vr.valid <= 0;
   else if(r_valid && !i_flush) begin
     o_vr.valid <= 1;
   end
@@ -136,6 +136,7 @@ assign to_bru.exception = idu_data.exception;
 assign to_bru.mcause = idu_data.mcause;
 assign to_bru.csr_wdata = alu_result.r;
 assign to_bru.fencei = FENCE && f001;
+assign to_bru.quit = idu_data.quit;
 
 assign to_lsu.ren = L;
 assign to_lsu.wen = S;

@@ -2,7 +2,7 @@ module ysyx_24110006_DCACHE2AXI(
   input i_clock,
   input i_reset,
   //cache <--> axi
-  if_dcache_axi.slave i_dcache_rq,
+  if_dcache_rq.slave i_dcache_rq,
   //axi <--> mem
   if_axi.master o_axi_rq
 );
