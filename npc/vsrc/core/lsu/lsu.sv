@@ -161,6 +161,12 @@ module ysyx_24110006_LSU (
   assign to_wbu.reg_wen = exu_data.reg_wen;
   assign to_wbu.reg_rd = exu_data.reg_rd;
   assign to_wbu.pc = exu_data.pc;
+`ifdef CONFIG_RENAME
+  assign to_wbu.has_old_map = exu_data.has_old_map;
+  assign to_wbu.old_index = exu_data.old_index;
+  assign to_wbu.is_flush = 0;
+  assign to_wbu.vrd = exu_data.vrd;
+`endif
 
   assign csr_einfo.pc = exu_data.pc;
   assign csr_einfo.exception = exu_data.exception;

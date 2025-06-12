@@ -3,10 +3,15 @@ module ysyx_24110006_IDU (
     input i_clock,
     input i_reset,
     input pipe::ifu2idu_t from_ifu,
+
+`ifdef CONFIG_RENAME
+    output ooo::idu2rename_t to_rename,
+`else
+    output pipe::reg_rinfo_t to_reg,
     output pipe::idu2exu_t to_exu,
     output pipe::idu2aluop_t to_aluop,
-    output pipe::reg_rinfo_t to_reg,
     output pipe::csr_rinfo_t to_csr,
+`endif
     input i_flush,
     input i_stall,
     input i_wen,
@@ -15,7 +20,8 @@ module ysyx_24110006_IDU (
     input pipe::sim_t i_sim,
     output pipe::sim_t o_sim,
 `endif
-    if_pipeline_vr.in i_vr,
+
+    if_pipeline_vr.in  i_vr,
     if_pipeline_vr.out o_vr
 );
 
@@ -25,24 +31,29 @@ module ysyx_24110006_IDU (
   always @(posedge i_clock) begin
     if (update_reg) ifu_data <= from_ifu;
   end
+  logic r_valid;
+  assign r_valid = i_vr.valid & ~i_stall & ~i_flush;
   always @(posedge i_clock) begin
     if (i_reset || i_flush) o_vr.valid <= 0;
-    else if (i_vr.valid) begin
+    else if (r_ready && r_valid && !o_vr.valid) begin
       o_vr.valid <= 1;
-    end else if (o_vr.valid && o_vr.ready && !i_stall) begin
+    end else if (!r_ready && o_vr.valid && o_vr.ready && !r_valid) begin
       o_vr.valid <= 0;
     end
   end
   reg r_ready;
   always @(posedge i_clock) begin
     if (i_reset || i_flush) r_ready <= 1;
-    else if (i_stall) r_ready <= 0;
-    else if (i_vr.valid && o_vr.valid && (i_wen || i_ren)) r_ready <= 0;
-    else if (o_vr.ready) r_ready <= 1;
-    else if (i_vr.valid) r_ready <= 0;
+    else if (r_ready && r_valid && !o_vr.valid) r_ready <= 0;
+    else if (!r_ready && o_vr.valid && o_vr.ready && !r_valid) r_ready <= 1;
+    /* else if (i_stall) r_ready <= 0; */
+    /* else if (r_valid && o_vr.valid && (i_wen || i_ren)) r_ready <= 0; */
+    /* else if (o_vr.ready) r_ready <= 1; */
+    /* else if (r_valid) r_ready <= 0; */
+    /* else if (!r_valid && !o_vr.valid) r_ready <= 1; */
   end
   assign i_vr.ready = (r_ready | o_vr.ready) & ~i_stall;
-  assign update_reg = i_vr.valid && (r_ready || o_vr.ready) && !i_stall && !i_flush;
+  assign update_reg = r_valid && (r_ready || o_vr.ready) && !i_stall && !i_flush;
 
 
   wire [6:0] inst_op = inst[6:0];
@@ -77,6 +88,25 @@ module ysyx_24110006_IDU (
   logic mret;
   assign inst = ifu_data.inst;
   assign mret = inst == 32'h30200073;
+
+
+`ifdef CONFIG_RENAME
+  assign to_rename.vrs1 = inst[19:15];
+  assign to_rename.vrs2 = inst[24:20];
+  assign to_rename.vrd = inst[11:7];
+  assign to_rename.reg_wen = !(S || B || FENCE);
+  assign to_rename.op = inst[6:0];
+  assign to_rename.func = inst[14:12];
+  assign to_rename.csr_t = {mret, CSR & (inst_func != 0)};
+  assign to_rename.pc = ifu_data.pc;
+  assign to_rename.imm = ifu_data.imm;
+  assign to_rename.csr = inst[31:20];
+  assign to_rename.exception = exception;
+  assign to_rename.mcause = mcause;
+  assign to_rename.quit = breakpoint;
+  assign to_rename.mret = mret;
+
+`else
   assign to_exu.op = inst[6:0];
   assign to_exu.func = inst[14:12];
   assign to_exu.reg_rd = inst[11:7];
@@ -98,16 +128,23 @@ module ysyx_24110006_IDU (
   assign to_aluop.func = inst[14:12];
   assign to_aluop.imm = ifu_data.imm;
   assign to_aluop.pc = ifu_data.pc;
+`endif
 `ifdef CONFIG_SIM
-  always @(posedge i_clock) begin
-    if(o_vr.valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE) && !i_flush) begin
-      $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n",
-              to_exu.op, ifu_data.pc);
-      quit();
-    end
-  end
-  always_ff@(posedge i_clock)begin
-    if(update_reg) o_sim <= i_sim;
+  logic [6:0] op;
+`ifdef CONFIG_RENAME
+  assign op = to_rename.op;
+`else
+  assign op = to_exu.op;
+`endif
+  /* always @(posedge i_clock) begin */
+  /*   if(o_vr.valid && !(I||R||L||S||JAL||JALR||AUIPC||LUI||B||CSR||FENCE) && !i_flush) begin */
+  /*     $fwrite(32'h80000002, "Assertion failed: Unsupported command `%xh` in pc `%xh` \n", op, */
+  /*             ifu_data.pc); */
+  /*     quit(); */
+  /*   end */
+  /* end */
+  always_ff @(posedge i_clock) begin
+    if (update_reg) o_sim <= i_sim;
   end
 `endif
 

@@ -56,8 +56,19 @@ private:
   SIM_STATE state = SIM_STATE::NORMAL;
   uint64_t old_clk = 0;
   void cpu_update(){
+#ifdef CONFIG_RENAME
+    for(int i = 1; i<REG_NUMS; i++){
+      if(GET_MEMBER(TOP_PREFIX, __PVT__mrename__DOT__areg_state[i]) == 0){
+        cpu.gpr[i] = 0;
+        continue;
+      }
+      int index = GET_MEMBER(TOP_PREFIX,__PVT__mrename__DOT__arat[i]);
+      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, __PVT__mreg__DOT__rf[index]);
+    }   
+#else
     for(int i = 1; i<REG_NUMS; i++)
       cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, __PVT__mreg__DOT__rf[i]);
+#endif
     cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc);
     cpu.inst = GET_MEMBER(TOP_PREFIX, sim_inst);
   }

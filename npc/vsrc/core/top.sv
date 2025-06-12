@@ -102,11 +102,11 @@ module ysyx_24110006_top (
 `else
   assign is_diff_skip = clint_axi.rvalid || lsu_vr_wbu.valid &&(lsu_addr >= 32'h10000000 && lsu_addr < 32'h10001000 || lsu_addr >= 32'h02000000 && lsu_addr < 32'h03000000);
 `endif
-  logic [31:0] sim_pc /*verilator public*/;
-  logic [31:0] sim_inst /*verilator public*/;
-  always_ff @(posedge clock)begin
-    if(wbu_valid) begin
-      sim_pc <= (bru_jump | sim_branch) ? bru_upc : mquit ? wbu_pc : exception ? upc : wbu_pc + 4;
+  logic [31:0] sim_pc  /*verilator public*/;
+  logic [31:0] sim_inst  /*verilator public*/;
+  always_ff @(posedge clock) begin
+    if (wbu_valid) begin
+      sim_pc   <= (bru_jump | sim_branch) ? bru_upc : mquit ? wbu_pc : exception ? upc : wbu_pc + 4;
       sim_inst <= wbu_sim.inst;
     end
   end
@@ -134,7 +134,7 @@ module ysyx_24110006_top (
   end
   wire reg_valid;
 `endif
-  if_pipeline_vr idu_vr_exu ();
+
   if_pipeline_vr exu_vr_alloc ();
   if_pipeline_vr alloc_vr_lsu ();
   if_pipeline_vr alloc_vr_bru ();
@@ -154,12 +154,8 @@ module ysyx_24110006_top (
   if_icache_rq ifu_rq ();
   pipe::idu2aluop_t idu2aluop;
   pipe::idu2exu_t idu2exu;
-  pipe::reg_rinfo_t reg_rinfo;
   pipe::csr_rinfo_t csr_rinfo;
-  pipe::reg_rdata_t reg_rdata;
-  pipe::reg_rdata_t from_forward;
   pipe::csr_rdata_t csr_rdata;
-  pipe::reg_winfo_t reg_winfo;
   pipe::exu2bru_t exu2bru;
   pipe::exu2lsu_t exu2lsu;
   alu::op_t alu_op;
@@ -168,9 +164,22 @@ module ysyx_24110006_top (
   pipe::csr_einfo_t bru_csr_einfo, lsu_csr_einfo, csr_einfo;
   if_mem_rq icache_mem_rq ();
 `ifdef CONFIG_IBUFFER
-  if_pipeline_vr ifu_vr_ibuffer(), ibuffer_vr_idu();
+  if_pipeline_vr ifu_vr_ibuffer (), ibuffer_vr_idu ();
 `else
-  if_pipeline_vr ifu_vr_idu();
+  if_pipeline_vr ifu_vr_idu ();
+`endif
+  pipe::reg_rdata_t reg_rdata;
+  pipe::reg_rdata_t from_forward;
+  pipe::reg_rinfo_t reg_rinfo;
+  pipe::reg_winfo_t reg_winfo;
+`ifdef CONFIG_RENAME
+  ooo::idu2rename_t idu2rename;
+  ooo::rename2exu_t rename2exu;
+  if_pipeline_vr idu_vr_rename ();
+  if_pipeline_vr rename_vr_exu ();
+  ooo::retire_info_t retire_info;
+`else
+  if_pipeline_vr idu_vr_exu ();
 `endif
 `ifdef CONFIG_YSYXSOC
   assign io_master_awvalid = mem_axi.awvalid;
@@ -241,15 +250,15 @@ module ysyx_24110006_top (
   );
 
 `ifdef CONFIG_IBUFFER
-  ysyx_24110006_IBUFFER mibuffer(
-    .i_clock(clock),
-    .i_reset(reset),
-    .i_flush(flush),
-    .i_fencei(fencei),
-    .from_ifu(from_ifu),
-    .to_idu(to_idu),
-    .i_vr(ifu_vr_ibuffer),
-    .o_vr(ibuffer_vr_idu)
+  ysyx_24110006_IBUFFER mibuffer (
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_flush(flush),
+      .i_fencei(fencei),
+      .from_ifu(from_ifu),
+      .to_idu(to_idu),
+      .i_vr(ifu_vr_ibuffer),
+      .o_vr(ibuffer_vr_idu)
   );
 `else
   assign to_idu = from_ifu;
@@ -258,16 +267,24 @@ module ysyx_24110006_top (
       .i_clock(clock),
       .i_reset(reset),
       .from_ifu(to_idu),
+`ifdef CONFIG_RENAME
+      .to_rename(idu2rename),
+`else
       .to_exu(idu2exu),
       .to_reg(reg_rinfo),
       .to_csr(csr_rinfo),
       .to_aluop(idu2aluop),
+`endif
 `ifdef CONFIG_IBUFFER
       .i_vr(ibuffer_vr_idu),
 `else
       .i_vr(ifu_vr_idu),
 `endif
+`ifdef CONFIG_RENAME
+      .o_vr(idu_vr_rename),
+`else
       .o_vr(idu_vr_exu),
+`endif
 `ifdef CONFIG_SIM
       .i_sim(ifu_sim),
       .o_sim(idu_sim),
@@ -277,7 +294,24 @@ module ysyx_24110006_top (
       .i_wen(exu2lsu.wen),
       .i_ren(exu2lsu.ren)
   );
-
+`ifdef CONFIG_RENAME
+  ysyx_24110006_RENAME mrename (
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_flush(flush),
+      .i_stall(stall),
+      .i_wen(exu2lsu.wen),
+      .i_ren(exu2lsu.ren),
+      .retire_info(retire_info),
+      .from_idu(idu2rename),
+      .to_reg(reg_rinfo),
+      .to_exu(rename2exu),
+      .to_aluop(idu2aluop),
+      .to_csr(csr_rinfo),
+      .i_vr(idu_vr_rename),
+      .o_vr(rename_vr_exu)
+  );
+`endif
   ysyx_24110006_RegisterFile mreg (
       .i_clock(clock),
       .i_reset(reset),
@@ -287,7 +321,6 @@ module ysyx_24110006_top (
       .i_valid(wbu_valid),
       .o_valid(reg_valid)
   );
-
   ysyx_24110006_CSR mcsr (
       .i_clock(clock),
       .i_reset(reset),
@@ -299,8 +332,14 @@ module ysyx_24110006_top (
   );
 
   ysyx_24110006_FORWARD_STALL mforward_stall (
+`ifdef CONFIG_RENAME
+      .i_valid(rename_vr_exu.valid),
+      .vrs_zero(reg_rinfo.rs_zero),
+      .i_op(rename2exu.op),
+`else
       .i_valid(idu_vr_exu.valid),
       .i_op(idu2exu.op),
+`endif
       .i_rs1(reg_rinfo.rs1),
       .i_rs2(reg_rinfo.rs2),
       .i_reg_src1(reg_rdata.r1),
@@ -338,7 +377,7 @@ module ysyx_24110006_top (
   ysyx_24110006_EXU mexu (
       .i_clock(clock),
       .i_reset(reset),
-      .from_idu(idu2exu),
+
       .from_reg(from_forward),
       .from_csr(csr_rdata),
       .from_aluop(alu_op),
@@ -348,7 +387,13 @@ module ysyx_24110006_top (
       .i_sim(idu_sim),
       .o_sim(exu_sim),
 `endif
+`ifdef CONFIG_RENAME
+      .from_idu(rename2exu),
+      .i_vr(rename_vr_exu),
+`else
+      .from_idu(idu2exu),
       .i_vr(idu_vr_exu),
+`endif
       .o_vr(exu_vr_alloc),
       .i_flush(flush | fencei),
       .i_stall(stall),
@@ -447,6 +492,9 @@ module ysyx_24110006_top (
       .i_vr_bru(bru_vr_wbu),
       .i_vr_lsu(lsu_vr_wbu),
       .o_pc(wbu_pc),
+`ifdef CONFIG_RENAME
+      .retire_info(retire_info),
+`endif
       .o_valid(wbu_valid)
   );
 
@@ -477,7 +525,7 @@ module ysyx_24110006_top (
   ysyx_24110006_SRAM msram (
       .i_clock(clock),
       .i_reset(reset),
-      .i_axi(mem_axi.slave)
+      .i_axi  (mem_axi.slave)
   );
 
   ysyx_24110006_UART muart (

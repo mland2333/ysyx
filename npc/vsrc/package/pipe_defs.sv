@@ -13,7 +13,7 @@ package pipe;
     logic [2:0] func;
     logic [1:0] csr_t;
     logic [11:0] csr;
-    logic [4:0] reg_rd;
+    logic [`REG_NUM_INDEX-1:0] reg_rd;
     logic [31:0] imm;
     logic [31:0] pc;
     logic exception;
@@ -28,15 +28,18 @@ package pipe;
   } idu2aluop_t;
 
   typedef struct packed {
-    logic [4:0] rs1;
-    logic [4:0] rs2;
+    logic [`REG_NUM_INDEX-1:0] rs1;
+    logic [`REG_NUM_INDEX-1:0] rs2;
+`ifdef CONFIG_RENAME
+    logic [1:0] rs_zero;
+`endif
   } reg_rinfo_t;
   typedef struct packed {
     logic [31:0] r1;
     logic [31:0] r2;
   } reg_rdata_t;
   typedef struct packed {
-    logic [4:0] rd;
+    logic [`REG_NUM_INDEX-1:0] rd;
     logic [31:0] wdata;
     logic wen;
   } reg_winfo_t;
@@ -66,13 +69,18 @@ package pipe;
     logic [31:0] upc;
     logic [1:0] csr_t;
     logic [11:0] csr;
-    logic [4:0] reg_rd;
+    logic [`REG_NUM_INDEX-1:0] reg_rd;
     logic [31:0] pc;
     logic exception;
     logic [3:0] mcause;
     logic [31:0] csr_wdata;
     logic fencei;
     logic quit;
+`ifdef CONFIG_RENAME
+    logic has_old_map;
+    logic [`REG_NUM_INDEX-1:0] old_index;
+    logic [4:0] vrd;
+`endif
   } exu2bru_t;
   typedef struct packed {
     logic ren;
@@ -82,16 +90,27 @@ package pipe;
     logic [31:0] wdata;
     logic [3:0] wmask;
     logic [2:0] read_t;
-    logic [4:0] reg_rd;
+    logic [`REG_NUM_INDEX-1:0] reg_rd;
     logic [31:0] pc;
     logic exception;
     logic [3:0] mcause;
+`ifdef CONFIG_RENAME
+    logic has_old_map;
+    logic [`REG_NUM_INDEX-1:0] old_index;
+    logic [4:0] vrd;
+`endif
   } exu2lsu_t;
   typedef struct packed {
     logic [31:0] result;
     logic reg_wen;
-    logic [4:0] reg_rd;
+    logic [`REG_NUM_INDEX-1:0] reg_rd;
     logic [31:0] pc;
+`ifdef CONFIG_RENAME
+    logic has_old_map;
+    logic [`REG_NUM_INDEX-1:0] old_index;
+    logic is_flush;
+    logic [4:0] vrd;
+`endif
   } wbu_t;
   typedef struct packed {
     logic [31:0] pc;
