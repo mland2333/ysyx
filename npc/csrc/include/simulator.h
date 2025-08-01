@@ -17,7 +17,7 @@
 // #include ROOT_HEADER_FILE(TOP_NAME)
 #include SV_HEADER_FILE(ADDH(__024root))
 #include SV_HEADER_FILE(ADDH(if_pipeline_vr))
-#include SV_HEADER_FILE(ADDH(TOP_NAME_NOTV))
+// #include SV_HEADER_FILE(ADDH(TOP_NAME_NOTV))
 #include SV_HEADER_FILE(ADDH(_Syms))
 #include "regs.h"
 #include "verilated_fst_c.h"
@@ -31,14 +31,17 @@
   top->rootp->ysyxSoCFull->asic->cpu->cpu->top
 #define PC_BEGIN 0xa0000000
 #else
-#define TOP_PREFIX top->rootp->ysyx_24110006->top
+// #define TOP_PREFIX top->rootp->ysyx_24110006->top
+#define TOP_PREFIX top->rootp->ysyx_24110006__DOT__top__DOT__
 #define PC_BEGIN 0x80000000
 #endif
-#define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
-#define INTERFACE(member) CONCAT(INTERFACE_PREFIX, member)
-#define ARROW_MEMBER(obj, member) obj->member
-#define GET_MEMBER(obj, member) ARROW_MEMBER(obj, member)
-
+// #define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
+// #define INTERFACE(member) CONCAT(INTERFACE_PREFIX, member)
+// #define ARROW_MEMBER(obj, member) obj->member
+// #define GET_MEMBER(obj, member) ARROW_MEMBER(obj, member)
+#define GET(x) x
+#define GET_MEMBER_HELPER(obj, member) obj ## member
+#define GET_MEMBER(obj, member) GET_MEMBER_HELPER(obj, member)
 #ifdef CONFIG_RISCV32E
 #define REG_NUMS 16
 #else
@@ -56,21 +59,17 @@ private:
   SIM_STATE state = SIM_STATE::NORMAL;
   uint64_t old_clk = 0;
   void cpu_update(){
-#ifdef CONFIG_RENAME
     for(int i = 1; i<REG_NUMS; i++){
-      if(GET_MEMBER(TOP_PREFIX, __PVT__mrename__DOT__areg_state[i]) == 0){
+      if(GET_MEMBER(TOP_PREFIX, mrename__DOT__areg_state[i]) == 0){
         cpu.gpr[i] = 0;
         continue;
       }
-      int index = GET_MEMBER(TOP_PREFIX,__PVT__mrename__DOT__arat[i]);
-      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, __PVT__mreg__DOT__rf[index]);
+      int index = GET_MEMBER(TOP_PREFIX,mrename__DOT__arat[i]);
+      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__rf[index]);
     }   
-#else
-    for(int i = 1; i<REG_NUMS; i++)
-      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, __PVT__mreg__DOT__rf[i]);
-#endif
+
     cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc);
-    cpu.inst = GET_MEMBER(TOP_PREFIX, sim_inst);
+    // cpu.inst = GET_MEMBER(TOP_PREFIX, sim_inst);
   }
 public:
   TOP_NAME *top;

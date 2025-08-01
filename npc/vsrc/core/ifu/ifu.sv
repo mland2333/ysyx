@@ -12,9 +12,7 @@ module ysyx_24110006_IFU (
     input i_dcache_fencei_fin,
     input [31:0] i_pc,
     input [31:0] i_upc,
-`ifdef CONFIG_SIM
-    output pipe::sim_t o_sim,
-`endif
+
     if_pipeline_vr.out o_vr
 );
   logic [31:0] pc;
@@ -95,9 +93,5 @@ module ysyx_24110006_IFU (
       .o_imm (imm)
   );
 
-`ifdef CONFIG_SIM
-  assign o_sim.pc   = pc;
-  assign o_sim.inst = o_icache_rq.rdata;
-`endif
   /* assign to_idu = {rdata, pc, predict, exception, mcause}; */
 endmodule

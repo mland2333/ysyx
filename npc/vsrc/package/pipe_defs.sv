@@ -39,6 +39,7 @@ package pipe;
     logic [31:0] r2;
   } reg_rdata_t;
   typedef struct packed {
+    logic valid;
     logic [`REG_NUM_INDEX-1:0] rd;
     logic [31:0] wdata;
     logic wen;

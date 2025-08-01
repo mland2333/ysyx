@@ -20,3 +20,6 @@
 
 `define PREG_NUM_INDEX $clog2(`PREG_NUM)
 `define REG_NUM_INDEX `PREG_NUM_INDEX
+
+`define ROB_NUM 32
+`define ROB_NUM_INDEX $clog2(`ROB_NUM)

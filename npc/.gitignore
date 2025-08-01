@@ -13,4 +13,5 @@
 !README.md
 !*.nxdc
 !*.sv
+chisel/
 build/

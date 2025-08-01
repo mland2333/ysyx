@@ -1,5 +1,0 @@
-package iq;
-
-
-
-endpackage
