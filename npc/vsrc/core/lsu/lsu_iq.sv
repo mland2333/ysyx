@@ -10,7 +10,8 @@ module ysyx_24110006_LSU_IQ #(
     input ooo::dispatch_inst_t dispatch_inst,
     input pipe::reg_winfo_t reg_winfo,
     output ooo::issue_lsu_t issue_inst,
-    output pipe::reg_rinfo_t reg_rinfo
+    output pipe::reg_rinfo_t reg_rinfo,
+    output rob::store_commit_t store_commit
 );
   typedef struct packed{
     ooo::dispatch_inst_t data;
@@ -86,4 +87,6 @@ module ysyx_24110006_LSU_IQ #(
   assign issue_inst.agu_info.func = select_inst.data.basic_inst_info.func;
   assign issue_inst.rob_index = select_inst.rob_index;
   assign reg_rinfo = select_inst.data.reg_rinfo;
+  assign store_commit.valid = o_vr.valid && o_vr.ready && select_inst.data.mem_wen;
+  assign store_commit.index = select_inst.rob_index;
 endmodule

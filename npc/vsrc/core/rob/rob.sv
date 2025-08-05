@@ -8,11 +8,13 @@ module ysyx_24110006_ROB #(
     input rob::inst_info_t dispatch_inst,
     input rob::commit_info_t commit_int,
     input rob::commit_info_t commit_lsu,
+    input rob::store_commit_t commit_store,
     output rob::wb_index rob_index,
     output logic retire_valid,
     output ooo::retire_info_t retire_info,
     output rob::rob_t rob_out,
-    output pipe::reg_winfo_t reg_winfo
+    output pipe::reg_winfo_t reg_winfo,
+    output store_retire
 );
 
   localparam ROB_INDEX = $clog2(ROB_NUM);
@@ -49,9 +51,15 @@ module ysyx_24110006_ROB #(
       else if (commit_int.valid && commit_int.index == i) begin
         robs[i].result <= commit_int.result;
         robs[i].valid  <= 1;
+        robs[i].type_store <= 0;
       end else if (commit_lsu.valid && commit_lsu.index == i) begin
         robs[i].result <= commit_lsu.result;
         robs[i].valid  <= 1;
+        robs[i].type_store <= 0;
+      end else if(commit_store.valid && commit_store.index == i)begin
+        robs[i].valid <= 1;
+        robs[i].result <= 0;
+        robs[i].type_store <= 1;
       end else if (robs[i].valid && r_ptr == i) robs[i].valid <= 0;
     end
   end
@@ -74,4 +82,5 @@ module ysyx_24110006_ROB #(
   assign retire_info.vrd = robs[r_ptr].inst_info.vrd;
   assign retire_info.prd = robs[r_ptr].inst_info.prd;
   assign rob_out = robs[r_ptr];
+  assign store_retire = retire_valid && robs[r_ptr].type_store;
 endmodule

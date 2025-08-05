@@ -49,8 +49,8 @@ module ysyx_24110006_top (
 `endif
   pipe::reg_rinfo_t reg_rinfo_int, reg_rinfo_lsu;
   if_axi_read icache_axi ();
-  if_lsu_adapter lsu_adapter ();
-  if_lsu_dcache lsu_dcache ();
+  if_lsu_adapter rq_axi ();
+  if_lsu_dcache rq_dcache ();
   if_dcache_rq dcache_bridge ();
   if_axi dcache_axi ();
   if_lsu_adapter lsu_adapter_axi ();
@@ -83,13 +83,23 @@ module ysyx_24110006_top (
   rob::inst_info_t dispatch_rob;
   ooo::issue_int_t issue_int;
   ooo::issue_lsu_t issue_lsu;
-  rob::commit_info_t commit_int, commit_lsu;
+  rob::commit_info_t commit_int, commit_load;
   ooo::retire_info_t retire_info;
   rob::wb_index rob_index;
   logic retire_valid;
   pipe::reg_rdata_t reg_rdata_int, reg_rdata_lsu;
   ooo::exu_info_t exu_info;
   ooo::lsu_info_t lsu_info;
+  if_rq_load rq_lunit();
+  if_rq_store rq_sunit();
+  lsu::rq_store_t rq_agu_store, rq_sbuf;
+  lsu::rq_load_t rq_agu_load;
+  if_pipeline_vr agu_vr_load();
+  if_pipeline_vr agu_vr_store();
+  if_pipeline_vr sbuf_vr_sunit();
+  if_load_check load_check();
+  rob::store_commit_t store_commit;
+  logic store_retire;
 
 `ifndef CONFIG_YSYXSOC
   if_axi_write uart_axi ();
@@ -170,12 +180,14 @@ module ysyx_24110006_top (
       .vr_in(dispatch_vr_rob),
       .dispatch_inst(dispatch_rob),
       .commit_int(commit_int),
-      .commit_lsu(commit_lsu),
+      .commit_lsu(commit_load),
+      .commit_store(store_commit),
       .retire_valid(retire_valid),
       .retire_info(retire_info),
       .rob_index(rob_index),
       .rob_out(rob_sim),
-      .reg_winfo(reg_winfo)
+      .reg_winfo(reg_winfo),
+      .store_retire(store_retire)
   );
   ysyx_24110006_INT_IQ mint_iq (
       .i_clock(clock),
@@ -198,6 +210,7 @@ module ysyx_24110006_top (
       .reg_winfo(reg_winfo),
       .issue_inst(issue_lsu),
       .reg_rinfo(reg_rinfo_lsu),
+      .store_commit(store_commit),
       .i_vr(dispatch_vr_lsu),
       .o_vr(iq_vr_lsu)
   );
@@ -210,7 +223,7 @@ module ysyx_24110006_top (
       .rdata2 (reg_rdata_lsu),
       .winfo  (reg_winfo),
 `ifdef CONFIG_SIM
-      .i_rat(rat),
+      .i_rat  (rat),
 `endif
       .o_valid(reg_valid)
   );
@@ -241,48 +254,67 @@ module ysyx_24110006_top (
   ysyx_24110006_AGU magu (
       .i_clock(clock),
       .vr_in(iq_vr_lsu),
-      .vr_out(agu_vr_lsu),
+      .vr_load(agu_vr_load),
+      .vr_store(agu_vr_store),
       .reg_rdata(reg_rdata_lsu),
       .issue_info(issue_lsu),
-      .lsu_info(lsu_info)
+      .rq_load(rq_agu_load),
+      .rq_store(rq_agu_store)
   );
-  ysyx_24110006_LSU mlsu (
+  ysyx_24110006_STORE_BUFFER mstore_buffer (
       .i_clock(clock),
       .i_reset(reset),
-      .issue_inst(lsu_info),
-      .commit(commit_lsu),
-      .i_vr(agu_vr_lsu),
       .i_flush(flush),
-      .o_lsu_rq(lsu_adapter.master)
+      .i_vr(agu_vr_store),
+      .o_vr(sbuf_vr_sunit),
+      .i_rq(rq_agu_store),
+      .store_retire(store_retire),
+      .check(load_check),
+      .o_rq(rq_sbuf)
   );
-  ysyx_24110006_LSU_ADAPTER mlsu_adapter (
-      .i_lsu_adapter(lsu_adapter.slave),
-`ifdef CONFIG_DCACHE
-      .o_lsu_dcache (lsu_dcache.master),
-`endif
-      .o_lsu_adapter(lsu_adapter_axi.master)
+  ysyx_24110006_STORE_UNIT mstore_unit (
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_vr(sbuf_vr_sunit),
+      .i_rq(rq_sbuf),
+      .o_rq(rq_sunit)
   );
-`ifdef CONFIG_DCACHE
+  ysyx_24110006_LOAD_UNIT mload_unit (
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_vr(agu_vr_load),
+      .i_rq(rq_agu_load),
+      .o_rq(rq_lunit),
+      .check(load_check),
+      .commit(commit_load)
+  );
+  ysyx_24110006_LSU_ARIBITER mlsu_aribiter (
+      .i_clock(clock),
+      .i_reset(reset),
+      .rq_load(rq_lunit),
+      .rq_store(rq_sunit),
+      .rq_dcache(rq_dcache),
+      .rq_axi(rq_axi)
+  );
   ysyx_24110006_DCACHE mdcache (
       .i_clock(clock),
       .i_reset(reset),
       .i_flush(fencei),
       .o_fin(fencei_fin),
-      .i_lsu_rq(lsu_dcache.slave),
-      .o_axi_rq(dcache_bridge.master)
+      .i_lsu_rq(rq_dcache),
+      .o_axi_rq(dcache_bridge)
   );
   ysyx_24110006_DCACHE2AXI mdcache2axi (
       .i_clock(clock),
       .i_reset(reset),
-      .i_dcache_rq(dcache_bridge.slave),
-      .o_axi_rq(dcache_axi.master)
+      .i_dcache_rq(dcache_bridge),
+      .o_axi_rq(dcache_axi)
   );
-`endif
   ysyx_24110006_LSU2AXI mlsu2axi (
       .i_clock(clock),
       .i_reset(reset),
-      .i_lsu_adapter(lsu_adapter_axi.slave),
-      .o_axi(lsu_axi.master)
+      .i_lsu_adapter(rq_axi),
+      .o_axi(lsu_axi)
   );
 
   ysyx_24110006_ARBITER marbiter (
@@ -290,9 +322,7 @@ module ysyx_24110006_top (
       .i_reset(reset),
       .i_flush(flush),
       .ifu(icache_axi.slave),
-`ifdef CONFIG_DCACHE
       .dcache(dcache_axi.slave),
-`endif
       .lsu(lsu_axi.slave),
       .out(xbar_axi.master)
   );

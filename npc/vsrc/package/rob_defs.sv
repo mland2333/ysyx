@@ -22,6 +22,7 @@ package rob;
     inst_info_t inst_info;
     result_t result;
     logic valid;
+    logic type_store;
   } rob_t;
   typedef logic [`ROB_NUM_INDEX-1:0] wb_index;
   typedef struct packed {
@@ -29,4 +30,8 @@ package rob;
     wb_index index;
     result_t result;
   } commit_info_t;
+  typedef struct packed{
+    logic valid;
+    wb_index index;
+  } store_commit_t;
 endpackage

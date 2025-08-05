@@ -67,6 +67,7 @@ else
 VSRCS += ./vsrc/package/pipe_defs.sv
 VSRCS += ./vsrc/package/rob_defs.sv
 VSRCS += ./vsrc/package/alu_defs.sv
+VSRCS += ./vsrc/package/lsu_defs.sv
 VSRCS += ./vsrc/package/ooo_defs.sv
 VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
 # VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
