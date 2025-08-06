@@ -27,7 +27,7 @@ module ysyx_24110006_IFU (
   logic in_flush;
   always_ff@(posedge i_clock)begin
     if(i_reset) in_flush <= 0;
-    else if(i_flush && !o_icache_rq.valid) in_flush <= 1;
+    else if(i_flush && !o_icache_rq.valid && (o_icache_rq.rq && o_icache_rq.cache_ready || !o_icache_rq.cache_ready)) in_flush <= 1;
     else if(in_flush && o_icache_rq.valid) in_flush <= 0;
   end
 

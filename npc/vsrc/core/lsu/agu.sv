@@ -19,7 +19,8 @@ assign rq_store.wmask = issue_info.agu_info.wen ? (issue_info.agu_info.func == 4
 assign rq_load.addr = addr;
 assign rq_load.read_t = issue_info.agu_info.func;
 assign rq_load.rob_index = issue_info.rob_index;
-
+(* keep *) logic sim;
+assign sim = addr == 32'h80010e44;
 /* assign lsu_info.addr = reg_rdata.r1 + issue_info.agu_info.imm; */
 /* assign lsu_info.wdata = reg_rdata.r2; */
 /* assign lsu_info.read_t = issue_info.agu_info.func; */

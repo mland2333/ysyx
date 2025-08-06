@@ -12,7 +12,8 @@ uint32_t Memory::read(uint32_t raddr){
   for (auto&area: areas) {
     if (area.in_mem(raddr)) return area.read<uint32_t>(raddr);
   }
-  throw std::runtime_error("No Area\n");
+  // throw std::runtime_error("No Area\n");
+  return 0;
 }
 
 void Memory::write(uint32_t waddr, uint32_t wdata, char wmask){
@@ -27,14 +28,15 @@ void Memory::write(uint32_t waddr, uint32_t wdata, char wmask){
       return ;
     }
   }
-  throw std::runtime_error("No Area\n");
+  return ;
+  // throw std::runtime_error("No Area\n");
 }
 
 const Area* Memory::find_area_by_name(const std::string& name){
   for (auto& area : areas) {
     if (area.name == name) return &area;
   }
-  throw std::runtime_error("No Area\n");
+  // throw std::runtime_error("No Area\n");
   return nullptr;
 }
 
@@ -42,6 +44,6 @@ const Area* Memory::find_area_has_image(){
   for (auto& area : areas) {
     if (area.has_image) return &area;
   }
-  throw std::runtime_error("No Area\n");
+  // throw std::runtime_error("No Area\n");
   return nullptr;
 }

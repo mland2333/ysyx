@@ -81,9 +81,9 @@ CSRCS += $(shell find $(abspath ./csrc) -maxdepth 1 -name "*.c" -or -name "*.cc"
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -DTOP_NAME_NOTV="$(TOPNAME)" -g
 LDFLAGS += $(LIBS) -lSDL2
-CXXFLAGS += -flto
-LDFLAGS += -flto
-
+# CXXFLAGS += -flto
+# LDFLAGS += -flto
+LDFLAGS += -fuse-ld=lld
 OBJCACHE = ccache
 CC = ccache gcc
 CXX = ccache g++

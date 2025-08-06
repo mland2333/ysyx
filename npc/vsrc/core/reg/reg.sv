@@ -16,8 +16,7 @@ module ysyx_24110006_RegisterFile #(
 );
   reg [DATA_WIDTH-1:0] rf[`PREG_NUM];
   always @(posedge i_clock) begin
-    if (i_reset) rf[0] <= 0;
-    else if (winfo.valid && winfo.wen) rf[winfo.rd] <= winfo.wdata;
+    if(winfo.valid && winfo.wen) rf[winfo.rd] <= winfo.wdata;
   end
 
   always @(posedge i_clock) begin
@@ -30,9 +29,6 @@ module ysyx_24110006_RegisterFile #(
   assign rdata2.r1 = rinfo2.rs_zero[0] ? 0 : rf[rinfo2.rs1];
   assign rdata2.r2 = rinfo2.rs_zero[1] ? 0 : rf[rinfo2.rs2];
 `ifdef CONFIG_SIM
-  always_comb begin
-    for (int i = 0; i < `PREG_NUM; i++) $dumpvars(0, rf[i]);
-  end
   reg [DATA_WIDTH-1:0] sim_rf[32];
   always_comb begin
     for (int i = 0; i < 32; i++) sim_rf[i] = rf[i_rat[i]];

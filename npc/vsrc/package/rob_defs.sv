@@ -9,7 +9,11 @@ package rob;
     logic [`REG_NUM_INDEX-1:0] old_index;
     logic quit;
   } inst_info_t;
-  typedef struct packed {logic difftest_skip;} sim_t;
+  typedef struct packed {
+    logic difftest_skip;
+    logic [31:0] addr;
+    logic ren;
+  } sim_t;
   typedef struct packed {
     logic [31:0] result;
     logic [31:0] upc;
@@ -30,8 +34,11 @@ package rob;
     wb_index index;
     result_t result;
   } commit_info_t;
-  typedef struct packed{
+  typedef struct packed {
     logic valid;
     wb_index index;
+/* `ifdef CONFIG_SIM */
+/*     sim_t sim; */
+/* `endif */
   } store_commit_t;
 endpackage

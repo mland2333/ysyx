@@ -68,7 +68,7 @@ module ysyx_24110006_LSU_IQ #(
         rs_valid[i][1] <= !dispatch_inst.need_rs[1] || dispatch_inst.rs_valid[1] ||
           reg_winfo.valid && reg_winfo.rd == dispatch_inst.reg_rinfo.rs2 && reg_winfo.wen;
       end
-      else if(reg_winfo.valid && info_valid[i])begin
+      else if(reg_winfo.valid && info_valid[i] && reg_winfo.wen)begin
         rs_valid[i][0] <= reg_winfo.rd == iq[i].data.reg_rinfo.rs1 || rs_valid[i][0];
         rs_valid[i][1] <= reg_winfo.rd == iq[i].data.reg_rinfo.rs2 || rs_valid[i][1];
       end

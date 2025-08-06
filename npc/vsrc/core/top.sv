@@ -100,6 +100,7 @@ module ysyx_24110006_top (
   if_load_check load_check();
   rob::store_commit_t store_commit;
   logic store_retire;
+  logic store_finish;
 
 `ifndef CONFIG_YSYXSOC
   if_axi_write uart_axi ();
@@ -270,7 +271,8 @@ module ysyx_24110006_top (
       .i_rq(rq_agu_store),
       .store_retire(store_retire),
       .check(load_check),
-      .o_rq(rq_sbuf)
+      .o_rq(rq_sbuf),
+      .store_finish(rq_sunit.valid)
   );
   ysyx_24110006_STORE_UNIT mstore_unit (
       .i_clock(clock),
@@ -282,6 +284,7 @@ module ysyx_24110006_top (
   ysyx_24110006_LOAD_UNIT mload_unit (
       .i_clock(clock),
       .i_reset(reset),
+      .i_flush(flush),
       .i_vr(agu_vr_load),
       .i_rq(rq_agu_load),
       .o_rq(rq_lunit),

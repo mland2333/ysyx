@@ -119,21 +119,20 @@ module ysyx_24110006_RENAME #(
   } reg_state_t;
   reg_state_t reg_state[32], areg_state[32];
   always_ff @(posedge i_clock) begin
-    if (i_reset) begin
-      for (int i = 1; i < 32; i++) reg_state[i] <= IDLE;
-      reg_state[0] <= ZERO;
-    end else if (flush_retire) begin
-      reg_state <= areg_state;
-    end else begin
-      if (need_alloc && !full && from_idu.vrd != 0) reg_state[from_idu.vrd] <= MAPPED;
-      if (retire_info.retire && retire_info.prd == rat[retire_info.vrd])
-        reg_state[retire_info.vrd] <= READY;
+    for(int i = 0; i<32; i++) begin
+      if (i_reset) reg_state[i] <= IDLE;
+      else if (flush_retire) begin
+      reg_state[i] <= areg_state[i];
+      end else begin
+        if (need_alloc && !full && from_idu.vrd != 0 && from_idu.vrd == i) reg_state[i] <= MAPPED;
+        else if (retire_info.retire && retire_info.prd == rat[retire_info.vrd] && retire_info.vrd == i)
+          reg_state[i] <= READY;
+      end
     end
   end
   always_ff @(posedge i_clock) begin
     if (i_reset) begin
-      for (int i = 1; i < 32; i++) areg_state[i] <= IDLE;
-      areg_state[0] <= ZERO;
+      for (int i = 0; i < 32; i++) areg_state[i] <= IDLE;
     end else begin
       if (retire_info.retire) areg_state[retire_info.vrd] <= READY;
     end
@@ -212,7 +211,7 @@ module ysyx_24110006_RENAME #(
   assign dispatch_info.is_lsu = idu_data.is_lsu;
 `ifdef CONFIG_SIM
   always_comb begin
-    for (int i = 0; i < 32; i++) o_rat[i] = rat[i];
+    for (int i = 0; i < 32; i++) o_rat[i] = arat[i];
   end
 `endif
 endmodule
