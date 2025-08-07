@@ -28,7 +28,7 @@ package rob;
     logic valid;
     logic type_store;
   } rob_t;
-  typedef logic [`ROB_NUM_INDEX-1:0] wb_index;
+  typedef logic [`ROB_NUM_INDEX:0] wb_index;
   typedef struct packed {
     logic valid;
     wb_index index;
@@ -41,4 +41,7 @@ package rob;
 /*     sim_t sim; */
 /* `endif */
   } store_commit_t;
+  function logic is_older(input wb_index a, input wb_index b);
+    return ~((a[`ROB_NUM_INDEX] == b[`ROB_NUM_INDEX]) ^ (a[`ROB_NUM_INDEX-1:0] < b[`ROB_NUM_INDEX-1:0]));
+  endfunction
 endpackage

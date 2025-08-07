@@ -1,6 +1,6 @@
 `include "common_config.sv"
 module ysyx_24110006_ROB #(
-    parameter ROB_NUM = 32
+    parameter ROB_NUM = `ROB_NUM
 ) (
     input i_clock,
     input i_reset,
@@ -48,15 +48,15 @@ module ysyx_24110006_ROB #(
     for (int i = 0; i < ROB_NUM; i++) begin
       if (i_reset || flush) robs[i].valid <= 0;
       else if (push && w_ptr == i) robs[i].inst_info <= dispatch_inst;
-      else if (commit_int.valid && commit_int.index == i) begin
+      else if (commit_int.valid && commit_int.index[ROB_INDEX-1:0] == i) begin
         robs[i].result <= commit_int.result;
         robs[i].valid  <= 1;
         robs[i].type_store <= 0;
-      end else if (commit_lsu.valid && commit_lsu.index == i) begin
+      end else if (commit_lsu.valid && commit_lsu.index[ROB_INDEX-1:0] == i) begin
         robs[i].result <= commit_lsu.result;
         robs[i].valid  <= 1;
         robs[i].type_store <= 0;
-      end else if(commit_store.valid && commit_store.index == i)begin
+      end else if(commit_store.valid && commit_store.index[ROB_INDEX-1:0] == i)begin
         robs[i].valid <= 1;
         robs[i].result <= 0;
         robs[i].type_store <= 1;
@@ -67,7 +67,7 @@ module ysyx_24110006_ROB #(
   /* always_ff @(posedge i_clock) begin */
   /*   if (push) rob_index <= w_ptr; */
   /* end */
-  assign rob_index = w_ptr;
+  assign rob_index = {w_ptr < r_ptr, w_ptr};
   logic flush;
   assign flush = robs[r_ptr].result.flush && retire_valid;
   assign retire_valid = robs[r_ptr].valid;
