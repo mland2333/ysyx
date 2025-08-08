@@ -65,7 +65,7 @@ private:
         continue;
       }
       int index = GET_MEMBER(TOP_PREFIX,mrename__DOT__arat[i]);
-      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__rf[index]);
+      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__reg_file[index]);
     }   
 
     cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc);

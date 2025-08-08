@@ -7,9 +7,9 @@ package ooo;
     logic [31:0] imm;
   } basic_info_t;
   typedef struct packed {
-    logic [4:0] vrs1;
-    logic [4:0] vrs2;
-    logic [4:0] vrd;
+    rf::vreg vrs1;
+    rf::vreg vrs2;
+    rf::vreg vrd;
     logic reg_wen;
     logic [6:0] op;
     logic [2:0] func;
@@ -27,33 +27,40 @@ package ooo;
   } idu2rename_t;
   typedef struct packed {
     basic_info_t basic_inst_info;
-    pipe::reg_rinfo_t reg_rinfo;
-    logic [`REG_NUM_INDEX-1:0] prd;
-    logic [4:0] vrd;
+    rf::rinfo_t reg_rinfo;
+    rf::preg prd;
+    rf::vreg vrd;
     logic mem_wen;
     logic reg_wen;
     logic has_old_map;
-    logic [`REG_NUM_INDEX-1:0] old_index;
+    rf::preg old_index;
     logic [1:0] need_rs;
     logic [1:0] rs_valid;
     logic quit;
     logic is_lsu;
   } dispatch_info_t;
   typedef struct packed {
-    logic flush_retire;
-    logic retire;
+    logic flush;
+    logic valid;
     logic has_old_map;
-    logic [`REG_NUM_INDEX-1:0] old_index;
-    logic [4:0] vrd;
-    logic [`REG_NUM_INDEX-1:0] prd;
+    rf::preg old_index;
+    rf::vreg vrd;
+    rf::preg prd;
   } retire_info_t;
+  typedef struct packed{
+    logic valid;
+    rf::vreg vrd;
+    rf::preg prd;
+  }commit_update_t;
   typedef struct packed {
     basic_info_t basic_inst_info;
-    pipe::reg_rinfo_t reg_rinfo;
+    rf::rinfo_t reg_rinfo;
     logic [1:0] need_rs;
     logic [1:0] rs_valid;
-    logic ren_wen;
+    logic reg_wen;
     logic mem_wen;
+    rf::preg rd;
+    rf::vreg vrd;
   } dispatch_inst_t;
   typedef struct packed {logic branch, beq, bne, blt, bge, jump;} branch_info_t;
   typedef struct packed {
@@ -62,11 +69,17 @@ package ooo;
     logic [31:0] upc;
     logic [31:0] imm;
     logic zero;
+    logic reg_wen;
     branch_info_t branch_info;
+    rf::preg rd;
+    rf::vreg vrd;
   } exu_info_t;
   typedef struct packed {
     basic_info_t data;
     rob::wb_index rob_index;
+    logic reg_wen;
+    rf::preg rd;
+    rf::vreg vrd;
   } issue_int_t;
   typedef struct packed {
     logic wen;
@@ -76,6 +89,8 @@ package ooo;
   typedef struct packed {
     agu_info_t agu_info;
     rob::wb_index rob_index;
+    rf::preg rd;
+    rf::vreg vrd;
   } issue_lsu_t;
   typedef struct packed{
     rob::wb_index rob_index;
@@ -84,5 +99,8 @@ package ooo;
     logic [31:0] wdata;
     logic [2:0] read_t;
     logic [3:0] wmask;
+    rf::preg rd;
+    rf::vreg vrd;
   }lsu_info_t;
+  
 endpackage

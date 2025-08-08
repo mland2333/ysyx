@@ -1,3 +1,4 @@
+`include "common_config.sv"
 package lsu;
 
   typedef struct packed{
@@ -8,6 +9,8 @@ package lsu;
     logic [31:0] addr;
     logic [2:0] read_t;
     rob::wb_index rob_index;
+    logic [`REG_NUM_INDEX-1:0] rd;
+    logic [4:0] vrd;
   }rq_load_t;
 
 

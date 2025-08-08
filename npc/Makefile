@@ -65,7 +65,10 @@ VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune
 VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
 else
 # VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
+VSRCS += ./vsrc/package/reg_defs.sv
 VSRCS += ./vsrc/package/pipe_defs.sv
+VSRCS += ./vsrc/package/rename_defs.sv
+VSRCS += ./vsrc/package/bypass_defs.sv
 VSRCS += ./vsrc/package/rob_defs.sv
 VSRCS += ./vsrc/package/alu_defs.sv
 VSRCS += ./vsrc/package/lsu_defs.sv

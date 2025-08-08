@@ -5,6 +5,8 @@ module ysyx_24110006_EXU (
     input i_reset,
     input ooo::exu_info_t issue_inst,
     output rob::commit_info_t commit,
+    output rename::commit_t rename_commit,
+    output rf::winfo_t winfo,
     input i_flush,
     if_pipeline_vr.in i_vr
 );
@@ -39,12 +41,19 @@ module ysyx_24110006_EXU (
   assign cmp = alu_result.cmp;
   assign branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp;
 
-  assign wb_result.result = alu_result.r;
+  /* assign wb_result.result = alu_result.r; */
   assign wb_result.flush = branch | exu_info.branch_info.jump;
   assign wb_result.upc = exu_info.upc + exu_info.imm;
   assign commit.result = wb_result;
   assign commit.valid = o_valid;
   assign commit.index = exu_info.rob_index;
+  assign winfo.valid = o_valid;
+  assign winfo.wen = exu_info.reg_wen;
+  assign winfo.rd = exu_info.rd;
+  assign winfo.wdata = alu_result.r;
+  assign rename_commit.prd = exu_info.rd;
+  assign rename_commit.vrd = exu_info.vrd;
+  assign rename_commit.valid = o_valid && exu_info.reg_wen;
 `ifdef CONFIG_SIM
   assign wb_result.sim.difftest_skip = 0;
 `endif

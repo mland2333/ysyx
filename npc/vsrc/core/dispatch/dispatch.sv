@@ -12,12 +12,18 @@ module ysyx_24110006_DISPATCH (
   assign dispatch_int.reg_rinfo = dispatch_info.reg_rinfo;
   assign dispatch_int.need_rs = dispatch_info.need_rs;
   assign dispatch_int.rs_valid = dispatch_info.rs_valid;
+  assign dispatch_int.reg_wen = dispatch_info.reg_wen;
+  assign dispatch_int.rd = dispatch_info.prd;
+  assign dispatch_int.vrd = dispatch_info.vrd;
 
   assign dispatch_lsu.basic_inst_info = dispatch_info.basic_inst_info;
   assign dispatch_lsu.reg_rinfo = dispatch_info.reg_rinfo;
   assign dispatch_lsu.need_rs = dispatch_info.need_rs;
   assign dispatch_lsu.rs_valid = dispatch_info.rs_valid;
   assign dispatch_lsu.mem_wen = dispatch_info.mem_wen;
+  assign dispatch_lsu.reg_wen = dispatch_info.reg_wen;
+  assign dispatch_lsu.rd = dispatch_info.prd;
+  assign dispatch_lsu.vrd = dispatch_info.vrd;
 
   assign rob_info.pc = dispatch_info.basic_inst_info.pc;
   assign rob_info.reg_wen = dispatch_info.reg_wen;

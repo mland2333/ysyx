@@ -6,6 +6,9 @@ module ysyx_24110006_LOAD_UNIT (
     if_rq_load.out o_rq,
     input lsu::rq_load_t i_rq,
     output rob::commit_info_t commit,
+    output rename::commit_t rename_commit,
+    output rf::winfo_t winfo,
+    output bypass::wakeup_t lsu_wakeup,
     if_load_check.out check
 );
   lsu::rq_load_t rq;
@@ -74,13 +77,26 @@ module ysyx_24110006_LOAD_UNIT (
       default: result = load_result;
     endcase
   end
-  assign wb_result.result = result;
+  /* assign wb_result.result = result; */
   assign wb_result.flush = 0;
   assign wb_result.upc = 0;
-  assign commit.valid = commit_valid;
   assign commit.result = wb_result;
+  assign commit.valid = commit_valid;
   assign commit.index = rq.rob_index;
+
   assign check.addr = i_rq.addr;
+  assign winfo.valid = commit_valid;
+  assign winfo.wen = 1;
+  assign winfo.rd = rq.rd;
+  assign winfo.wdata = result;
+
+  assign rename_commit.prd = rq.rd;
+  assign rename_commit.vrd = rq.vrd;
+  assign rename_commit.valid = commit_valid;
+  logic mem_valid;
+  assign mem_valid = (o_rq.valid && !i_vr.ready || i_vr.valid && i_vr.ready && check.hit) && !i_flush && !in_flush;
+  assign lsu_wakeup.valid = mem_valid;
+  assign lsu_wakeup.rd = o_rq.valid && !i_vr.ready ? rq.rd : i_rq.rd;
 `ifdef CONFIG_SIM
   function logic in_mem(input int addr);
 `ifdef CONFIG_YSYXSOC
@@ -89,7 +105,7 @@ module ysyx_24110006_LOAD_UNIT (
     return addr >= 32'h80000000 && addr < 32'h90000000;
 `endif
   endfunction
-  assign wb_result.sim.difftest_skip = !in_mem(rq.addr);
+  assign wb_result.sim.difftest_skip = !(rq.addr >= 32'h80000000 && rq.addr < 32'h90000000);
   assign wb_result.sim.addr = rq.addr;
   assign wb_result.sim.ren = 1;
 `endif

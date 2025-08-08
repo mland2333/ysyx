@@ -9,9 +9,11 @@ module ysyx_24110006_INT_IQ #(
     if_pipeline_vr.out o_vr,
     input rob::wb_index rob_index,
     input ooo::dispatch_inst_t dispatch_inst,
-    input pipe::reg_winfo_t reg_winfo,
+    input bypass::wakeup_t lsu_wakeup,
+    output bypass::wakeup_t int_wakeup,
     output ooo::issue_int_t issue_inst,
-    output pipe::reg_rinfo_t reg_rinfo
+    output rf::rinfo_t reg_rinfo,
+    output bypass::src_loction_t loc
 );
   typedef struct packed {
     ooo::dispatch_inst_t data;
@@ -56,13 +58,25 @@ module ysyx_24110006_INT_IQ #(
       if (i_reset || i_flush) rs_valid[i] <= 0;
       else if (alloc && alloc_index == i) begin
         rs_valid[i][0] <= !dispatch_inst.need_rs[0] || dispatch_inst.rs_valid[0] ||
-          reg_winfo.valid && reg_winfo.rd == dispatch_inst.reg_rinfo.rs1 && reg_winfo.wen;
+          int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs1 ||
+          lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs1;
         rs_valid[i][1] <= !dispatch_inst.need_rs[1] || dispatch_inst.rs_valid[1] ||
-          reg_winfo.valid && reg_winfo.rd == dispatch_inst.reg_rinfo.rs2 && reg_winfo.wen;
-      end else if (reg_winfo.valid && info_valid[i] && reg_winfo.wen) begin
-        rs_valid[i][0] <= reg_winfo.rd == iq[i].data.reg_rinfo.rs1 || rs_valid[i][0];
-        rs_valid[i][1] <= reg_winfo.rd == iq[i].data.reg_rinfo.rs2 || rs_valid[i][1];
-      end else if (free && free_index == i) rs_valid[i] <= 0;
+          int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs2 ||
+          lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs2;
+      end else if (lsu_wakeup.valid && int_wakeup.valid && info_valid[i]) begin
+        rs_valid[i][0] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs1 || 
+          lsu_wakeup.rd == iq[i].data.reg_rinfo.rs1 || rs_valid[i][0];
+        rs_valid[i][1] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs2 || 
+          lsu_wakeup.rd == iq[i].data.reg_rinfo.rs2 || rs_valid[i][1];
+      end else if (lsu_wakeup.valid && info_valid[i]) begin
+        rs_valid[i][0] <= lsu_wakeup.rd == iq[i].data.reg_rinfo.rs1 || rs_valid[i][0];
+        rs_valid[i][1] <= lsu_wakeup.rd == iq[i].data.reg_rinfo.rs2 || rs_valid[i][1];
+      end else if (free && free_index == i) begin
+        rs_valid[i] <= 0;
+      end else if (int_wakeup.valid && info_valid[i]) begin
+        rs_valid[i][0] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs1 || rs_valid[i][0];
+        rs_valid[i][1] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs2 || rs_valid[i][1];
+      end
     end
   end
   always_ff @(posedge i_clock) begin
@@ -85,7 +99,7 @@ module ysyx_24110006_INT_IQ #(
       else return b;
     end
   endfunction
-  entry_t nodes [INT_IQ_NUM*2];
+  entry_t nodes[INT_IQ_NUM*2];
   generate
     for (genvar i = 0; i < INT_IQ_NUM; i++) begin : leaf_init
       always_comb begin
@@ -103,6 +117,67 @@ module ysyx_24110006_INT_IQ #(
       end
     end
   endgenerate
+  bypass::src_loction_t locs[INT_IQ_NUM];
+  always_ff @(posedge i_clock) begin
+    for (int i = 0; i < INT_IQ_NUM; i++) begin
+      if (i_reset || i_flush) begin
+        locs[i].loc[0] <= bypass::none;
+        locs[i].loc[1] <= bypass::none;
+      end else if (alloc && alloc_index == i) begin
+        if (dispatch_inst.need_rs[0] && dispatch_inst.rs_valid[0])
+          locs[i].loc[0] <= bypass::from_reg;
+        else if (int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs1)
+          locs[i].loc[0] <= bypass::from_int;
+        else if (lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs1)
+          locs[i].loc[0] <= bypass::from_lsu;
+        if (dispatch_inst.need_rs[1] && dispatch_inst.rs_valid[1])
+          locs[i].loc[1] <= bypass::from_reg;
+        else if (int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs2)
+          locs[i].loc[1] <= bypass::from_int;
+        else if (lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs2)
+          locs[i].loc[1] <= bypass::from_lsu;
+      end else if (lsu_wakeup.valid && int_wakeup.valid && info_valid[i]) begin
+        if (iq[i].data.need_rs[0] && lsu_wakeup.rd == iq[i].data.reg_rinfo.rs1 && !rs_valid[i][0])
+          locs[i].loc[0] <= bypass::from_lsu;
+        else if(iq[i].data.need_rs[0] && int_wakeup.rd == iq[i].data.reg_rinfo.rs1 && !rs_valid[i][0])
+          locs[i].loc[0] <= bypass::from_int;
+        else if (iq[i].data.need_rs[0] || rs_valid[i][0] && (!free || free_index != i))
+          locs[i].loc[0] <= bypass::from_reg;
+        if (iq[i].data.need_rs[1] && lsu_wakeup.rd == iq[i].data.reg_rinfo.rs2 && !rs_valid[i][1])
+          locs[i].loc[1] <= bypass::from_lsu;
+        else if(iq[i].data.need_rs[1] && int_wakeup.rd == iq[i].data.reg_rinfo.rs2 && !rs_valid[i][1])
+          locs[i].loc[1] <= bypass::from_int;
+        else if (iq[i].data.need_rs[1] || rs_valid[i][1] && (!free || free_index != i))
+          locs[i].loc[1] <= bypass::from_reg;
+      end else if (lsu_wakeup.valid && info_valid[i]) begin
+        if (iq[i].data.need_rs[0] && lsu_wakeup.rd == iq[i].data.reg_rinfo.rs1 && !rs_valid[i][0])
+          locs[i].loc[0] <= bypass::from_lsu;
+        else if (iq[i].data.need_rs[0] || rs_valid[i][0] && (!free || free_index != i))
+          locs[i].loc[0] <= bypass::from_reg;
+        if (iq[i].data.need_rs[1] && lsu_wakeup.rd == iq[i].data.reg_rinfo.rs2 && !rs_valid[i][1])
+          locs[i].loc[1] <= bypass::from_lsu;
+        else if (iq[i].data.need_rs[1] || rs_valid[i][1] && (!free || free_index != i))
+          locs[i].loc[1] <= bypass::from_reg;
+      end else if (free && free_index == i) begin
+        locs[i].loc[0] <= bypass::none;
+        locs[i].loc[1] <= bypass::none;
+      end else if (int_wakeup.valid && info_valid[i]) begin
+        if (iq[i].data.need_rs[0] && int_wakeup.rd == iq[i].data.reg_rinfo.rs1 && !rs_valid[i][0])
+          locs[i].loc[0] <= bypass::from_int;
+        else if (iq[i].data.need_rs[0] || rs_valid[i][0] && (!free || free_index != i))
+          locs[i].loc[0] <= bypass::from_reg;
+        if (iq[i].data.need_rs[1] && int_wakeup.rd == iq[i].data.reg_rinfo.rs2 && !rs_valid[i][1])
+          locs[i].loc[1] <= bypass::from_int;
+        else if (iq[i].data.need_rs[1] || rs_valid[i][1] && (!free || free_index != i))
+          locs[i].loc[1] <= bypass::from_reg;
+      end else begin
+        if (iq[i].data.need_rs[0] || rs_valid[i][0] && (!free || free_index != i))
+          locs[i].loc[0] <= bypass::from_reg;
+        if (iq[i].data.need_rs[1] || rs_valid[i][1] && (!free || free_index != i))
+          locs[i].loc[1] <= bypass::from_reg;
+      end
+    end
+  end
 
   assign issue_valid = nodes[1].valid;
   assign issue_index = nodes[1].index;
@@ -114,5 +189,11 @@ module ysyx_24110006_INT_IQ #(
   assign issue_inst.data = select_inst.data.basic_inst_info;
   assign reg_rinfo = select_inst.data.reg_rinfo;
   assign issue_inst.rob_index = select_inst.rob_index;
+  assign issue_inst.reg_wen = select_inst.data.reg_wen;
+  assign issue_inst.rd = select_inst.data.rd;
+  assign issue_inst.vrd = select_inst.data.vrd;
+  assign loc = locs[issue_index].loc;
+  assign int_wakeup.valid = issue_valid && select_inst.data.reg_wen;
+  assign int_wakeup.rd = select_inst.data.rd;
 endmodule
 

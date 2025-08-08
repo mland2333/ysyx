@@ -45,9 +45,10 @@ module ysyx_24110006_top (
     if (reset) mtime <= 0;
     else mtime <= mtime + 1;
   end
-  wire reg_valid;
 `endif
-  pipe::reg_rinfo_t reg_rinfo_int, reg_rinfo_lsu;
+  rf::rinfo_t reg_rinfo_int, reg_rinfo_lsu;
+  rf::rdata_t reg_rdata_int, reg_rdata_lsu;
+  rf::winfo_t reg_winfo_int, reg_winfo_lsu;
   if_axi_read icache_axi ();
   if_lsu_adapter rq_axi ();
   if_lsu_dcache rq_dcache ();
@@ -68,7 +69,6 @@ module ysyx_24110006_top (
   if_mem_rq icache_mem_rq ();
   if_pipeline_vr ifu_vr_ibuffer (), ibuffer_vr_idu ();
   if_pipeline_vr ifu_vr_idu ();
-  pipe::reg_winfo_t reg_winfo;
   ooo::idu2rename_t idu2rename;
   if_pipeline_vr idu_vr_rename ();
   if_pipeline_vr rename_vr_dispatch ();
@@ -87,7 +87,6 @@ module ysyx_24110006_top (
   ooo::retire_info_t retire_info;
   rob::wb_index rob_index;
   logic retire_valid;
-  pipe::reg_rdata_t reg_rdata_int, reg_rdata_lsu;
   ooo::exu_info_t exu_info;
   ooo::lsu_info_t lsu_info;
   if_rq_load rq_lunit();
@@ -101,7 +100,11 @@ module ysyx_24110006_top (
   rob::store_commit_t store_commit;
   logic store_retire;
   logic store_finish;
-
+  rename::commit_t rename_commit_lsu, rename_commit_int;
+  bypass::wakeup_t int_wakeup, lsu_wakeup;
+  bypass::src_t bypass_src_int, bypass_src_lsu;
+  bypass::src_loction_t src_loction_int, src_loction_lsu;
+  rename::retire_t rename_retire;
 `ifndef CONFIG_YSYXSOC
   if_axi_write uart_axi ();
 `endif
@@ -156,9 +159,13 @@ module ysyx_24110006_top (
       .i_clock(clock),
       .i_reset(reset),
       .i_flush(flush),
-      .retire_info(retire_info),
+      .retire_info(rename_retire),
       .from_idu(idu2rename),
       .dispatch_info(dispatch_info),
+      .commit_int(rename_commit_int),
+      .commit_lsu(rename_commit_lsu),
+      .int_wakeup(int_wakeup),
+      .lsu_wakeup(lsu_wakeup),
 `ifdef CONFIG_SIM
       .o_rat(rat),
 `endif
@@ -184,10 +191,9 @@ module ysyx_24110006_top (
       .commit_lsu(commit_load),
       .commit_store(store_commit),
       .retire_valid(retire_valid),
-      .retire_info(retire_info),
+      .retire_info(rename_retire),
       .rob_index(rob_index),
       .rob_out(rob_sim),
-      .reg_winfo(reg_winfo),
       .store_retire(store_retire)
   );
   ysyx_24110006_INT_IQ mint_iq (
@@ -196,9 +202,11 @@ module ysyx_24110006_top (
       .i_flush(flush),
       .rob_index(rob_index),
       .dispatch_inst(dispatch_int),
-      .reg_winfo(reg_winfo),
+      .int_wakeup(int_wakeup),
+      .lsu_wakeup(lsu_wakeup),
       .issue_inst(issue_int),
       .reg_rinfo(reg_rinfo_int),
+      .loc(src_loction_int),
       .i_vr(dispatch_vr_int),
       .o_vr(iq_vr_int)
   );
@@ -208,10 +216,12 @@ module ysyx_24110006_top (
       .i_flush(flush),
       .rob_index(rob_index),
       .dispatch_inst(dispatch_lsu),
-      .reg_winfo(reg_winfo),
+      .int_wakeup(int_wakeup),
+      .lsu_wakeup(lsu_wakeup),
       .issue_inst(issue_lsu),
       .reg_rinfo(reg_rinfo_lsu),
       .store_commit(store_commit),
+      .loc(src_loction_lsu),
       .i_vr(dispatch_vr_lsu),
       .o_vr(iq_vr_lsu)
   );
@@ -222,11 +232,11 @@ module ysyx_24110006_top (
       .rdata1 (reg_rdata_int),
       .rinfo2 (reg_rinfo_lsu),
       .rdata2 (reg_rdata_lsu),
-      .winfo  (reg_winfo),
+      .winfo1 (reg_winfo_int),
+      .winfo2 (reg_winfo_lsu)
 `ifdef CONFIG_SIM
-      .i_rat  (rat),
+      ,.i_rat  (rat)
 `endif
-      .o_valid(reg_valid)
   );
   ysyx_24110006_CSR mcsr (
       .i_clock(clock),
@@ -237,9 +247,16 @@ module ysyx_24110006_top (
       .einfo  (csr_einfo),
       .i_valid(retire_valid)
   );
+  ysyx_24110006_BYPASS mbypass_int(
+    .loc(src_loction_int),
+    .reg_rdata(reg_rdata_int),
+    .int_result(reg_winfo_int.wdata),
+    .lsu_result(reg_winfo_lsu.wdata),
+    .src(bypass_src_int)
+  );
   ysyx_24110006_ALUOP maluop (
       .csr_rdata (csr_rdata),
-      .reg_rdata (reg_rdata_int),
+      .src (bypass_src_int),
       .issue_info(issue_int),
       .exu_info  (exu_info)
   );
@@ -249,15 +266,24 @@ module ysyx_24110006_top (
       .i_reset(reset),
       .issue_inst(exu_info),
       .commit(commit_int),
+      .rename_commit(rename_commit_int),
+      .winfo(reg_winfo_int),
       .i_vr(iq_vr_int),
       .i_flush(flush | fencei)
+  );
+  ysyx_24110006_BYPASS mbypass_lsu(
+    .loc(src_loction_lsu),
+    .reg_rdata(reg_rdata_lsu),
+    .int_result(reg_winfo_int.wdata),
+    .lsu_result(reg_winfo_lsu.wdata),
+    .src(bypass_src_lsu)
   );
   ysyx_24110006_AGU magu (
       .i_clock(clock),
       .vr_in(iq_vr_lsu),
       .vr_load(agu_vr_load),
       .vr_store(agu_vr_store),
-      .reg_rdata(reg_rdata_lsu),
+      .src(bypass_src_lsu),
       .issue_info(issue_lsu),
       .rq_load(rq_agu_load),
       .rq_store(rq_agu_store)
@@ -289,6 +315,9 @@ module ysyx_24110006_top (
       .i_rq(rq_agu_load),
       .o_rq(rq_lunit),
       .check(load_check),
+      .winfo(reg_winfo_lsu),
+      .rename_commit(rename_commit_lsu),
+      .lsu_wakeup(lsu_wakeup),
       .commit(commit_load)
   );
   ysyx_24110006_LSU_ARIBITER mlsu_aribiter (

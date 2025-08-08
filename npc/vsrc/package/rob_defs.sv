@@ -3,10 +3,10 @@ package rob;
   typedef struct packed {
     logic [31:0] pc;
     logic reg_wen;
-    logic [`REG_NUM_INDEX-1:0] prd;
-    logic [4:0] vrd;
+    rf::preg prd;
+    rf::vreg vrd;
     logic has_old_map;
-    logic [`REG_NUM_INDEX-1:0] old_index;
+    rf::preg old_index;
     logic quit;
   } inst_info_t;
   typedef struct packed {
@@ -15,7 +15,7 @@ package rob;
     logic ren;
   } sim_t;
   typedef struct packed {
-    logic [31:0] result;
+    /* logic [31:0] result; */
     logic [31:0] upc;
     logic flush;
 `ifdef CONFIG_SIM

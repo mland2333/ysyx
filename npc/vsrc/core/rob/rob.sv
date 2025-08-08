@@ -11,9 +11,8 @@ module ysyx_24110006_ROB #(
     input rob::store_commit_t commit_store,
     output rob::wb_index rob_index,
     output logic retire_valid,
-    output ooo::retire_info_t retire_info,
+    output rename::retire_t retire_info,
     output rob::rob_t rob_out,
-    output pipe::reg_winfo_t reg_winfo,
     output store_retire
 );
 
@@ -71,12 +70,8 @@ module ysyx_24110006_ROB #(
   logic flush;
   assign flush = robs[r_ptr].result.flush && retire_valid;
   assign retire_valid = robs[r_ptr].valid;
-  assign reg_winfo.valid = retire_valid;
-  assign reg_winfo.wdata = robs[r_ptr].result.result;
-  assign reg_winfo.rd = robs[r_ptr].inst_info.prd;
-  assign reg_winfo.wen = robs[r_ptr].inst_info.reg_wen;
-  assign retire_info.flush_retire = flush;
-  assign retire_info.retire = robs[r_ptr].inst_info.reg_wen && robs[r_ptr].inst_info.vrd != 0 && retire_valid;
+  assign retire_info.flush = flush;
+  assign retire_info.valid = robs[r_ptr].inst_info.reg_wen && robs[r_ptr].inst_info.vrd != 0 && retire_valid;
   assign retire_info.has_old_map = robs[r_ptr].inst_info.has_old_map;
   assign retire_info.old_index = robs[r_ptr].inst_info.old_index;
   assign retire_info.vrd = robs[r_ptr].inst_info.vrd;

@@ -4,7 +4,11 @@ module ysyx_24110006_RENAME #(
     input i_clock,
     input i_reset,
     input i_flush,
-    input ooo::retire_info_t retire_info,
+    input rename::retire_t retire_info,
+    input rename::commit_t commit_int,
+    commit_lsu,
+    input bypass::wakeup_t int_wakeup,
+    lsu_wakeup,
     input ooo::idu2rename_t from_idu,
     output ooo::dispatch_info_t dispatch_info,
 `ifdef CONFIG_SIM
@@ -48,11 +52,11 @@ module ysyx_24110006_RENAME #(
   assign empty = free_list.count == PREG_NUM;
   assign need_alloc = r_valid && from_idu.reg_wen && i_vr.ready && from_idu.vrd != 0 && !in_flush && !i_flush;
   always_ff @(posedge i_clock) begin
-    flush_retire <= retire_info.flush_retire;
+    flush_retire <= retire_info.flush;
   end
   always_ff @(posedge i_clock) begin
     if (i_reset) in_flush <= 0;
-    else if (i_flush && !retire_info.flush_retire) in_flush <= 1;
+    else if (i_flush && !retire_info.flush) in_flush <= 1;
     else if (in_flush && flush_retire) in_flush <= 0;
   end
   always_ff @(posedge i_clock) begin
@@ -65,10 +69,10 @@ module ysyx_24110006_RENAME #(
       free_list.w_ptr <= free_list_backup.w_ptr;
       free_list.count <= free_list_backup.count;
     end else begin
-      if (need_alloc && retire_info.retire && retire_info.has_old_map) begin
+      if (need_alloc && retire_info.valid && retire_info.has_old_map) begin
         free_list.w_ptr <= free_list.w_ptr + 1;
         free_list.r_ptr <= free_list.r_ptr + 1;
-      end else if (retire_info.retire && !empty && retire_info.has_old_map) begin
+      end else if (retire_info.valid && !empty && retire_info.has_old_map) begin
         free_list.w_ptr <= free_list.w_ptr + 1;
         free_list.count <= free_list.count + 1;
       end else if (need_alloc && !full) begin
@@ -83,7 +87,7 @@ module ysyx_24110006_RENAME #(
       free_list_backup.w_ptr <= (PREG_NUM_INDEX)'(PREG_NUM - 1);
       free_list_backup.count <= PREG_NUM;
     end else begin
-      if (retire_info.retire) begin
+      if (retire_info.valid) begin
         free_list_backup.r_ptr <= free_list_backup.r_ptr + 1;
         if (retire_info.has_old_map) free_list_backup.w_ptr <= free_list_backup.w_ptr + 1;
         else free_list_backup.count <= free_list_backup.count - 1;
@@ -94,13 +98,13 @@ module ysyx_24110006_RENAME #(
     if (i_reset) begin
       for (int i = 0; i < PREG_NUM; i++) free_list.preg_index[i] <= (PREG_NUM_INDEX)'(i);
     end else if (flush_retire) free_list.preg_index <= free_list_backup.preg_index;
-    else if (retire_info.retire && !full && retire_info.has_old_map)
+    else if (retire_info.valid && !full && retire_info.has_old_map)
       free_list.preg_index[free_list.w_ptr] <= retire_info.old_index;
   end
   always_ff @(posedge i_clock) begin
     if (i_reset) begin
       for (int i = 0; i < PREG_NUM; i++) free_list_backup.preg_index[i] <= (PREG_NUM_INDEX)'(i);
-    end else if (retire_info.retire && retire_info.has_old_map)
+    end else if (retire_info.valid && retire_info.has_old_map)
       free_list_backup.preg_index[free_list_backup.w_ptr] <= retire_info.old_index;
   end
 
@@ -109,23 +113,27 @@ module ysyx_24110006_RENAME #(
     if (update_reg) idu_data <= from_idu;
   end
 
-  logic [PREG_NUM_INDEX-1:0] rat [32];
-  logic [PREG_NUM_INDEX-1:0] arat[32];
+  rf::preg rat [32];
+  rf::preg arat[32];
   typedef enum {
     IDLE,
     MAPPED,
-    ZERO,
+    COMMIT,
     READY
   } reg_state_t;
   reg_state_t reg_state[32], areg_state[32];
   always_ff @(posedge i_clock) begin
-    for(int i = 0; i<32; i++) begin
+    for (int i = 0; i < 32; i++) begin
       if (i_reset) reg_state[i] <= IDLE;
       else if (flush_retire) begin
-      reg_state[i] <= areg_state[i];
+        reg_state[i] <= areg_state[i];
       end else begin
         if (need_alloc && !full && from_idu.vrd != 0 && from_idu.vrd == i) reg_state[i] <= MAPPED;
-        else if (retire_info.retire && retire_info.prd == rat[retire_info.vrd] && retire_info.vrd == i)
+        else if (commit_int.valid && commit_int.prd == rat[commit_int.vrd] && commit_int.vrd == i)
+          reg_state[i] <= COMMIT;
+        else if (commit_lsu.valid && commit_lsu.prd == rat[commit_lsu.vrd] && commit_lsu.vrd == i)
+          reg_state[i] <= COMMIT;
+        else if (retire_info.valid && retire_info.prd == rat[retire_info.vrd] && retire_info.vrd == i)
           reg_state[i] <= READY;
       end
     end
@@ -134,7 +142,7 @@ module ysyx_24110006_RENAME #(
     if (i_reset) begin
       for (int i = 0; i < 32; i++) areg_state[i] <= IDLE;
     end else begin
-      if (retire_info.retire) areg_state[retire_info.vrd] <= READY;
+      if (retire_info.valid) areg_state[retire_info.vrd] <= READY;
     end
   end
   always_ff @(posedge i_clock) begin
@@ -150,7 +158,7 @@ module ysyx_24110006_RENAME #(
   always_ff @(posedge i_clock) begin
     if (i_reset) begin
       for (int i = 0; i < 32; i++) arat[i] <= 0;
-    end else if (retire_info.retire) begin
+    end else if (retire_info.valid) begin
       arat[retire_info.vrd] <= retire_info.prd;
     end
   end
@@ -179,17 +187,22 @@ module ysyx_24110006_RENAME #(
   logic [1:0] rs_valid;
   always_ff @(posedge i_clock) begin
     if (update_reg) begin
-      rs_valid[0] <= reg_state[from_idu.vrs1] != MAPPED || from_idu.vrs1 == 0 || retire_info.retire && retire_info.prd == rat[from_idu.vrs1];
-      rs_valid[1] <= reg_state[from_idu.vrs2] != MAPPED || from_idu.vrs2 == 0 || retire_info.retire && retire_info.prd == rat[from_idu.vrs2];
+      rs_valid[0] <= reg_state[from_idu.vrs1] != MAPPED ||
+        from_idu.vrs1 == 0 ||
+        retire_info.valid && retire_info.prd == rat[from_idu.vrs1] ||
+        commit_int.valid && commit_int.prd == rat[from_idu.vrs1] ||
+        commit_lsu.valid && commit_lsu.prd == rat[from_idu.vrs1] ||
+        int_wakeup.valid && int_wakeup.rd == rat[from_idu.vrs1] ||
+        lsu_wakeup.valid && lsu_wakeup.rd == rat[from_idu.vrs1];
+      rs_valid[1] <= reg_state[from_idu.vrs2] != MAPPED ||
+        from_idu.vrs2 == 0 ||
+        retire_info.valid && retire_info.prd == rat[from_idu.vrs2] ||
+        commit_int.valid && commit_int.prd == rat[from_idu.vrs2] ||
+        commit_lsu.valid && commit_lsu.prd == rat[from_idu.vrs2] ||
+        int_wakeup.valid && int_wakeup.rd == rat[from_idu.vrs2] ||
+        lsu_wakeup.valid && lsu_wakeup.rd == rat[from_idu.vrs2];
     end
   end
-  /* logic [1:0] reg_ready; */
-  /* always_ff@(posedge i_clock)begin */
-  /*   if(update_reg)begin */
-  /*     reg_ready[0] <= retire_info.retire && retire_info.vrd == from_idu.vrs1; */
-  /*     reg_ready[1] <= retire_info.retire && retire_info.vrd == from_idu.vrs2; */
-  /*   end */
-  /* end */
 
   assign dispatch_info.basic_inst_info.op = idu_data.op;
   assign dispatch_info.basic_inst_info.func = idu_data.func;
