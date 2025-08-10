@@ -23,112 +23,88 @@ module ysyx_24110006_ICACHE #(
     logic [DATA_WIDTH-1:0] data;
     logic valid;
   } cache_line_t;
+  typedef struct packed {
+    logic [TAG_WIDTH-1:0] tag;
+    logic [INDEX_WIDTH-1:0] index;
+    logic [OFFSET_WIDTH-1:0] offset;
+  } addr_info_t;
   cache_line_t cache[NUM_BLOCKS];
-  logic [TAG_WIDTH-1:0] tag;
-  logic [INDEX_WIDTH-1:0] index;
-  logic [OFFSET_WIDTH-3:0] offset;
-  assign tag = addr[31-:TAG_WIDTH];
-  assign index = addr[OFFSET_WIDTH+:INDEX_WIDTH];
-  assign offset = addr[OFFSET_WIDTH-1:2];
+  addr_info_t addr_s1, addr_s2;
+  logic hit_s1, hit_s2;
   logic [31:0] addr;
-  always_ff @(posedge i_clock) begin
-    if (i_rq.rq && i_rq.ready) begin
-      addr <= i_rq.addr;
-    end
-  end
-  assign i_rq.rdata = cache_line.data[offset*32+:32];
-  logic hit;
-  cache_line_t cache_line;
-  assign cache_line = cache[index];
-  assign hit = cache_line.valid && cache_line.tag == tag;
 
-  logic flush;
+  logic valid_s1, valid_s2;
+  logic ready_s1, ready_s2;
+  cache_line_t cache_line_s1, cache_line_s2;
+  logic rq_valid, ack_valid;
+  logic mem_valid;
   always_ff @(posedge i_clock) begin
-    if (i_reset) flush <= 0;
-    else if (i_rq.flush) flush <= 1;
-    else if (flush && state == idle) flush <= 0;
+    if (i_reset) valid_s1 <= 0;
+    else if (i_rq.rq && (ready_s1 || ready_s2)) valid_s1 <= 1;
+    else if (valid_s1 && ready_s2) valid_s1 <= 0;
   end
   always_ff @(posedge i_clock) begin
-    if (i_reset) i_rq.flush_fin <= 0;
-    else if (state == in_flush) i_rq.flush_fin <= 1;
-    else if (i_rq.flush_fin) i_rq.flush_fin <= 0;
+    if (i_reset) ready_s1 <= 1;
+    else if (i_rq.rq && (!ready_s2 || valid_s1 && !hit_s1)) ready_s1 <= 0;
+    else if (ready_s2) ready_s1 <= 1;
   end
-  typedef enum logic [2:0] {
-    idle,
-    judge,
-    in_flush,
-    read_mem
-  } state_t;
-  state_t state;
+  always_ff @(posedge i_clock) begin
+    if (i_rq.rq && (ready_s1 || ready_s2)) addr_s1 <= i_rq.addr;
+  end
+  assign cache_line_s1 = cache[addr_s1.index];
+  assign hit_s1 = cache_line_s1.valid && cache_line_s1.tag == addr_s1.tag;
 
   always_ff @(posedge i_clock) begin
-    if (i_reset) state <= idle;
-    else begin
-      case (state)
-        idle: begin
-          if (flush) state <= in_flush;
-          else if (i_rq.rq && !i_rq.flush) begin
-            state <= judge;
-          end
-        end
-        judge: begin
-          if (hit) begin
-            state <= idle;
-          end else begin
-            state <= read_mem;
-          end
-        end
-        in_flush: begin
-          state <= idle;
-        end
-        read_mem: begin
-          if (o_rq.valid) state <= judge;
-        end
-        default: begin
-          state <= idle;
-        end
-      endcase
-    end
+    if (i_reset) valid_s2 <= 0;
+    else if (mem_valid || valid_s1 && ready_s2 && hit_s1) valid_s2 <= 1;
+    else if (valid_s2) valid_s2 <= 0;
   end
   always_ff @(posedge i_clock) begin
-    if (i_reset) o_rq.rq <= 0;
-    else if (state == judge && !hit) o_rq.rq <= 1;
-    else if (o_rq.rq && o_rq.ack) o_rq.rq <= 0;
+    if (i_reset) ready_s2 <= 1;
+    else if (valid_s1 && !hit_s1 && ready_s2) ready_s2 <= 0;
+    else if (mem_valid && !ready_s2) ready_s2 <= 1;
   end
+  always_ff @(posedge i_clock) begin
+    if (valid_s1 && ready_s2) addr_s2 <= addr_s1;
+  end
+  assign cache_line_s2 = cache[addr_s2.index];
+  assign hit_s2 = cache_line_s2.valid && cache_line_s2.tag == addr_s2.tag;
+
+  always_ff @(posedge i_clock) begin
+    if (i_reset) rq_valid <= 0;
+    else if (valid_s1 && !hit_s1 && ready_s2) rq_valid <= 1;
+    else if (rq_valid && ack_valid) rq_valid <= 0;
+  end
+  assign o_rq.rq = rq_valid;
+  assign ack_valid = o_rq.ack;
+  assign o_rq.addr = addr_s2;
   assign o_rq.ready = 1;
-  assign o_rq.addr  = addr;
+  assign mem_valid = o_rq.valid;
+
   always_ff @(posedge i_clock) begin
-    if (state == read_mem && o_rq.valid) cache[index].data <= o_rq.r_cache_line;
-  end
-  always_ff @(posedge i_clock) begin
-    if (i_reset || state == in_flush) begin
-      for (int i = 0; i < NUM_BLOCKS; i++) begin
-        cache[i].valid <= 0;
-      end
-    end else begin
-      if (state == read_mem && o_rq.valid) cache[index].valid <= 1;
-      else if (state == judge && !hit) cache[index].valid <= 0;
+    for (int i = 0; i < NUM_BLOCKS; i++) begin
+      if (i_reset || i_rq.flush) cache[i].valid <= 0;
+      else if (valid_s1 && !hit_s1 && cache[i].valid && addr_s1.index == i) cache[i].valid <= 0;
+      else if (mem_valid && addr_s2.index == i) cache[i].valid <= 1;
     end
   end
   always_ff @(posedge i_clock) begin
-    if (i_reset) begin
-      for (int i = 0; i < NUM_BLOCKS; i++) begin
-        cache[i].tag <= 0;
-      end
-    end else begin
-      if (state == read_mem && o_rq.valid) cache[index].tag <= tag;
+    for (int i = 0; i < NUM_BLOCKS; i++) begin
+      if (mem_valid && addr_s2.index == i) cache[i].tag <= addr_s2.tag;
     end
   end
   always_ff @(posedge i_clock) begin
-    if (i_reset) i_rq.valid <= 0;
-    else if (state == judge && hit && !i_rq.flush && !flush) i_rq.valid <= 1;
-    else if (i_rq.valid && i_rq.ready) i_rq.valid <= 0;
+    for (int i = 0; i < NUM_BLOCKS; i++) begin
+      if (mem_valid && addr_s2.index == i) cache[i].data <= o_rq.r_cache_line;
+    end
   end
-  /* always_ff @(posedge i_clock) begin */
-  /*   if (i_reset && i_rq.flush && flush) i_rq.ack <= 0; */
-  /*   else if (i_rq.rq && !i_rq.ack && state == idle) i_rq.ack <= 1; */
-  /*   else if (i_rq.ack) i_rq.ack <= 0; */
-  /* end */
-  assign i_rq.cache_ready = state == idle;
+
+  assign i_rq.cache_ready = ready_s1 || ready_s2;
+  assign i_rq.valid = valid_s2;
+  assign i_rq.rdata = cache_line_s2.data[{addr_s2.offset, 3'b000}+:32];
+  assign i_rq.pc = addr_s2;
+
+
+
 
 endmodule

@@ -12,8 +12,8 @@ module ysyx_24110006_STORE_BUFFER(
 );
   lsu::rq_store_t buffer;
   always_ff@(posedge i_clock)begin
-    if(i_reset || i_flush) i_vr.ready <= 1;
-    else if(i_vr.valid && i_vr.ready) i_vr.ready <= 0;
+    if(i_reset || (i_flush && o_vr.ready && !o_vr.valid)) i_vr.ready <= 1;
+    else if(i_vr.valid && i_vr.ready && !i_flush) i_vr.ready <= 0;
     else if(!i_vr.ready && store_finish) i_vr.ready <= 1;
   end
   always_ff@(posedge i_clock)begin

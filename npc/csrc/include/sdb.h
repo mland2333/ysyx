@@ -31,6 +31,8 @@ class Sdb {
   bool is_time_to_diff = false;
   bool is_time_to_trace = false;
   uint64_t rtc_begin;
+  uint64_t inst_num = 0;
+  uint64_t clk_num = 0;
 
 public:
   Sdb(Args &args, Simulator *sim, Memory *mem);

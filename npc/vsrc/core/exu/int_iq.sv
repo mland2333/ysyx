@@ -11,6 +11,8 @@ module ysyx_24110006_INT_IQ #(
     input ooo::dispatch_inst_t dispatch_inst,
     input bypass::wakeup_t lsu_wakeup,
     output bypass::wakeup_t int_wakeup,
+    input rename::commit_t commit_int,
+    commit_lsu,
     output ooo::issue_int_t issue_inst,
     output rf::rinfo_t reg_rinfo,
     output bypass::src_loction_t loc
@@ -59,14 +61,18 @@ module ysyx_24110006_INT_IQ #(
       else if (alloc && alloc_index == i) begin
         rs_valid[i][0] <= !dispatch_inst.need_rs[0] || dispatch_inst.rs_valid[0] ||
           int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs1 ||
-          lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs1;
+          lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs1 ||
+          commit_int.valid && commit_int.prd == dispatch_inst.reg_rinfo.rs1 ||
+          commit_int.valid && commit_int.prd == dispatch_inst.reg_rinfo.rs1;
         rs_valid[i][1] <= !dispatch_inst.need_rs[1] || dispatch_inst.rs_valid[1] ||
           int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs2 ||
-          lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs2;
+          lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs2 ||
+          commit_int.valid && commit_int.prd == dispatch_inst.reg_rinfo.rs2 ||
+          commit_int.valid && commit_int.prd == dispatch_inst.reg_rinfo.rs2;
       end else if (lsu_wakeup.valid && int_wakeup.valid && info_valid[i]) begin
-        rs_valid[i][0] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs1 || 
+        rs_valid[i][0] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs1 ||
           lsu_wakeup.rd == iq[i].data.reg_rinfo.rs1 || rs_valid[i][0];
-        rs_valid[i][1] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs2 || 
+        rs_valid[i][1] <= int_wakeup.rd == iq[i].data.reg_rinfo.rs2 ||
           lsu_wakeup.rd == iq[i].data.reg_rinfo.rs2 || rs_valid[i][1];
       end else if (lsu_wakeup.valid && info_valid[i]) begin
         rs_valid[i][0] <= lsu_wakeup.rd == iq[i].data.reg_rinfo.rs1 || rs_valid[i][0];
@@ -124,13 +130,17 @@ module ysyx_24110006_INT_IQ #(
         locs[i].loc[0] <= bypass::none;
         locs[i].loc[1] <= bypass::none;
       end else if (alloc && alloc_index == i) begin
-        if (dispatch_inst.need_rs[0] && dispatch_inst.rs_valid[0])
+        if (dispatch_inst.need_rs[0] && dispatch_inst.rs_valid[0] || 
+          commit_int.valid && commit_int.prd == dispatch_inst.reg_rinfo.rs1 ||
+          commit_lsu.valid && commit_lsu.prd == dispatch_inst.reg_rinfo.rs1)
           locs[i].loc[0] <= bypass::from_reg;
         else if (int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs1)
           locs[i].loc[0] <= bypass::from_int;
         else if (lsu_wakeup.valid && lsu_wakeup.rd == dispatch_inst.reg_rinfo.rs1)
           locs[i].loc[0] <= bypass::from_lsu;
-        if (dispatch_inst.need_rs[1] && dispatch_inst.rs_valid[1])
+        if (dispatch_inst.need_rs[1] && dispatch_inst.rs_valid[1] ||
+          commit_int.valid && commit_int.prd == dispatch_inst.reg_rinfo.rs2 ||
+          commit_lsu.valid && commit_lsu.prd == dispatch_inst.reg_rinfo.rs2)
           locs[i].loc[1] <= bypass::from_reg;
         else if (int_wakeup.valid && int_wakeup.rd == dispatch_inst.reg_rinfo.rs2)
           locs[i].loc[1] <= bypass::from_int;

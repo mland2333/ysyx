@@ -44,6 +44,7 @@ uint8_t* sdram_guest_to_host(paddr_t paddr) { return sdram + paddr - SDRAM_RADDR
 paddr_t sdram_host_to_guest(uint8_t *haddr) { return haddr - sdram + SDRAM_RADDR; }
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
+  // if (addr == 0x80006580) printf("pmem_read , address: 0x%x, len: %d, data:0x%x\n", addr, len, ret);
   #ifdef CONFIG_MTRACE
     printf("pmem_read , address: 0x%x, len: %d, data:0x%x\n", addr, len, ret);
   #endif
@@ -54,6 +55,7 @@ static void pmem_write(paddr_t addr, int len, word_t data) {
   #ifdef CONFIG_MTRACE
     printf("pmem_write, address: 0x%x, len: %d, data:0x%x\n", addr, len, data);
   #endif
+  // if (addr == 0x80006580) printf("pmem_write, address: 0x%x, len: %d, data:0x%x\n", addr, len, data);
   host_write(guest_to_host(addr), len, data);
 }
 
