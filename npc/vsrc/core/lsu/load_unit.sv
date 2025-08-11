@@ -77,9 +77,9 @@ module ysyx_24110006_LOAD_UNIT (
       default: result = load_result;
     endcase
   end
-  /* assign wb_result.result = result; */
-  assign wb_result.flush = 0;
   assign wb_result.upc = 0;
+  assign wb_result.btb_update = 0;
+  assign wb_result.flush = 0;
   assign commit.result = wb_result;
   assign commit.valid = commit_valid;
   assign commit.index = rq.rob_index;

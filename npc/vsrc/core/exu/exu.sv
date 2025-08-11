@@ -42,8 +42,11 @@ module ysyx_24110006_EXU (
   assign branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp;
 
   /* assign wb_result.result = alu_result.r; */
-  assign wb_result.flush = branch | exu_info.branch_info.jump;
   assign wb_result.upc = exu_info.upc + exu_info.imm;
+  assign wb_result.btb_update = exu_info.branch_info.jal && !exu_info.bp_info.pred_taken ||
+    branch && !exu_info.bp_info.pred_taken && exu_info.branch_info.branch_back;
+  assign wb_result.flush = (branch || exu_info.branch_info.jal || exu_info.branch_info.jalr) ^
+    exu_info.bp_info.pred_taken;
   assign commit.result = wb_result;
   assign commit.valid = o_valid;
   assign commit.index = exu_info.rob_index;

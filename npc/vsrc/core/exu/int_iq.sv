@@ -202,6 +202,7 @@ module ysyx_24110006_INT_IQ #(
   assign issue_inst.reg_wen = select_inst.data.reg_wen;
   assign issue_inst.rd = select_inst.data.rd;
   assign issue_inst.vrd = select_inst.data.vrd;
+  assign issue_inst.bp_info = select_inst.data.bp_info;
   assign loc = locs[issue_index].loc;
   assign int_wakeup.valid = issue_valid && select_inst.data.reg_wen;
   assign int_wakeup.rd = select_inst.data.rd;

@@ -53,11 +53,14 @@ assign exu_info.branch_info.beq = B & f000;
 assign exu_info.branch_info.bne = B & f001;
 assign exu_info.branch_info.blt = B & (f100 | f110);
 assign exu_info.branch_info.bge = B & (f101 | f111);
-assign exu_info.branch_info.jump = JAL | JALR;
+assign exu_info.branch_info.branch_back = issue_info.data.imm[31];
+assign exu_info.branch_info.jal = JAL;
+assign exu_info.branch_info.jalr = JALR;
 assign exu_info.zero = src.r1 == src.r2;
 assign exu_info.reg_wen = issue_info.reg_wen;
 assign exu_info.rd = issue_info.rd;
 assign exu_info.vrd = issue_info.vrd;
+assign exu_info.bp_info = issue_info.bp_info;
 
 endmodule
 

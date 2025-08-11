@@ -88,5 +88,5 @@ module ysyx_24110006_IDU (
   assign to_rename.mem_wen = S;
   assign to_rename.need_rs[0] = !(U||JAL);
   assign to_rename.need_rs[1] = B | S | R;
-
+  assign to_rename.bp_info = ifu_data.bp_info;
 endmodule

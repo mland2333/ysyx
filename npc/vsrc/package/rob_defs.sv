@@ -8,6 +8,7 @@ package rob;
     logic has_old_map;
     rf::preg old_index;
     logic quit;
+    bp::info_t bp_info;
   } inst_info_t;
   typedef struct packed {
     logic difftest_skip;
@@ -18,6 +19,7 @@ package rob;
     /* logic [31:0] result; */
     logic [31:0] upc;
     logic flush;
+    logic btb_update;
 `ifdef CONFIG_SIM
     sim_t sim;
 `endif

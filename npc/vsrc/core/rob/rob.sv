@@ -13,6 +13,7 @@ module ysyx_24110006_ROB #(
     output logic retire_valid,
     output rename::retire_t retire_info,
     output rob::rob_t rob_out,
+    output bp::result_t bp_result,
     output store_retire
 );
 
@@ -78,4 +79,8 @@ module ysyx_24110006_ROB #(
   assign retire_info.prd = robs[r_ptr].inst_info.prd;
   assign rob_out = robs[r_ptr];
   assign store_retire = retire_valid && robs[r_ptr].type_store;
+  assign bp_result.btb_update = robs[r_ptr].result.btb_update && retire_valid;
+  assign bp_result.pred_taken = robs[r_ptr].inst_info.bp_info.pred_taken;
+  assign bp_result.pc = robs[r_ptr].inst_info.pc;
+  assign bp_result.upc = robs[r_ptr].result.upc;
 endmodule

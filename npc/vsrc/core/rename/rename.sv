@@ -202,6 +202,22 @@ module ysyx_24110006_RENAME #(
         int_wakeup.valid && int_wakeup.rd == rat[from_idu.vrs2] ||
         lsu_wakeup.valid && lsu_wakeup.rd == rat[from_idu.vrs2];
     end
+    else if(!o_vr.ready) begin
+      rs_valid[0] <= reg_state[idu_data.vrs1] != MAPPED ||
+        idu_data.vrs1 == 0 ||
+        retire_info.valid && retire_info.prd == rs1 ||
+        commit_int.valid && commit_int.prd == rs1 ||
+        commit_lsu.valid && commit_lsu.prd == rs1 ||
+        int_wakeup.valid && int_wakeup.rd == rs1 ||
+        lsu_wakeup.valid && lsu_wakeup.rd == rs1 || rs_valid[0];
+      rs_valid[1] <= reg_state[idu_data.vrs2] != MAPPED ||
+        idu_data.vrs2 == 0 ||
+        retire_info.valid && retire_info.prd == rs2 ||
+        commit_int.valid && commit_int.prd == rs2 ||
+        commit_lsu.valid && commit_lsu.prd == rs2 ||
+        int_wakeup.valid && int_wakeup.rd == rs2 ||
+        lsu_wakeup.valid && lsu_wakeup.rd == rs2 || rs_valid[1];
+    end
   end
 
   assign dispatch_info.basic_inst_info.op = idu_data.op;
@@ -222,6 +238,7 @@ module ysyx_24110006_RENAME #(
   assign dispatch_info.reg_rinfo.rs_zero = rs_zero;
   assign dispatch_info.quit = idu_data.quit;
   assign dispatch_info.is_lsu = idu_data.is_lsu;
+  assign dispatch_info.bp_info = idu_data.bp_info;
 `ifdef CONFIG_SIM
   always_comb begin
     for (int i = 0; i < 32; i++) o_rat[i] = arat[i];

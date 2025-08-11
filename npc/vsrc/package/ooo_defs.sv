@@ -24,6 +24,7 @@ package ooo;
     logic [1:0] need_rs;
     logic mem_wen;
     logic is_lsu;
+    bp::info_t bp_info;
   } idu2rename_t;
   typedef struct packed {
     basic_info_t basic_inst_info;
@@ -38,6 +39,7 @@ package ooo;
     logic [1:0] rs_valid;
     logic quit;
     logic is_lsu;
+    bp::info_t bp_info;
   } dispatch_info_t;
   typedef struct packed {
     logic flush;
@@ -47,11 +49,11 @@ package ooo;
     rf::vreg vrd;
     rf::preg prd;
   } retire_info_t;
-  typedef struct packed{
+  typedef struct packed {
     logic valid;
     rf::vreg vrd;
     rf::preg prd;
-  }commit_update_t;
+  } commit_update_t;
   typedef struct packed {
     basic_info_t basic_inst_info;
     rf::rinfo_t reg_rinfo;
@@ -61,8 +63,9 @@ package ooo;
     logic mem_wen;
     rf::preg rd;
     rf::vreg vrd;
+    bp::info_t bp_info;
   } dispatch_inst_t;
-  typedef struct packed {logic branch, beq, bne, blt, bge, jump;} branch_info_t;
+  typedef struct packed {logic branch, beq, bne, blt, bge, branch_back, jal, jalr;} branch_info_t;
   typedef struct packed {
     rob::wb_index rob_index;
     alu::op_t alu_op;
@@ -73,6 +76,7 @@ package ooo;
     branch_info_t branch_info;
     rf::preg rd;
     rf::vreg vrd;
+    bp::info_t bp_info;
   } exu_info_t;
   typedef struct packed {
     basic_info_t data;
@@ -80,6 +84,7 @@ package ooo;
     logic reg_wen;
     rf::preg rd;
     rf::vreg vrd;
+    bp::info_t bp_info;
   } issue_int_t;
   typedef struct packed {
     logic wen;
@@ -92,7 +97,7 @@ package ooo;
     rf::preg rd;
     rf::vreg vrd;
   } issue_lsu_t;
-  typedef struct packed{
+  typedef struct packed {
     rob::wb_index rob_index;
     logic wen;
     logic [31:0] addr;
@@ -101,6 +106,6 @@ package ooo;
     logic [3:0] wmask;
     rf::preg rd;
     rf::vreg vrd;
-  }lsu_info_t;
-  
+  } lsu_info_t;
+
 endpackage

@@ -7,6 +7,7 @@ package pipe;
     logic [31:0] pc;
     logic exception;
     logic [3:0] mcause;
+    bp::info_t bp_info;
   } ifu2idu_t;
 
   typedef struct packed {
