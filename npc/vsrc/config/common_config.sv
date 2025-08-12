@@ -12,14 +12,10 @@
 `define CACHE_LINE_WIDTH 128
 `define DCACHE_LINE_WIDTH 256
 
-`ifdef CONFIG_RENAME
 `define PREG_NUM 64
-`else
-`define PREG_NUM 32
-`endif
 
 `define PREG_NUM_INDEX $clog2(`PREG_NUM)
 `define REG_NUM_INDEX `PREG_NUM_INDEX
 
-`define ROB_NUM 32
+`define ROB_NUM 64
 `define ROB_NUM_INDEX $clog2(`ROB_NUM)

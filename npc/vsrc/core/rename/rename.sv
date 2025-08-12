@@ -18,12 +18,12 @@ module ysyx_24110006_RENAME #(
     if_pipeline_vr o_vr
 );
   logic r_valid;
-  assign r_valid = i_vr.valid & ~in_flush;
+  assign r_valid = i_vr.valid & ~in_flush & !full;
   always @(posedge i_clock) begin
     if (i_reset || i_flush) o_vr.valid <= 0;
     else if (r_ready && r_valid && !o_vr.valid) begin
       o_vr.valid <= 1;
-    end else if (!r_ready && o_vr.valid && o_vr.ready && !i_vr.valid) begin
+    end else if (!r_ready && o_vr.valid && o_vr.ready && !r_valid) begin
       o_vr.valid <= 0;
     end
   end
@@ -33,9 +33,9 @@ module ysyx_24110006_RENAME #(
     else if (r_ready && r_valid && !o_vr.valid) r_ready <= 0;
     else if (!r_ready && o_vr.valid && o_vr.ready && !r_valid) r_ready <= 1;
   end
-  assign i_vr.ready = (r_ready | o_vr.ready) & ~in_flush;
+  assign i_vr.ready = (r_ready || o_vr.ready) && !full;
   logic update_reg;
-  assign update_reg = r_valid && (r_ready || o_vr.ready) && !i_flush && !in_flush;
+  assign update_reg = r_valid && (r_ready || o_vr.ready) && !i_flush && !full;
 
   localparam PREG_NUM_INDEX = $clog2(PREG_NUM);
   typedef struct packed {
@@ -50,19 +50,14 @@ module ysyx_24110006_RENAME #(
   logic flush_retire, in_flush;
   assign full = free_list.count == 0;
   assign empty = free_list.count == PREG_NUM;
-  assign need_alloc = r_valid && from_idu.reg_wen && i_vr.ready && from_idu.vrd != 0 && !in_flush && !i_flush;
+  assign need_alloc = r_valid && from_idu.reg_wen && i_vr.ready && from_idu.vrd != 0 && !i_flush;
   always_ff @(posedge i_clock) begin
     flush_retire <= retire_info.flush;
   end
   always_ff @(posedge i_clock) begin
-    if (i_reset) in_flush <= 0;
-    else if (i_flush && !retire_info.flush) in_flush <= 1;
-    else if (in_flush && flush_retire) in_flush <= 0;
-  end
-  always_ff @(posedge i_clock) begin
     if (i_reset) begin
       free_list.r_ptr <= 0;
-      free_list.w_ptr <= (PREG_NUM_INDEX)'(PREG_NUM - 1);
+      free_list.w_ptr <= 0;
       free_list.count <= PREG_NUM;
     end else if (flush_retire) begin
       free_list.r_ptr <= free_list_backup.r_ptr;
@@ -72,7 +67,7 @@ module ysyx_24110006_RENAME #(
       if (need_alloc && retire_info.valid && retire_info.has_old_map) begin
         free_list.w_ptr <= free_list.w_ptr + 1;
         free_list.r_ptr <= free_list.r_ptr + 1;
-      end else if (retire_info.valid && !empty && retire_info.has_old_map) begin
+      end else if (retire_info.valid && retire_info.has_old_map) begin
         free_list.w_ptr <= free_list.w_ptr + 1;
         free_list.count <= free_list.count + 1;
       end else if (need_alloc && !full) begin
@@ -84,7 +79,7 @@ module ysyx_24110006_RENAME #(
   always_ff @(posedge i_clock) begin
     if (i_reset) begin
       free_list_backup.r_ptr <= 0;
-      free_list_backup.w_ptr <= (PREG_NUM_INDEX)'(PREG_NUM - 1);
+      free_list_backup.w_ptr <= 0;
       free_list_backup.count <= PREG_NUM;
     end else begin
       if (retire_info.valid) begin
@@ -98,7 +93,7 @@ module ysyx_24110006_RENAME #(
     if (i_reset) begin
       for (int i = 0; i < PREG_NUM; i++) free_list.preg_index[i] <= (PREG_NUM_INDEX)'(i);
     end else if (flush_retire) free_list.preg_index <= free_list_backup.preg_index;
-    else if (retire_info.valid && !full && retire_info.has_old_map)
+    else if (retire_info.valid && retire_info.has_old_map)
       free_list.preg_index[free_list.w_ptr] <= retire_info.old_index;
   end
   always_ff @(posedge i_clock) begin
