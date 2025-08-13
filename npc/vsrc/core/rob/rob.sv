@@ -29,9 +29,12 @@ module ysyx_24110006_ROB #(
   assign push = vr_in.valid && vr_in.ready;
   assign pop = robs[r_ptr].valid;
   always_ff @(posedge i_clock) begin
-    if (i_reset || flush) begin
+    if (i_reset) begin
       w_ptr <= 0;
       r_ptr <= 0;
+      count <= 0;
+    end else if(flush) begin
+      r_ptr <= w_ptr;
       count <= 0;
     end else if (push && pop) begin
       w_ptr <= w_ptr + 1;
@@ -67,7 +70,12 @@ module ysyx_24110006_ROB #(
   /* always_ff @(posedge i_clock) begin */
   /*   if (push) rob_index <= w_ptr; */
   /* end */
-  assign rob_index = {w_ptr < r_ptr, w_ptr};
+  logic cycle;
+  always_ff@(posedge i_clock)begin
+    if(i_reset) cycle <= 0;
+    else if((w_ptr == ROB_NUM - 1) && push && !flush) cycle <= ~cycle;
+  end
+  assign rob_index = {cycle, w_ptr};
   logic flush;
   assign flush = robs[r_ptr].result.flush && retire_valid;
   assign retire_valid = robs[r_ptr].valid;

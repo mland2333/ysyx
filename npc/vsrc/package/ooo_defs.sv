@@ -96,6 +96,7 @@ package ooo;
     rob::wb_index rob_index;
     rf::preg rd;
     rf::vreg vrd;
+    rob::wb_index store_index;
   } issue_lsu_t;
   typedef struct packed {
     rob::wb_index rob_index;

@@ -1,11 +1,13 @@
 module ysyx_24110006_DISPATCH (
     if_pipeline_vr.in vr_in,
-    if_pipeline_vr.out vr_lsu,
+    if_pipeline_vr.out vr_load,
+    if_pipeline_vr.out vr_store,
     if_pipeline_vr.out vr_int,
     if_pipeline_vr.out vr_rob,
     input ooo::dispatch_info_t dispatch_info,
     output ooo::dispatch_inst_t dispatch_int,
-    output ooo::dispatch_inst_t dispatch_lsu,
+    output ooo::dispatch_inst_t dispatch_load,
+    output ooo::dispatch_inst_t dispatch_store,
     output rob::inst_info_t rob_info
 );
   assign dispatch_int.basic_inst_info = dispatch_info.basic_inst_info;
@@ -17,14 +19,23 @@ module ysyx_24110006_DISPATCH (
   assign dispatch_int.vrd = dispatch_info.vrd;
   assign dispatch_int.bp_info = dispatch_info.bp_info;
 
-  assign dispatch_lsu.basic_inst_info = dispatch_info.basic_inst_info;
-  assign dispatch_lsu.reg_rinfo = dispatch_info.reg_rinfo;
-  assign dispatch_lsu.need_rs = dispatch_info.need_rs;
-  assign dispatch_lsu.rs_valid = dispatch_info.rs_valid;
-  assign dispatch_lsu.mem_wen = dispatch_info.mem_wen;
-  assign dispatch_lsu.reg_wen = dispatch_info.reg_wen;
-  assign dispatch_lsu.rd = dispatch_info.prd;
-  assign dispatch_lsu.vrd = dispatch_info.vrd;
+  assign dispatch_load.basic_inst_info = dispatch_info.basic_inst_info;
+  assign dispatch_load.reg_rinfo = dispatch_info.reg_rinfo;
+  assign dispatch_load.need_rs = dispatch_info.need_rs;
+  assign dispatch_load.rs_valid = dispatch_info.rs_valid;
+  assign dispatch_load.mem_wen = dispatch_info.mem_wen;
+  assign dispatch_load.reg_wen = dispatch_info.reg_wen;
+  assign dispatch_load.rd = dispatch_info.prd;
+  assign dispatch_load.vrd = dispatch_info.vrd;
+
+  assign dispatch_store.basic_inst_info = dispatch_info.basic_inst_info;
+  assign dispatch_store.reg_rinfo = dispatch_info.reg_rinfo;
+  assign dispatch_store.need_rs = dispatch_info.need_rs;
+  assign dispatch_store.rs_valid = dispatch_info.rs_valid;
+  assign dispatch_store.mem_wen = dispatch_info.mem_wen;
+  assign dispatch_store.reg_wen = dispatch_info.reg_wen;
+  assign dispatch_store.rd = dispatch_info.prd;
+  assign dispatch_store.vrd = dispatch_info.vrd;
 
   assign rob_info.pc = dispatch_info.basic_inst_info.pc;
   assign rob_info.reg_wen = dispatch_info.reg_wen;
@@ -35,8 +46,11 @@ module ysyx_24110006_DISPATCH (
   assign rob_info.quit = dispatch_info.quit;
   assign rob_info.bp_info = dispatch_info.bp_info;
 
-  assign vr_in.ready = vr_lsu.ready && vr_int.ready && vr_rob.ready;
-  assign vr_int.valid = vr_in.valid && !dispatch_info.is_lsu && vr_rob.ready && vr_lsu.ready;
-  assign vr_lsu.valid = vr_in.valid && dispatch_info.is_lsu && vr_rob.ready && vr_int.ready;
-  assign vr_rob.valid = vr_in.valid && vr_rob.ready && vr_int.ready && vr_lsu.ready;
+  assign vr_in.ready = (vr_int.ready && !dispatch_info.is_lsu ||
+    vr_load.ready && dispatch_info.is_lsu && !dispatch_info.mem_wen ||
+    vr_store.ready && dispatch_info.is_lsu && dispatch_info.mem_wen) && vr_rob.ready;
+  assign vr_int.valid = vr_in.valid && !dispatch_info.is_lsu && vr_rob.ready;
+  assign vr_load.valid = vr_in.valid && dispatch_info.is_lsu && !dispatch_info.mem_wen && vr_rob.ready;
+  assign vr_store.valid = vr_in.valid && dispatch_info.is_lsu && dispatch_info.mem_wen && vr_rob.ready;
+  assign vr_rob.valid = vr_int.valid && vr_int.ready || vr_load.valid && vr_load.ready || vr_store.valid && vr_store.ready;
 endmodule

@@ -43,7 +43,7 @@ package rob;
 /*     sim_t sim; */
 /* `endif */
   } store_commit_t;
-  function logic is_older(input wb_index a, input wb_index b);
-    return ~((a[`ROB_NUM_INDEX] == b[`ROB_NUM_INDEX]) ^ (a[`ROB_NUM_INDEX-1:0] < b[`ROB_NUM_INDEX-1:0]));
+  function automatic logic is_older(input wb_index a, input wb_index b);
+    return ~((a[$left(a)] == b[$left(a)]) ^ (a[$left(a)-1:0] < b[$left(a)-1:0]));
   endfunction
 endpackage

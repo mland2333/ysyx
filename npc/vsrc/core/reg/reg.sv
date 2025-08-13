@@ -4,8 +4,8 @@ module ysyx_24110006_RegisterFile #(
 ) (
     input i_clock,
     input i_reset,
-    input rf::rinfo_t rinfo1, rinfo2,
-    output rf::rdata_t rdata1, rdata2,
+    input rf::rinfo_t rinfo1, rinfo2, rinfo3,
+    output rf::rdata_t rdata1, rdata2, rdata3,
     input rf::winfo_t winfo1, winfo2
 `ifdef CONFIG_SIM
     ,input logic [31:0][5:0] i_rat
@@ -23,6 +23,8 @@ module ysyx_24110006_RegisterFile #(
   assign rdata1.r2 = rinfo1.rs_zero[1] ? 0 : reg_file[rinfo1.rs2];
   assign rdata2.r1 = rinfo2.rs_zero[0] ? 0 : reg_file[rinfo2.rs1];
   assign rdata2.r2 = rinfo2.rs_zero[1] ? 0 : reg_file[rinfo2.rs2];
+  assign rdata3.r1 = rinfo3.rs_zero[0] ? 0 : reg_file[rinfo3.rs1];
+  assign rdata3.r2 = rinfo3.rs_zero[1] ? 0 : reg_file[rinfo3.rs2];
 `ifdef CONFIG_SIM
   reg [DATA_WIDTH-1:0] sim_rf[32];
   always_comb begin

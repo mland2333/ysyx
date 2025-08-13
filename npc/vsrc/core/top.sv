@@ -49,8 +49,8 @@ module ysyx_24110006_top (
     else mtime <= mtime + 1;
   end
 `endif
-  rf::rinfo_t reg_rinfo_int, reg_rinfo_lsu;
-  rf::rdata_t reg_rdata_int, reg_rdata_lsu;
+  rf::rinfo_t reg_rinfo_int, reg_rinfo_load, reg_rinfo_store;
+  rf::rdata_t reg_rdata_int, reg_rdata_load, reg_rdata_store;
   rf::winfo_t reg_winfo_int, reg_winfo_lsu;
   if_axi_read icache_axi ();
   if_lsu_adapter rq_axi ();
@@ -77,15 +77,18 @@ module ysyx_24110006_top (
   if_pipeline_vr rename_vr_dispatch ();
   if_pipeline_vr dispatch_vr_int ();
   if_pipeline_vr dispatch_vr_rob ();
-  if_pipeline_vr dispatch_vr_lsu ();
+  if_pipeline_vr dispatch_vr_load ();
+  if_pipeline_vr dispatch_vr_store ();
   if_pipeline_vr iq_vr_int ();
-  if_pipeline_vr iq_vr_lsu ();
-  if_pipeline_vr agu_vr_lsu ();
+  if_pipeline_vr iq_vr_load ();
+  if_pipeline_vr iq_vr_store ();
+  if_pipeline_vr agu_vr_load ();
+  if_pipeline_vr agu_vr_store ();
   ooo::dispatch_info_t dispatch_info;
-  ooo::dispatch_inst_t dispatch_int, dispatch_lsu;
+  ooo::dispatch_inst_t dispatch_int, dispatch_load, dispatch_store;
   rob::inst_info_t dispatch_rob;
   ooo::issue_int_t issue_int;
-  ooo::issue_lsu_t issue_lsu;
+  ooo::issue_lsu_t issue_load, issue_store;
   rob::commit_info_t commit_int, commit_load;
   ooo::retire_info_t retire_info;
   rob::wb_index rob_index;
@@ -96,8 +99,6 @@ module ysyx_24110006_top (
   if_rq_store rq_sunit ();
   lsu::rq_store_t rq_agu_store, rq_sbuf;
   lsu::rq_load_t rq_agu_load;
-  if_pipeline_vr agu_vr_load ();
-  if_pipeline_vr agu_vr_store ();
   if_pipeline_vr sbuf_vr_sunit ();
   if_load_check load_check ();
   rob::store_commit_t store_commit;
@@ -105,12 +106,13 @@ module ysyx_24110006_top (
   logic store_finish;
   rename::commit_t rename_commit_lsu, rename_commit_int;
   bypass::wakeup_t int_wakeup, lsu_wakeup;
-  bypass::src_t bypass_src_int, bypass_src_lsu;
-  bypass::src_loction_t src_loction_int, src_loction_lsu;
+  bypass::src_t bypass_src_int, bypass_src_load, bypass_src_store;
+  bypass::src_loction_t src_loction_int, src_loction_load, src_loction_store;
   rename::retire_t rename_retire;
   bp::result_t bp_result;
   bp::btb_update_t btb_update;
   if_rq_btb btb_rq ();
+  lsu::older_store_t older_store;
 `ifndef CONFIG_YSYXSOC
   if_axi_write uart_axi ();
 `endif
@@ -186,12 +188,14 @@ module ysyx_24110006_top (
   );
   ysyx_24110006_DISPATCH mdispatch (
       .vr_in(rename_vr_dispatch),
-      .vr_lsu(dispatch_vr_lsu),
+      .vr_load(dispatch_vr_load),
+      .vr_store(dispatch_vr_store),
       .vr_int(dispatch_vr_int),
       .vr_rob(dispatch_vr_rob),
       .dispatch_info(dispatch_info),
       .dispatch_int(dispatch_int),
-      .dispatch_lsu(dispatch_lsu),
+      .dispatch_load(dispatch_load),
+      .dispatch_store(dispatch_store),
       .rob_info(dispatch_rob)
   );
   ysyx_24110006_ROB mrob (
@@ -225,30 +229,51 @@ module ysyx_24110006_top (
       .i_vr(dispatch_vr_int),
       .o_vr(iq_vr_int)
   );
-  ysyx_24110006_LSU_IQ mlsu_iq (
+  ysyx_24110006_LOAD_IQ mload_iq (
       .i_clock(clock),
       .i_reset(reset),
       .i_flush(flush),
       .rob_index(rob_index),
-      .dispatch_inst(dispatch_lsu),
+      .dispatch_inst(dispatch_load),
       .int_wakeup(int_wakeup),
       .lsu_wakeup(lsu_wakeup),
       .commit_int(rename_commit_int),
       .commit_lsu(rename_commit_lsu),
-      .issue_inst(issue_lsu),
-      .reg_rinfo(reg_rinfo_lsu),
+      .issue_inst(issue_load),
+      .reg_rinfo(reg_rinfo_load),
       .store_commit(store_commit),
-      .loc(src_loction_lsu),
-      .i_vr(dispatch_vr_lsu),
-      .o_vr(iq_vr_lsu)
+      .loc(src_loction_load),
+      .older_store(older_store),
+      .i_vr(dispatch_vr_load),
+      .o_vr(iq_vr_load)
+  );
+  ysyx_24110006_STORE_IQ mstore_iq (
+      .i_clock(clock),
+      .i_reset(reset),
+      .i_flush(flush),
+      .rob_index(rob_index),
+      .dispatch_inst(dispatch_store),
+      .int_wakeup(int_wakeup),
+      .lsu_wakeup(lsu_wakeup),
+      .commit_int(rename_commit_int),
+      .commit_lsu(rename_commit_lsu),
+      .issue_inst(issue_store),
+      .reg_rinfo(reg_rinfo_store),
+      .store_commit(store_commit),
+      .loc(src_loction_store),
+      .older_store(older_store),
+      .i_vr(dispatch_vr_store),
+      .o_vr(iq_vr_store)
   );
   ysyx_24110006_RegisterFile mreg (
       .i_clock(clock),
       .i_reset(reset),
       .rinfo1 (reg_rinfo_int),
       .rdata1 (reg_rdata_int),
-      .rinfo2 (reg_rinfo_lsu),
-      .rdata2 (reg_rdata_lsu),
+      .rinfo2 (reg_rinfo_load),
+      .rdata2 (reg_rdata_load),
+      .rinfo3 (reg_rinfo_store),
+      .rdata3 (reg_rdata_store),
       .winfo1 (reg_winfo_int),
       .winfo2 (reg_winfo_lsu)
 `ifdef CONFIG_SIM,
@@ -288,21 +313,19 @@ module ysyx_24110006_top (
       .i_vr(iq_vr_int),
       .i_flush(flush | fencei)
   );
-  ysyx_24110006_BYPASS mbypass_lsu (
-      .loc(src_loction_lsu),
-      .reg_rdata(reg_rdata_lsu),
+  ysyx_24110006_BYPASS mbypass_store (
+      .loc(src_loction_store),
+      .reg_rdata(reg_rdata_store),
       .int_result(reg_winfo_int.wdata),
       .lsu_result(reg_winfo_lsu.wdata),
-      .src(bypass_src_lsu)
+      .src(bypass_src_store)
   );
-  ysyx_24110006_AGU magu (
+  ysyx_24110006_AGU_STORE magu_store (
       .i_clock(clock),
-      .vr_in(iq_vr_lsu),
-      .vr_load(agu_vr_load),
-      .vr_store(agu_vr_store),
-      .src(bypass_src_lsu),
-      .issue_info(issue_lsu),
-      .rq_load(rq_agu_load),
+      .vr_in(iq_vr_store),
+      .vr_out(agu_vr_store),
+      .src(bypass_src_store),
+      .issue_info(issue_store),
       .rq_store(rq_agu_store)
   );
   ysyx_24110006_STORE_BUFFER mstore_buffer (
@@ -323,6 +346,21 @@ module ysyx_24110006_top (
       .i_vr(sbuf_vr_sunit),
       .i_rq(rq_sbuf),
       .o_rq(rq_sunit)
+  );
+  ysyx_24110006_BYPASS mbypass_load (
+      .loc(src_loction_load),
+      .reg_rdata(reg_rdata_load),
+      .int_result(reg_winfo_int.wdata),
+      .lsu_result(reg_winfo_lsu.wdata),
+      .src(bypass_src_load)
+  );
+  ysyx_24110006_AGU_LOAD magu_load (
+      .i_clock(clock),
+      .vr_in(iq_vr_load),
+      .vr_out(agu_vr_load),
+      .src(bypass_src_load),
+      .issue_info(issue_load),
+      .rq_load(rq_agu_load)
   );
   ysyx_24110006_LOAD_UNIT mload_unit (
       .i_clock(clock),
