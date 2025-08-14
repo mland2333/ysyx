@@ -38,7 +38,7 @@ module ysyx_24110006_ICACHE #(
   cache_line_t cache_line_s1, cache_line_s2;
   logic rq_valid, ack_valid;
   logic mem_valid;
-  bp::info_t bp_info_s1, bp_info_s2;
+  bp::info_group_t bp_info_s1, bp_info_s2;
   logic in_tran, ready_s2_or, ready_s1_or;
   assign in_tran = !valid_s2 && !ready_s2;
   assign ready_s2_or = ready_s2 || (!in_tran && i_rq.ready);
@@ -113,7 +113,10 @@ module ysyx_24110006_ICACHE #(
 
   assign i_rq.cache_ready = ready_s1_or;
   assign i_rq.valid = valid_s2;
-  assign i_rq.rdata = cache_line_s2.data[{addr_s2.offset, 3'b000}+:32];
+  assign i_rq.rdata1 = cache_line_s2.data[{addr_s2.offset, 3'b000}+:32];
+  addr_info_t addr_s2_2;
+  assign addr_s2_2.offset = addr_s2.offset + 4;
+  assign i_rq.rdata2 = addr_s2.offset[OFFSET_WIDTH-1:OFFSET_WIDTH-3] == 2'b11 ? 0 : cache_line_s2.data[{addr_s2_2.offset, 3'b000}+:32];
   assign i_rq.pc = addr_s2;
   assign i_rq.bp_info_out = bp_info_s2;
 

@@ -60,8 +60,8 @@ Sdb::Sdb(Args &args_, Simulator *sim_, Memory *mem_)
 
 void Sdb::perf(){
   if(sim->GET_MEMBER(TOP_PREFIX, flush)) flush_num++;
-  if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__count) == 0) ibuf_empty++;
-  if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__full) && !sim->top->rootp->__PVT__ysyx_24110006__DOT__top__DOT__ibuffer_vr_idu->ready) ibuf_full++;
+  // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__count) == 0) ibuf_empty++;
+  // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__full) && !sim->top->rootp->__PVT__ysyx_24110006__DOT__top__DOT__ibuffer_vr_idu->ready) ibuf_full++;
   if(sim->GET_MEMBER(TOP_PREFIX, mrob__DOT__count) == 64) rob_full++;
 }
 SIM_STATE Sdb::exec_once() {

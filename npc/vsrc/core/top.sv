@@ -62,7 +62,8 @@ module ysyx_24110006_top (
   if_axi xbar_axi ();
   if_axi mem_axi ();
   if_icache_rq ifu_icache ();
-  pipe::ifu2idu_t from_ifu, to_idu;
+  pipe::ifu2idu_t from_ifu;
+  pipe::ifu2idu_single_t to_idu;
   if_icache_rq ifu_rq ();
   pipe::csr_rinfo_t csr_rinfo;
   pipe::csr_rdata_t csr_rdata;

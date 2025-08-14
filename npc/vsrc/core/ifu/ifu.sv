@@ -32,7 +32,7 @@ module ysyx_24110006_IFU (
     end else if (i_fencei) begin
       pc <= bp_result.pc + 4;
     end else if (o_icache_rq.rq && o_icache_rq.cache_ready) begin
-      pc <= o_btb_rq.hit ? o_btb_rq.upc : pc + 4;
+      pc <= o_btb_rq.hit1 ? o_btb_rq.upc1 : pc[3:2] == 2'b11 ? pc + 4 : o_btb_rq.hit2 ? o_btb_rq.upc2 : pc + 8;
     end
   end
   logic rq_icache;
@@ -62,22 +62,38 @@ module ysyx_24110006_IFU (
   assign o_icache_rq.ready = o_vr.ready;
   assign o_icache_rq.addr = pc;
   assign o_icache_rq.flush = i_fencei;
-  assign o_icache_rq.bp_info_in.pred_taken = o_btb_rq.hit;
+  assign o_icache_rq.bp_info_in.d1.pred_taken = o_btb_rq.hit1;
+  assign o_icache_rq.bp_info_in.d2.pred_taken = o_btb_rq.hit2;
   assign o_btb_rq.pc = pc;
   assign btb_update.valid = bp_result.btb_update;
   assign btb_update.pc = bp_result.pc;
   assign btb_update.upc = bp_result.upc;
-  logic [31:0] imm;
+  logic [31:0] imm1, imm2;
   assign o_vr.valid = o_icache_rq.valid && !i_flush && !in_flush;
-  assign to_idu.inst = o_icache_rq.rdata;
-  assign to_idu.pc = o_icache_rq.pc;
-  assign to_idu.exception = 0;
-  assign to_idu.mcause = 0;
-  assign to_idu.imm = imm;
-  assign to_idu.bp_info = o_icache_rq.bp_info_out;
-  ysyx_24110006_IMM mimm (
-      .i_inst(o_icache_rq.rdata),
-      .o_imm (imm)
-  );
+  pipe::ifu2idu_single_t to_idu1, to_idu2;
+  assign to_idu1.inst = o_icache_rq.rdata1;
+  assign to_idu1.pc = o_icache_rq.pc;
+  assign to_idu1.exception = 0;
+  assign to_idu1.mcause = 0;
+  assign to_idu1.imm = imm1;
+  assign to_idu1.bp_info = o_icache_rq.bp_info_out.d1;
+  assign to_idu1.inst_valid = 1;
 
+  assign to_idu2.inst = o_icache_rq.rdata2;
+  assign to_idu2.pc = o_icache_rq.pc + 4;
+  assign to_idu2.exception = 0;
+  assign to_idu2.mcause = 0;
+  assign to_idu2.imm = imm2;
+  assign to_idu2.bp_info = o_icache_rq.bp_info_out.d2;
+  assign to_idu2.inst_valid = !o_icache_rq.bp_info_out.d1.pred_taken && o_icache_rq.pc[3:2] != 2'b11;
+  assign to_idu.d1 = to_idu1;
+  assign to_idu.d2 = to_idu2;
+  ysyx_24110006_IMM mimm1 (
+      .i_inst(o_icache_rq.rdata1),
+      .o_imm (imm1)
+  );
+  ysyx_24110006_IMM mimm2 (
+      .i_inst(o_icache_rq.rdata2),
+      .o_imm (imm2)
+  );
 endmodule

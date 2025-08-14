@@ -2,7 +2,7 @@
 module ysyx_24110006_IDU (
     input i_clock,
     input i_reset,
-    input pipe::ifu2idu_t from_ifu,
+    input pipe::ifu2idu_single_t from_ifu,
     output ooo::idu2rename_t to_rename,
     input i_flush,
 
@@ -10,7 +10,7 @@ module ysyx_24110006_IDU (
     if_pipeline_vr.out o_vr
 );
 
-  pipe::ifu2idu_t ifu_data;
+  pipe::ifu2idu_single_t ifu_data;
 
   wire update_reg;
   always @(posedge i_clock) begin

@@ -27,7 +27,9 @@ localparam BTB_INDEX_WIDTH = $clog2(BTB_NUMS);
       end
     end
   end
-  assign i_rq.hit = get_tag(i_rq.pc) == btbs[get_index(i_rq.pc)].tag;
-  assign i_rq.upc = btbs[get_index(i_rq.pc)].target;
-
+  assign i_rq.hit1 = get_tag(i_rq.pc) == btbs[get_index(i_rq.pc)].tag;
+  assign i_rq.upc1 = btbs[get_index(i_rq.pc)].target;
+  
+  assign i_rq.hit2 = get_tag(i_rq.pc + 4) == btbs[get_index(i_rq.pc + 4)].tag;
+  assign i_rq.upc2 = btbs[get_index(i_rq.pc + 4)].target;
 endmodule
