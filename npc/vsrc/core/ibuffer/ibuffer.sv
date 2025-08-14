@@ -1,5 +1,5 @@
 module ysyx_24110006_IBUFFER #(
-  parameter INST_BUFFER_WIDTH = 32
+  parameter INST_BUFFER_WIDTH = 64
   )(
   input i_clock,
   input i_reset,

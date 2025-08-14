@@ -33,6 +33,8 @@ class Sdb {
   uint64_t rtc_begin;
   uint64_t inst_num = 0;
   uint64_t clk_num = 0;
+  uint64_t ibuf_empty = 0, ibuf_full = 0, flush_num = 0;
+  uint64_t rob_full = 0;
 
 public:
   Sdb(Args &args, Simulator *sim, Memory *mem);
@@ -73,4 +75,5 @@ public:
   void update_reg(int rd, int wdata) { sim->update_reg(rd, wdata); }
   void update_pc(int32_t pc) { sim->update_pc(pc); }
   void update_inst(int32_t inst) { sim->update_inst(inst); }
+  void perf();
 };

@@ -87,14 +87,15 @@ INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -DTOP_NAME_NOTV="$(TOPNAME)" -g
 LDFLAGS += $(LIBS) -lSDL2
 # CXXFLAGS += -flto
-# LDFLAGS += -flto
-LDFLAGS += -fuse-ld=lld
+LDFLAGS += -flto
+# LDFLAGS += -fuse-ld=lld
+LDFLAGS += -fuse-ld=mold
 OBJCACHE = ccache
 CC = ccache gcc
 CXX = ccache g++
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
-	@rm -rf $(OBJ_DIR)
+	# @rm -rf $(OBJ_DIR)
 	$(VERILATOR) $(VERILATOR_CFLAGS) \
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
