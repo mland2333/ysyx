@@ -9,6 +9,7 @@ package rob;
     rf::preg old_index;
     logic quit;
     bp::info_t bp_info;
+    logic type_store;
   } inst_info_t;
   typedef struct packed {
     logic difftest_skip;
@@ -28,7 +29,6 @@ package rob;
     inst_info_t inst_info;
     result_t result;
     logic valid;
-    logic type_store;
   } rob_t;
   typedef logic [`ROB_NUM_INDEX:0] wb_index;
   typedef struct packed {

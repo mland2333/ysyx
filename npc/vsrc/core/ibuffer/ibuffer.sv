@@ -10,7 +10,8 @@ module ysyx_24110006_IBUFFER #(
     if_pipeline_vr i_vr,
     if_pipeline_vr o_vr
 );
-
+  if_rq_fifo #(.WIDTH($bits(pipe::ifu2idu_single_t))) rq1();
+  if_rq_fifo #(.WIDTH($bits(pipe::ifu2idu_single_t))) rq2();
   logic empty, full, almost_full;
   assign i_vr.ready = !full && !almost_full;
   assign o_vr.valid = !empty;
@@ -18,9 +19,13 @@ module ysyx_24110006_IBUFFER #(
   logic pop, push;
   assign pop = o_vr.valid && o_vr.ready;
   assign push = i_vr.valid && i_vr.ready;
-  assign push_valid = push ? {from_ifu.d2.inst_valid, from_ifu.d1.inst_valid} : 0;
-  assign pop_valid = pop ? 2'b01 : 0;
-  
+  assign rq1.push = push;
+  assign rq1.pop = pop;
+  assign rq2.push = push && from_ifu.d2.inst_valid;
+  assign rq2.pop = 0;
+  assign rq1.push_data = from_ifu.d1;
+  assign rq2.push_data = from_ifu.d2;
+  assign to_idu = rq1.pop_data;
   DOUBLE_PROT_FIFO #(
       .WIDTH($bits(pipe::ifu2idu_single_t)),
       .NUM  (INST_BUFFER_WIDTH)
@@ -28,13 +33,10 @@ module ysyx_24110006_IBUFFER #(
       .i_clock(i_clock),
       .i_reset(i_reset),
       .i_flush(i_flush),
-      .pop_valid(pop_valid),
-      .push_valid(push_valid),
-      .data_in1(from_ifu.d1),
-      .data_in2(from_ifu.d2),
-      .data_out1(to_idu),
-      .data_out2(),
+      .rq1(rq1),
+      .rq2(rq2),
       .empty(empty),
+      .almost_empty(),
       .full(full),
       .almost_full(almost_full)
   );

@@ -60,12 +60,12 @@ private:
   uint64_t old_clk = 0;
   void cpu_update(){
     for(int i = 1; i<REG_NUMS; i++){
-      if(GET_MEMBER(TOP_PREFIX, mrename__DOT__areg_state[i]) == 0){
+      if(GET_MEMBER(TOP_PREFIX, mrename__DOT__mrat__DOT__areg_state[i]) == 0){
         cpu.gpr[i] = 0;
         continue;
       }
-      int index = GET_MEMBER(TOP_PREFIX,mrename__DOT__arat[i]);
-      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__reg_file[index]);
+      // int index = GET_MEMBER(TOP_PREFIX,mrename__DOT__arat[i]);
+      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__sim_rf[i]);
     }   
 
     cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc);

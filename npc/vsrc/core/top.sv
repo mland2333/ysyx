@@ -1,6 +1,7 @@
 `ifndef CONFIG_YOSYS
 import "DPI-C" function void quit();
 import "DPI-C" function void difftest();
+import "DPI-C" function void difftest2();
 import "DPI-C" function void diff_skip();
 import "DPI-C" function void fetch_inst();
 import "DPI-C" context function void update_pc(input int pc);
@@ -21,15 +22,15 @@ module ysyx_24110006_top (
 );
 
   wire fencei, fencei_fin;
+  logic flush;
   rob::rob_t rob_sim;
-  wire flush = rob_sim.result.flush && rob_sim.valid;
   wire [31:0] upc = rob_sim.result.upc;
   wire [31:0] pc = rob_sim.inst_info.pc;
 `ifdef CONFIG_SIM
   logic [31:0][5:0] rat;
   reg [31:0] sim_pc;
   always_ff @(posedge clock) begin
-    if (retire_valid) begin
+    if (retire_valid[0]) begin
       if(flush)
         sim_pc <= bp_result.pred_taken ? bp_result.pc + 4 : bp_result.upc;
       else
@@ -37,9 +38,10 @@ module ysyx_24110006_top (
     end
   end
   always @(posedge clock) begin
-    if (retire_valid) begin
+    if (retire_valid[0]) begin
       if (rob_sim.result.sim.difftest_skip) diff_skip();
       if (rob_sim.inst_info.quit) quit();
+      if (retire_valid[1]) difftest2();
       else difftest();
     end
   end
@@ -91,9 +93,8 @@ module ysyx_24110006_top (
   ooo::issue_int_t issue_int;
   ooo::issue_lsu_t issue_load, issue_store;
   rob::commit_info_t commit_int, commit_load;
-  ooo::retire_info_t retire_info;
   rob::wb_index rob_index;
-  logic retire_valid;
+  logic [1:0] retire_valid;
   ooo::exu_info_t exu_info;
   ooo::lsu_info_t lsu_info;
   if_rq_load rq_lunit ();
@@ -109,7 +110,7 @@ module ysyx_24110006_top (
   bypass::wakeup_t int_wakeup, lsu_wakeup;
   bypass::src_t bypass_src_int, bypass_src_load, bypass_src_store;
   bypass::src_loction_t src_loction_int, src_loction_load, src_loction_store;
-  rename::retire_t rename_retire;
+  rename::retire_group_t rename_retire;
   bp::result_t bp_result;
   bp::btb_update_t btb_update;
   if_rq_btb btb_rq ();
@@ -212,6 +213,7 @@ module ysyx_24110006_top (
       .rob_index(rob_index),
       .rob_out(rob_sim),
       .bp_result(bp_result),
+      .flush(flush),
       .store_retire(store_retire)
   );
   ysyx_24110006_INT_IQ mint_iq (
@@ -281,15 +283,15 @@ module ysyx_24110006_top (
       .i_rat  (rat)
 `endif
   );
-  ysyx_24110006_CSR mcsr (
-      .i_clock(clock),
-      .i_reset(reset),
-      .rinfo  (csr_rinfo),
-      .rdata  (csr_rdata),
-      .winfo  (csr_winfo),
-      .einfo  (csr_einfo),
-      .i_valid(retire_valid)
-  );
+  /* ysyx_24110006_CSR mcsr ( */
+  /*     .i_clock(clock), */
+  /*     .i_reset(reset), */
+  /*     .rinfo  (csr_rinfo), */
+  /*     .rdata  (csr_rdata), */
+  /*     .winfo  (csr_winfo), */
+  /*     .einfo  (csr_einfo), */
+  /*     .i_valid(retire_valid) */
+  /* ); */
   ysyx_24110006_BYPASS mbypass_int (
       .loc(src_loction_int),
       .reg_rdata(reg_rdata_int),

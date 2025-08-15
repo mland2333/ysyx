@@ -29,6 +29,7 @@ class Sdb {
   Ftrace *ftrace;
   Diff *diff;
   bool is_time_to_diff = false;
+  bool is_time_to_diff2 = false;
   bool is_time_to_trace = false;
   uint64_t rtc_begin;
   uint64_t inst_num = 0;
@@ -69,6 +70,7 @@ public:
       diff->diff_skip_step();
   }
   void difftest() { is_time_to_diff = true; }
+  void difftest2() { is_time_to_diff2 = true; }
   void fetch_inst() {
     is_time_to_trace = true;
   }

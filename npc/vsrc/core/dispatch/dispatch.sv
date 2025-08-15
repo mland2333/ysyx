@@ -45,6 +45,7 @@ module ysyx_24110006_DISPATCH (
   assign rob_info.old_index = dispatch_info.old_index;
   assign rob_info.quit = dispatch_info.quit;
   assign rob_info.bp_info = dispatch_info.bp_info;
+  assign rob_info.type_store = dispatch_info.mem_wen;
 
   assign vr_in.ready = (vr_int.ready && !dispatch_info.is_lsu ||
     vr_load.ready && dispatch_info.is_lsu && !dispatch_info.mem_wen ||

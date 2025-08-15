@@ -57,12 +57,11 @@ Sdb::Sdb(Args &args_, Simulator *sim_, Memory *mem_)
     init_vga();
   rtc_begin = Utils::get_time();
 }
-
 void Sdb::perf(){
   if(sim->GET_MEMBER(TOP_PREFIX, flush)) flush_num++;
   // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__count) == 0) ibuf_empty++;
   // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__full) && !sim->top->rootp->__PVT__ysyx_24110006__DOT__top__DOT__ibuffer_vr_idu->ready) ibuf_full++;
-  if(sim->GET_MEMBER(TOP_PREFIX, mrob__DOT__count) == 64) rob_full++;
+  // if(sim->GET_MEMBER(TOP_PREFIX, mrob__DOT__count) == 64) rob_full++;
 }
 SIM_STATE Sdb::exec_once() {
   SIM_STATE state = sim->exec_once();
@@ -74,7 +73,11 @@ SIM_STATE Sdb::exec_once() {
   }
   if (args.is_diff && is_time_to_diff) {
     is_time_to_diff = false;
-    if (!diff->difftest_step())
+    if (!diff->difftest_step(1))
+      state = SIM_STATE::DIFF_FAILURE;
+  } else if (args.is_diff && is_time_to_diff2) {
+    is_time_to_diff2 = false;
+    if (!diff->difftest_step(2))
       state = SIM_STATE::DIFF_FAILURE;
   }
   if (args.is_vga)

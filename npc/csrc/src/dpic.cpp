@@ -35,7 +35,7 @@ extern "C" void pmem_write(int waddr, int wdata, char wmask) {
   sdb->mem_write(waddr, wdata, wmask & 0x0f);
 }
 extern "C" void difftest() { sdb->difftest(); }
-
+extern "C" void difftest2() { sdb->difftest2(); }
 extern "C" void diff_skip() { sdb->diff_skip_step(); }
 extern "C" void flash_read(int32_t addr, int32_t *data) {
   /* printf("flash_read 0x%x\n", addr); */
