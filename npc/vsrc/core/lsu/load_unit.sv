@@ -40,9 +40,11 @@ module ysyx_24110006_LOAD_UNIT (
   end
   logic [31:0] rdata;
   logic [31:0] rdata_aligned;
+  logic [1:0] aligned_addr;
   assign rdata = i_vr.valid && i_vr.ready && check.hit ? check.data : o_rq.rdata;
+  assign aligned_addr = i_vr.valid && i_vr.ready && check.hit ? i_rq.addr[1:0] : rq.addr[1:0];
   always_comb begin
-    unique case (rq.addr[1:0])
+    unique case (aligned_addr)
       2'b00: begin
         rdata_aligned = rdata;
       end
