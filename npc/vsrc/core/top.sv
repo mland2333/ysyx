@@ -3,6 +3,7 @@ import "DPI-C" function void quit();
 import "DPI-C" function void difftest();
 import "DPI-C" function void difftest2();
 import "DPI-C" function void diff_skip();
+import "DPI-C" function void diff_skip2();
 import "DPI-C" function void fetch_inst();
 import "DPI-C" context function void update_pc(input int pc);
 import "DPI-C" context function void update_reg(
@@ -28,19 +29,37 @@ module ysyx_24110006_top (
   wire [31:0] pc = rob_sim.inst_info.pc;
 `ifdef CONFIG_SIM
   logic [31:0][5:0] rat;
-  reg [31:0] sim_pc;
+  logic [1:0] difftest_skip;
+  logic sim_quit;
+  logic [1:0][31:0] retire_pc;
+  logic [1:0][31:0] sim_pc;
+  logic [2:0][31:0] sim_pc_r;
+  logic [31:0] sim_pc_w;
   always_ff @(posedge clock) begin
-    if (retire_valid[0]) begin
-      if(flush)
-        sim_pc <= bp_result.pred_taken ? bp_result.pc + 4 : bp_result.upc;
-      else
-        sim_pc <= bp_result.pred_taken ? bp_result.upc : bp_result.pc + 4;
+    if (retire_valid != 0)
+      if (flush) sim_pc_w <= bp_result.pred_taken ? bp_result.pc + 4 : bp_result.upc;
+      else sim_pc_w <= bp_result.pred_taken ? bp_result.upc : bp_result.pc + 4;
+  end
+  always_comb begin
+    if (flush) sim_pc[0] = bp_result.pred_taken ? retire_pc[0] + 4 : bp_result.upc;
+    else sim_pc[0] = bp_result.pred_taken ? bp_result.upc : retire_pc[0] + 4;
+  end
+  always_comb begin
+    if (flush) sim_pc[1] = bp_result.pred_taken ? retire_pc[1] + 4 : bp_result.upc;
+    else sim_pc[1] = bp_result.pred_taken ? bp_result.upc : retire_pc[1] + 4;
+  end
+  always_ff @(posedge clock) begin
+    if (retire_valid != 0) begin
+      sim_pc_r[0] <= sim_pc[0];
+      sim_pc_r[1] <= sim_pc[1];
+      sim_pc_r[2] <= retire_pc[0];
     end
   end
   always @(posedge clock) begin
     if (retire_valid[0]) begin
-      if (rob_sim.result.sim.difftest_skip) diff_skip();
-      if (rob_sim.inst_info.quit) quit();
+      if (difftest_skip[0]) diff_skip();
+      if (difftest_skip[1] && retire_valid[1]) diff_skip2();
+      if (sim_quit) quit();
       if (retire_valid[1]) difftest2();
       else difftest();
     end
@@ -214,6 +233,9 @@ module ysyx_24110006_top (
       .rob_out(rob_sim),
       .bp_result(bp_result),
       .flush(flush),
+      .quit(sim_quit),
+      .retire_pc(retire_pc),
+      .diff_skip(difftest_skip),
       .store_retire(store_retire)
   );
   ysyx_24110006_INT_IQ mint_iq (

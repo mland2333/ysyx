@@ -36,6 +36,7 @@ class Sdb {
   uint64_t clk_num = 0;
   uint64_t ibuf_empty = 0, ibuf_full = 0, flush_num = 0;
   uint64_t rob_full = 0;
+  uint64_t single_inst_clk = 0;
 
 public:
   Sdb(Args &args, Simulator *sim, Memory *mem);
@@ -68,6 +69,10 @@ public:
   void diff_skip_step() {
     if (args.is_diff)
       diff->diff_skip_step();
+  }
+  void diff_skip_step2() {
+    if (args.is_diff)
+      diff->diff_skip_step2();
   }
   void difftest() { is_time_to_diff = true; }
   void difftest2() { is_time_to_diff2 = true; }

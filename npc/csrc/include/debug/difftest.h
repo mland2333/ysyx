@@ -10,7 +10,7 @@ class Diff{
   const Area* area;
   Cpu<REG_NUMS>* cpu;
   Cpu<32>* ref_cpu;
-  bool diff_skip_buf[BUF_NUMS] = {};
+  bool diff_skip_buf[2] = {};
   int read_index = 0, write_index = 0;
   
 public:
@@ -22,7 +22,8 @@ public:
   ~Diff(){ delete ref_cpu;}
   void init_difftest(const char *ref_so_file, int port);
   bool difftest_step(int n);
-  void diff_skip_step(){ diff_skip_buf[write_index] = true; write_index = (write_index+1)%BUF_NUMS; }
+  void diff_skip_step(){ diff_skip_buf[0] = true; }
+  void diff_skip_step2(){ diff_skip_buf[1] = true; }
 
 };
 

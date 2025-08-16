@@ -47,7 +47,7 @@
 #else
 #define REG_NUMS 32
 #endif
-enum class SIM_STATE { NORMAL, QUIT, DIFF_FAILURE };
+enum class SIM_STATE { NORMAL, QUIT, DIFF_FAILURE, TIMEOUT};
 class Simulator {
 private:
   VerilatedContext *contextp;
@@ -68,7 +68,7 @@ private:
       cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__sim_rf[i]);
     }   
 
-    cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc);
+    cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc_w);
     // cpu.inst = GET_MEMBER(TOP_PREFIX, sim_inst);
   }
 public:

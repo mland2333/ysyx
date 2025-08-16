@@ -4,6 +4,7 @@
 #include <debug/difftest.h>
 #include <debug/log.h>
 #include <dlfcn.h>
+#include <simulator.h>
 #include <iostream>
 void (*ref_difftest_memcpy)(uint64_t addr, void *buf, size_t n,
                             bool direction) = nullptr;
@@ -46,24 +47,27 @@ void Diff::init_difftest(const char *ref_so_file, int port) {
                       DIFFTEST_TO_REF);
   ref_difftest_regcpy((void *)cpu, DIFFTEST_TO_REF);
 }
-
+extern Simulator* sim;
 bool Diff::difftest_step(int n) {
   /* if (diff_skip){ */
   /* ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF); */
   /* diff_skip = diff_skip_buf; */
   /* return true; */
   /* } */
-  if (diff_skip_buf[read_index]) {
-    ref_difftest_regcpy((void *)cpu, DIFFTEST_TO_REF);
-    diff_skip_buf[read_index] = false;
-    read_index = (read_index + 1) % BUF_NUMS;
-    /* std::cout << "跳过\n"; */
-    return true;
-  }
-  diff_nums++;
-  /* std::cout << "diff\n"; */
-  for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++) {
+    if (diff_skip_buf[i]) {
+      uint32_t temp = cpu->pc;
+      cpu->pc = sim->GET_MEMBER(TOP_PREFIX, sim_pc_r[i]);
+      ref_difftest_regcpy((void *)cpu, DIFFTEST_TO_REF);
+      cpu->pc = temp;
+      diff_skip_buf[i] = false;
+      /* std::cout << "跳过\n"; */
+      continue;
+    }
+    diff_nums ++;
     ref_difftest_exec(1);
+  }
+
   ref_difftest_regcpy((void *)ref_cpu, DIFFTEST_TO_DUT);
   int i;
   if ((i = cpu->check(ref_cpu)) != 0) {

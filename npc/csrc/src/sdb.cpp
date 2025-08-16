@@ -83,8 +83,13 @@ SIM_STATE Sdb::exec_once() {
   if (args.is_vga)
     if (device_update() == -1)
       state = SIM_STATE::QUIT;
-  if (sim->GET_MEMBER(TOP_PREFIX, retire_valid))
-    inst_num++;
+  if (sim->GET_MEMBER(TOP_PREFIX, retire_valid)){
+    if(sim->GET_MEMBER(TOP_PREFIX, retire_valid) == 1) inst_num++;
+    else inst_num += 2;
+    single_inst_clk = 0;
+  }
+  else single_inst_clk ++;
+  if(single_inst_clk >= 100000) state = SIM_STATE::TIMEOUT;
   clk_num++;
 
   return state;
@@ -153,6 +158,9 @@ int Sdb::run() {
       Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED),
           sim->cpu.pc);
     break;
+  case SIM_STATE::TIMEOUT:
+      Log("npc: %s at pc = 0x%08x", ANSI_FMT("TIMEOUT", ANSI_FG_RED),
+          sim->cpu.pc);
   default:
     Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED),
         sim->cpu.pc);

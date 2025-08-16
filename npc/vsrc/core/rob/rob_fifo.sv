@@ -85,10 +85,10 @@ module ROB_FIFO #(
   logic cycle, cycle1, cycle2;
   always_ff@(posedge i_clock)begin
     if(i_reset) cycle <= 0;
-    else if(((w_ptr == NUM - 1) && push || (w_ptr_2 == NUM-1 && push2))&& !i_flush) cycle <= ~cycle;
+    else if((w_ptr == NUM/2 - 1) && (w_prior && push || push2) && !i_flush) cycle <= ~cycle;
   end
   assign cycle1 = cycle;
-  assign cycle2 = w_ptr == NUM-1 && push2 ? ~cycle : cycle;
+  assign cycle2 = (w_ptr == NUM/2-1) && (w_prior && push2) ? ~cycle : cycle;
   assign rq1.push_index = {cycle1, w_ptr, w_prior};
   assign rq2.push_index = w_prior ? {cycle2, w_ptr_2, 1'b0} : {cycle2, w_ptr, 1'b1};
 endmodule

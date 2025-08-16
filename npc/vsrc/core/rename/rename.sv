@@ -18,7 +18,7 @@ module ysyx_24110006_RENAME #(
     if_pipeline_vr o_vr
 );
   logic r_valid;
-  assign r_valid = i_vr.valid && !i_flush;
+  assign r_valid = i_vr.valid && !i_flush && !full;
   always @(posedge i_clock) begin
     if (i_reset || i_flush) o_vr.valid <= 0;
     else if (r_ready && r_valid && !o_vr.valid) begin
