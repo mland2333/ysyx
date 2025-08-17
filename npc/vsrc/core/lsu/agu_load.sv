@@ -8,7 +8,7 @@ module ysyx_24110006_AGU_LOAD(
 );
 assign vr_out.valid = vr_in.valid;
 assign vr_in.ready = vr_out.ready;
-wire [31:0] addr = src.r1 + issue_info.agu_info.imm;
+wire [31:0] addr = src.d[0] + issue_info.agu_info.imm;
 
 assign rq_load.addr = addr;
 assign rq_load.read_t = issue_info.agu_info.func;

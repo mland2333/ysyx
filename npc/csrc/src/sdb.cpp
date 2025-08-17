@@ -161,6 +161,7 @@ int Sdb::run() {
   case SIM_STATE::TIMEOUT:
       Log("npc: %s at pc = 0x%08x", ANSI_FMT("TIMEOUT", ANSI_FG_RED),
           sim->cpu.pc);
+    break;
   default:
     Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED),
         sim->cpu.pc);

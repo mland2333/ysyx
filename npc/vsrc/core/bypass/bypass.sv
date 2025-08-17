@@ -6,7 +6,10 @@ module ysyx_24110006_BYPASS(
   output bypass::src_t src
 );
 
-assign src.r1 = loc.loc[0] == bypass::from_lsu ? lsu_result : loc.loc[0] == bypass::from_reg ? reg_rdata.r1 : loc.loc[0] == bypass::from_int ? int_result : 0;
-assign src.r2 = loc.loc[1] == bypass::from_lsu ? lsu_result : loc.loc[1] == bypass::from_reg ? reg_rdata.r2 : loc.loc[1] == bypass::from_int ? int_result : 0;
-
+assign src.d[0] = {32{(loc.loc[0][bypass::from_int])}} & int_result |
+                  {32{(loc.loc[0][bypass::from_lsu])}} & lsu_result |
+                  {32{(loc.loc[0][bypass::from_reg])}} & reg_rdata.d[0];
+assign src.d[1] = {32{(loc.loc[1][bypass::from_int])}} & int_result |
+                  {32{(loc.loc[1][bypass::from_lsu])}} & lsu_result |
+                  {32{(loc.loc[1][bypass::from_reg])}} & reg_rdata.d[1];
 endmodule

@@ -29,9 +29,9 @@ wire f111 = issue_info.data.func == 3'b111;
 // 先计算sub信号，避免在op.b中使用op.sub
 wire sub_signal = (I || R) && (f011 || f010) || B || R && f000 && issue_info.data.imm[5];
 
-assign exu_info.alu_op.a = JAL || JALR || AUIPC ? issue_info.data.pc : LUI ? 0 : src.r1;
+assign exu_info.alu_op.a = JAL || JALR || AUIPC ? issue_info.data.pc : LUI ? 0 : src.d[0];
 wire [31:0]b0 = I || L || AUIPC || S  || LUI ? issue_info.data.imm : JAL || JALR ? 32'b100 :
-        CSR && f001 ? 32'b0 : CSR && f010 ? csr_rdata.r1 : src.r2;
+        CSR && f001 ? 32'b0 : CSR && f010 ? csr_rdata.r1 : src.d[1];
 assign exu_info.alu_op.b = sub_signal ? ~b0 : b0;
 assign exu_info.alu_op.alu_t[`ALU_ADD] = (I|R)&f000|AUIPC|LUI|B|L|S|JAL|JALR|CSR&~f010;
 assign exu_info.alu_op.alu_t[`ALU_SLL] = (I|R)&f001;
@@ -46,7 +46,7 @@ assign exu_info.alu_op.sub = sub_signal;
 
 assign exu_info.rob_index = issue_info.rob_index;
 assign exu_info.imm = issue_info.data.imm;
-assign exu_info.upc = (CSR && f000) ? csr_rdata.upc : (JALR ? src.r1 : issue_info.data.pc);
+assign exu_info.upc = (CSR && f000) ? csr_rdata.upc : (JALR ? src.d[0] : issue_info.data.pc);
 
 assign exu_info.branch_info.branch = B;
 assign exu_info.branch_info.beq = B & f000;
@@ -56,7 +56,7 @@ assign exu_info.branch_info.bge = B & (f101 | f111);
 assign exu_info.branch_info.branch_back = issue_info.data.imm[31];
 assign exu_info.branch_info.jal = JAL;
 assign exu_info.branch_info.jalr = JALR;
-assign exu_info.zero = src.r1 == src.r2;
+assign exu_info.zero = src.d[0] == src.d[1];
 assign exu_info.reg_wen = issue_info.reg_wen;
 assign exu_info.rd = issue_info.rd;
 assign exu_info.vrd = issue_info.vrd;

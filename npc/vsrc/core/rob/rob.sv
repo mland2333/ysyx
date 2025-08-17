@@ -24,11 +24,8 @@ module ysyx_24110006_ROB #(
   if_rq_rob_fifo #(
       .WIDTH($bits(rob::inst_info_t)),
       .NUM  (ROB_NUM)
-  ) rq1 ();
-  if_rq_rob_fifo #(
-      .WIDTH($bits(rob::inst_info_t)),
-      .NUM  (ROB_NUM)
-  ) rq2 ();
+  )
+      rq1 (), rq2 ();
   logic [1:0] pop_valid, push_valid;
   logic pop, push, pop2, push2;
   assign vr_in.ready = !full;
@@ -89,17 +86,17 @@ module ysyx_24110006_ROB #(
   assign retire_valid = {rq2.pop, rq1.pop};
   assign flush = retire_valid[0] && result[rq1.pop_index].flush;
 
-  assign retire_info.d1.valid = rq1.pop && inst1.reg_wen && inst1.vrd != 0;
-  assign retire_info.d1.has_old_map = inst1.has_old_map;
-  assign retire_info.d1.old_index = inst1.old_index;
-  assign retire_info.d1.vrd = inst1.vrd;
-  assign retire_info.d1.prd = inst1.prd;
+  assign retire_info.d[0].valid = rq1.pop && inst1.reg_wen && inst1.vrd != 0;
+  assign retire_info.d[0].has_old_map = inst1.has_old_map;
+  assign retire_info.d[0].old_index = inst1.old_index;
+  assign retire_info.d[0].vrd = inst1.vrd;
+  assign retire_info.d[0].prd = inst1.prd;
 
-  assign retire_info.d2.valid = rq2.pop && inst2.reg_wen && inst2.vrd != 0;
-  assign retire_info.d2.has_old_map = inst2.has_old_map;
-  assign retire_info.d2.old_index = inst2.old_index;
-  assign retire_info.d2.vrd = inst2.vrd;
-  assign retire_info.d2.prd = inst2.prd;
+  assign retire_info.d[1].valid = rq2.pop && inst2.reg_wen && inst2.vrd != 0;
+  assign retire_info.d[1].has_old_map = inst2.has_old_map;
+  assign retire_info.d[1].old_index = inst2.old_index;
+  assign retire_info.d[1].vrd = inst2.vrd;
+  assign retire_info.d[1].prd = inst2.prd;
 
   assign store_retire = rq1.pop && inst1.type_store || rq2.pop && inst2.type_store;
 

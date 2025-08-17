@@ -99,7 +99,7 @@ module ysyx_24110006_LOAD_UNIT (
   logic mem_valid;
   assign mem_valid = (o_rq.valid && !i_vr.ready || i_vr.valid && i_vr.ready && check.hit) && !i_flush && !in_flush;
   assign lsu_wakeup.valid = mem_valid;
-  assign lsu_wakeup.rd = o_rq.valid && !i_vr.ready ? rq.rd : i_rq.rd;
+  assign lsu_wakeup.prd = o_rq.valid && !i_vr.ready ? rq.rd : i_rq.rd;
 `ifdef CONFIG_SIM
   function logic in_mem(input int addr);
 `ifdef CONFIG_YSYXSOC

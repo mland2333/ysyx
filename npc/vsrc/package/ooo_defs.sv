@@ -7,8 +7,7 @@ package ooo;
     logic [31:0] imm;
   } basic_info_t;
   typedef struct packed {
-    rf::vreg vrs1;
-    rf::vreg vrs2;
+    rf::vreg [1:0] vrs;
     rf::vreg vrd;
     logic reg_wen;
     logic [6:0] op;

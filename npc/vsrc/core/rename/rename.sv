@@ -4,11 +4,9 @@ module ysyx_24110006_RENAME #(
     input i_clock,
     input i_reset,
     input i_flush,
-    input rename::retire_group_t retire_info,
-    input rename::commit_t commit_int,
-    commit_lsu,
-    input bypass::wakeup_t int_wakeup,
-    lsu_wakeup,
+    input rename::retire_group_t retire,
+    input rename::commit_group_t commit,
+    input bypass::wakeup_group_t wakeup,
     input ooo::idu2rename_t from_idu,
     output ooo::dispatch_info_t dispatch_info,
 `ifdef CONFIG_SIM
@@ -44,21 +42,21 @@ module ysyx_24110006_RENAME #(
       rq1(), rq2(), backup_rq1(), backup_rq2();
   assign rq1.pop = r_valid && from_idu.reg_wen && i_vr.ready && from_idu.vrd != 0 && !i_flush;
   assign rq2.pop = 0;
-  assign rq1.push = retire_info.d1.valid && retire_info.d1.has_old_map || 
-    retire_info.d2.valid && retire_info.d2.has_old_map;
-  assign rq2.push = retire_info.d1.valid && retire_info.d1.has_old_map && 
-    retire_info.d2.valid && retire_info.d2.has_old_map;
-  assign rq1.push_data = retire_info.d1.valid && retire_info.d1.has_old_map ? retire_info.d1.old_index : retire_info.d2.old_index;
-  assign rq2.push_data = retire_info.d2.old_index;
+  assign rq1.push = retire.d[0].valid && retire.d[0].has_old_map || 
+    retire.d[1].valid && retire.d[1].has_old_map;
+  assign rq2.push = retire.d[0].valid && retire.d[0].has_old_map && 
+    retire.d[1].valid && retire.d[1].has_old_map;
+  assign rq1.push_data = retire.d[0].valid && retire.d[0].has_old_map ? retire.d[0].old_index : retire.d[1].old_index;
+  assign rq2.push_data = retire.d[1].old_index;
 
-  assign backup_rq1.pop = retire_info.d1.valid || retire_info.d2.valid;
-  assign backup_rq2.pop = retire_info.d1.valid && retire_info.d2.valid;
-  assign backup_rq1.push = retire_info.d1.valid && retire_info.d1.has_old_map ||
-    retire_info.d2.valid && retire_info.d2.has_old_map;
-  assign backup_rq2.push = retire_info.d1.valid && retire_info.d1.has_old_map &&
-    retire_info.d2.valid && retire_info.d2.has_old_map;
-  assign backup_rq1.push_data = retire_info.d1.valid && retire_info.d1.has_old_map ? retire_info.d1.old_index : retire_info.d2.old_index;
-  assign backup_rq2.push_data = retire_info.d2.old_index;
+  assign backup_rq1.pop = retire.d[0].valid || retire.d[1].valid;
+  assign backup_rq2.pop = retire.d[0].valid && retire.d[1].valid;
+  assign backup_rq1.push = retire.d[0].valid && retire.d[0].has_old_map ||
+    retire.d[1].valid && retire.d[1].has_old_map;
+  assign backup_rq2.push = retire.d[0].valid && retire.d[0].has_old_map &&
+    retire.d[1].valid && retire.d[1].has_old_map;
+  assign backup_rq1.push_data = retire.d[0].valid && retire.d[0].has_old_map ? retire.d[0].old_index : retire.d[1].old_index;
+  assign backup_rq2.push_data = retire.d[1].old_index;
   rename::free_list_backup_t free_list_backup;
   logic free_list_full, free_list_empty;
   DOUBLE_PROT_FREE_LIST #(
@@ -103,8 +101,7 @@ module ysyx_24110006_RENAME #(
   end
   if_rq_rat rq_rat ();
   assign rq_rat.valid = need_alloc;
-  assign rq_rat.vrs1  = from_idu.vrs1;
-  assign rq_rat.vrs2  = from_idu.vrs2;
+  assign rq_rat.vrs  = from_idu.vrs;
   assign rq_rat.vrd   = from_idu.vrd;
   assign rq_rat.valid = rq1.pop;
   assign rq_rat.prd   = rq1.pop_data;
@@ -112,53 +109,48 @@ module ysyx_24110006_RENAME #(
       .i_clock(i_clock),
       .i_reset(i_reset),
       .i_flush(flush_retire),
-      .retire_info(retire_info),
-      .commit_int(commit_int),
-      .commit_lsu(commit_lsu),
-      .int_wakeup(int_wakeup),
-      .lsu_wakeup(lsu_wakeup),
+      .retire(retire),
+      .commit(commit),
+      .wakeup(wakeup),
 `ifdef CONFIG_SIM
       .o_rat(o_rat),
 `endif
       .rq(rq_rat)
   );
-  rf::preg prs1, prs2, prd;
+  rf::preg [1:0] prs;
+  rf::preg prd;
   logic [1:0] rs_zero;
   always_ff @(posedge i_clock) begin
     if (i_reset) begin
-      prs1 <= 0;
-      prs2 <= 0;
+      prs <= 0;
       prd <= 0;
       rs_zero <= 0;
     end else if (update_reg) begin
-      prs1 <= rq_rat.prs1;
-      prs2 <= rq_rat.prs2;
+      prs <= rq_rat.prs;
       prd <= rq1.pop_data;
-      rs_zero <= {from_idu.vrs2 == 0, from_idu.vrs1 == 0};
+      rs_zero <= {from_idu.vrs[1] == 0, from_idu.vrs[0] == 0};
     end
   end
-
+  function automatic logic check_rs_valid(
+    rename::retire_group_t retire,
+    rename::commit_group_t commit,
+    bypass::wakeup_group_t wakeup,
+    rf::preg prs
+  );
+    logic valid;
+    valid = 0;
+    foreach(retire.d[i]) valid |= retire.d[i].valid && retire.d[i].prd == prs;
+    foreach(commit.d[i]) valid |= commit.d[i].valid && commit.d[i].prd == prs;
+    foreach(wakeup.d[i]) valid |= wakeup.d[i].valid && wakeup.d[i].prd == prs;
+    return valid;
+  endfunction
   logic [1:0] rs_valid;
   always_ff @(posedge i_clock) begin
     if (update_reg) begin
       rs_valid <= rq_rat.rs_valid;
     end else if (!o_vr.ready) begin
-      rs_valid[0] <= 
-        idu_data.vrs1 == 0 ||
-        retire_info.d1.valid && retire_info.d1.prd == prs1 ||
-        retire_info.d2.valid && retire_info.d2.prd == prs1 ||
-        commit_int.valid && commit_int.prd == prs1 ||
-        commit_lsu.valid && commit_lsu.prd == prs1 ||
-        int_wakeup.valid && int_wakeup.rd == prs1 ||
-        lsu_wakeup.valid && lsu_wakeup.rd == prs1 || rs_valid[0];
-      rs_valid[1] <= 
-        idu_data.vrs2 == 0 ||
-        retire_info.d1.valid && retire_info.d1.prd == prs2 ||
-        retire_info.d2.valid && retire_info.d2.prd == prs2 ||
-        commit_int.valid && commit_int.prd == prs2 ||
-        commit_lsu.valid && commit_lsu.prd == prs2 ||
-        int_wakeup.valid && int_wakeup.rd == prs2 ||
-        lsu_wakeup.valid && lsu_wakeup.rd == prs2 || rs_valid[1];
+      rs_valid[0] <= check_rs_valid(retire, commit, wakeup, prs[0]) || rs_valid[0];
+      rs_valid[1] <= check_rs_valid(retire, commit, wakeup, prs[1]) || rs_valid[1];
     end
   end
   logic has_old_map;
@@ -181,8 +173,8 @@ module ysyx_24110006_RENAME #(
   assign dispatch_info.old_index = old_index;
   assign dispatch_info.need_rs = idu_data.need_rs;
   assign dispatch_info.rs_valid = rs_valid;
-  assign dispatch_info.reg_rinfo.rs1 = prs1;
-  assign dispatch_info.reg_rinfo.rs2 = prs2;
+  assign dispatch_info.reg_rinfo.rs[0] = prs[0];
+  assign dispatch_info.reg_rinfo.rs[1] = prs[1];
   assign dispatch_info.reg_rinfo.rs_zero = rs_zero;
   assign dispatch_info.quit = idu_data.quit;
   assign dispatch_info.is_lsu = idu_data.is_lsu;

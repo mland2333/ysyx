@@ -125,7 +125,7 @@ module ysyx_24110006_top (
   rob::store_commit_t store_commit;
   logic store_retire;
   logic store_finish;
-  rename::commit_t rename_commit_lsu, rename_commit_int;
+  rename::commit_t rename_commit_load, rename_commit_int;
   bypass::wakeup_t int_wakeup, lsu_wakeup;
   bypass::src_t bypass_src_int, bypass_src_load, bypass_src_store;
   bypass::src_loction_t src_loction_int, src_loction_load, src_loction_store;
@@ -134,6 +134,11 @@ module ysyx_24110006_top (
   bp::btb_update_t btb_update;
   if_rq_btb btb_rq ();
   lsu::older_store_t older_store;
+  bypass::wakeup_group_t wakeup;
+  rename::commit_group_t commit;
+  rename::retire_group_t retire;
+  assign wakeup = {lsu_wakeup, int_wakeup};
+  assign commit = {rename_commit_load, rename_commit_int};
 `ifndef CONFIG_YSYXSOC
   if_axi_write uart_axi ();
 `endif
@@ -194,13 +199,11 @@ module ysyx_24110006_top (
       .i_clock(clock),
       .i_reset(reset),
       .i_flush(flush),
-      .retire_info(rename_retire),
+      .retire(retire),
       .from_idu(idu2rename),
       .dispatch_info(dispatch_info),
-      .commit_int(rename_commit_int),
-      .commit_lsu(rename_commit_lsu),
-      .int_wakeup(int_wakeup),
-      .lsu_wakeup(lsu_wakeup),
+      .commit(commit),
+      .wakeup(wakeup),
 `ifdef CONFIG_SIM
       .o_rat(rat),
 `endif
@@ -228,7 +231,7 @@ module ysyx_24110006_top (
       .commit_lsu(commit_load),
       .commit_store(store_commit),
       .retire_valid(retire_valid),
-      .retire_info(rename_retire),
+      .retire_info(retire),
       .rob_index(rob_index),
       .rob_out(rob_sim),
       .bp_result(bp_result),
@@ -245,9 +248,8 @@ module ysyx_24110006_top (
       .rob_index(rob_index),
       .dispatch_inst(dispatch_int),
       .int_wakeup(int_wakeup),
-      .lsu_wakeup(lsu_wakeup),
-      .commit_int(rename_commit_int),
-      .commit_lsu(rename_commit_lsu),
+      .wakeup(wakeup),
+      .commit(commit),
       .issue_inst(issue_int),
       .reg_rinfo(reg_rinfo_int),
       .loc(src_loction_int),
@@ -260,10 +262,8 @@ module ysyx_24110006_top (
       .i_flush(flush),
       .rob_index(rob_index),
       .dispatch_inst(dispatch_load),
-      .int_wakeup(int_wakeup),
-      .lsu_wakeup(lsu_wakeup),
-      .commit_int(rename_commit_int),
-      .commit_lsu(rename_commit_lsu),
+      .wakeup(wakeup),
+      .commit(commit),
       .issue_inst(issue_load),
       .reg_rinfo(reg_rinfo_load),
       .store_commit(store_commit),
@@ -278,10 +278,8 @@ module ysyx_24110006_top (
       .i_flush(flush),
       .rob_index(rob_index),
       .dispatch_inst(dispatch_store),
-      .int_wakeup(int_wakeup),
-      .lsu_wakeup(lsu_wakeup),
-      .commit_int(rename_commit_int),
-      .commit_lsu(rename_commit_lsu),
+      .wakeup(wakeup),
+      .commit(commit),
       .issue_inst(issue_store),
       .reg_rinfo(reg_rinfo_store),
       .store_commit(store_commit),
@@ -396,7 +394,7 @@ module ysyx_24110006_top (
       .o_rq(rq_lunit),
       .check(load_check),
       .winfo(reg_winfo_lsu),
-      .rename_commit(rename_commit_lsu),
+      .rename_commit(rename_commit_load),
       .lsu_wakeup(lsu_wakeup),
       .commit(commit_load)
   );
