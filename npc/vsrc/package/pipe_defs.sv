@@ -8,10 +8,10 @@ package pipe;
     logic exception;
     logic [3:0] mcause;
     bp::info_t bp_info;
-    logic inst_valid;
   } ifu2idu_single_t;
   typedef struct packed {
     ifu2idu_single_t d1, d2;
+    logic [1:0] inst_valid;
   } ifu2idu_t;
   typedef struct packed {
     logic [11:0] csr_r;

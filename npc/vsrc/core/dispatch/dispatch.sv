@@ -2,56 +2,75 @@ module ysyx_24110006_DISPATCH (
     if_pipeline_vr.in vr_in,
     if_pipeline_vr.out vr_load,
     if_pipeline_vr.out vr_store,
-    if_pipeline_vr.out vr_int,
+    if_pipeline_vr.out vr_int[2],
     if_pipeline_vr.out vr_rob,
     input ooo::dispatch_info_t dispatch_info,
-    output ooo::dispatch_inst_t dispatch_int,
+    output ooo::dispatch_inst_t dispatch_int[2],
     output ooo::dispatch_inst_t dispatch_load,
     output ooo::dispatch_inst_t dispatch_store,
-    output rob::inst_info_t rob_info
+    output rob::info_t rob_info,
+    input rob::wb_index rob_index[2],
+    output rob::wb_index rob_int[2],
+    rob_load,
+    rob_store
 );
-  assign dispatch_int.basic_inst_info = dispatch_info.basic_inst_info;
-  assign dispatch_int.reg_rinfo = dispatch_info.reg_rinfo;
-  assign dispatch_int.need_rs = dispatch_info.need_rs;
-  assign dispatch_int.rs_valid = dispatch_info.rs_valid;
-  assign dispatch_int.reg_wen = dispatch_info.reg_wen;
-  assign dispatch_int.rd = dispatch_info.prd;
-  assign dispatch_int.vrd = dispatch_info.vrd;
-  assign dispatch_int.bp_info = dispatch_info.bp_info;
+  ooo::dispatch_inst_t inst[2];
+  always_comb begin
+    for (int i = 0; i < 2; i++) begin
+      inst[i].basic_inst_info = dispatch_info.d[i].basic_inst_info;
+      inst[i].reg_rinfo = dispatch_info.d[i].reg_rinfo;
+      inst[i].need_rs = dispatch_info.d[i].need_rs;
+      inst[i].rs_valid = dispatch_info.d[i].rs_valid;
+      inst[i].mem_wen = dispatch_info.d[i].mem_wen;
+      inst[i].reg_wen = dispatch_info.d[i].reg_wen;
+      inst[i].rd = dispatch_info.d[i].prd;
+      inst[i].vrd = dispatch_info.d[i].vrd;
+    end
+  end
+  assign dispatch_load = dispatch_info.d[0].is_lsu && !dispatch_info.d[0].mem_wen ? inst[0] : inst[1];
+  assign dispatch_store = dispatch_info.d[0].is_lsu && dispatch_info.d[0].mem_wen ? inst[0] : inst[1];
+  logic [1:0] has_int;
+  logic has_load, has_store;
+  assign has_int[0] = dispatch_info.inst_valid[0] && !dispatch_info.d[0].is_lsu;
+  assign has_int[1] = dispatch_info.inst_valid[1] && !dispatch_info.d[1].is_lsu;
+  assign has_load = dispatch_info.inst_valid[0] && dispatch_info.d[0].is_lsu && !dispatch_info.d[0].mem_wen ||
+          dispatch_info.inst_valid[1] && dispatch_info.d[1].is_lsu && !dispatch_info.d[1].mem_wen;
+  assign has_store = dispatch_info.inst_valid[0] && dispatch_info.d[0].is_lsu && dispatch_info.d[0].mem_wen ||
+          dispatch_info.inst_valid[1] && dispatch_info.d[1].is_lsu && dispatch_info.d[1].mem_wen;
 
-  assign dispatch_load.basic_inst_info = dispatch_info.basic_inst_info;
-  assign dispatch_load.reg_rinfo = dispatch_info.reg_rinfo;
-  assign dispatch_load.need_rs = dispatch_info.need_rs;
-  assign dispatch_load.rs_valid = dispatch_info.rs_valid;
-  assign dispatch_load.mem_wen = dispatch_info.mem_wen;
-  assign dispatch_load.reg_wen = dispatch_info.reg_wen;
-  assign dispatch_load.rd = dispatch_info.prd;
-  assign dispatch_load.vrd = dispatch_info.vrd;
+  assign dispatch_int[0] = inst[0];
+  assign dispatch_int[1] = inst[1];
+  always_comb begin
+    for (int i = 0; i < 2; i++) begin
+      rob_info.d[i].pc = dispatch_info.d[i].basic_inst_info.pc;
+      rob_info.d[i].reg_wen = dispatch_info.d[i].reg_wen;
+      rob_info.d[i].prd = dispatch_info.d[i].prd;
+      rob_info.d[i].vrd = dispatch_info.d[i].vrd;
+      rob_info.d[i].has_old_map = dispatch_info.d[i].has_old_map;
+      rob_info.d[i].old_index = dispatch_info.d[i].old_index;
+      rob_info.d[i].quit = dispatch_info.d[i].quit;
+      rob_info.d[i].bp_info = dispatch_info.d[i].bp_info;
+      rob_info.d[i].type_store = dispatch_info.d[i].mem_wen;
+    end
+  end
+  assign rob_info.inst_valid = dispatch_info.inst_valid;
 
-  assign dispatch_store.basic_inst_info = dispatch_info.basic_inst_info;
-  assign dispatch_store.reg_rinfo = dispatch_info.reg_rinfo;
-  assign dispatch_store.need_rs = dispatch_info.need_rs;
-  assign dispatch_store.rs_valid = dispatch_info.rs_valid;
-  assign dispatch_store.mem_wen = dispatch_info.mem_wen;
-  assign dispatch_store.reg_wen = dispatch_info.reg_wen;
-  assign dispatch_store.rd = dispatch_info.prd;
-  assign dispatch_store.vrd = dispatch_info.vrd;
+  logic load_ready, store_ready;
+  logic [1:0] int_ready;
+  assign load_ready = has_load && vr_load.ready || !has_load;
+  assign store_ready = has_store && vr_store.ready || !has_store;
+  assign int_ready[0] = has_int[0] && vr_int[0].ready || !has_int[0];
+  assign int_ready[1] = has_int[1] && vr_int[1].ready || !has_int[1];
+  assign vr_in.ready = load_ready && store_ready && int_ready[0] && int_ready[1] && vr_rob.ready;
 
-  assign rob_info.pc = dispatch_info.basic_inst_info.pc;
-  assign rob_info.reg_wen = dispatch_info.reg_wen;
-  assign rob_info.prd = dispatch_info.prd;
-  assign rob_info.vrd = dispatch_info.vrd;
-  assign rob_info.has_old_map = dispatch_info.has_old_map;
-  assign rob_info.old_index = dispatch_info.old_index;
-  assign rob_info.quit = dispatch_info.quit;
-  assign rob_info.bp_info = dispatch_info.bp_info;
-  assign rob_info.type_store = dispatch_info.mem_wen;
+  assign vr_int[0].valid = vr_in.valid && vr_in.ready && has_int[0];
+  assign vr_int[1].valid = vr_in.valid && vr_in.ready && has_int[1];
+  assign vr_load.valid = vr_in.valid && vr_in.ready && has_load;
+  assign vr_store.valid = vr_in.valid && vr_in.ready && has_store;
+  assign vr_rob.valid = vr_in.valid && vr_in.ready;
 
-  assign vr_in.ready = (vr_int.ready && !dispatch_info.is_lsu ||
-    vr_load.ready && dispatch_info.is_lsu && !dispatch_info.mem_wen ||
-    vr_store.ready && dispatch_info.is_lsu && dispatch_info.mem_wen) && vr_rob.ready;
-  assign vr_int.valid = vr_in.valid && !dispatch_info.is_lsu && vr_rob.ready;
-  assign vr_load.valid = vr_in.valid && dispatch_info.is_lsu && !dispatch_info.mem_wen && vr_rob.ready;
-  assign vr_store.valid = vr_in.valid && dispatch_info.is_lsu && dispatch_info.mem_wen && vr_rob.ready;
-  assign vr_rob.valid = vr_int.valid && vr_int.ready || vr_load.valid && vr_load.ready || vr_store.valid && vr_store.ready;
+  assign rob_int[0] = rob_index[0];
+  assign rob_int[1] = rob_index[1];
+  assign rob_load = dispatch_info.inst_valid[0] && dispatch_info.d[0].is_lsu && !dispatch_info.d[0].mem_wen ? rob_index[0] : rob_index[1];
+  assign rob_store = dispatch_info.inst_valid[0] && dispatch_info.d[0].is_lsu && dispatch_info.d[0].mem_wen ? rob_index[0] : rob_index[1];
 endmodule

@@ -10,7 +10,11 @@ package rob;
     logic quit;
     bp::info_t bp_info;
     logic type_store;
-  } inst_info_t;
+  } info_single_t;
+  typedef struct packed {
+    info_single_t [1:0] d;
+    logic [1:0] inst_valid;
+  } info_t;
   typedef struct packed {
     logic difftest_skip;
     logic [31:0] addr;
@@ -26,7 +30,7 @@ package rob;
 `endif
   } result_t;
   typedef struct packed {
-    inst_info_t inst_info;
+    info_single_t inst_info;
     result_t result;
     logic valid;
   } rob_t;
@@ -39,9 +43,9 @@ package rob;
   typedef struct packed {
     logic valid;
     wb_index index;
-/* `ifdef CONFIG_SIM */
-/*     sim_t sim; */
-/* `endif */
+    /* `ifdef CONFIG_SIM */
+    /*     sim_t sim; */
+    /* `endif */
   } store_commit_t;
   function automatic logic is_older(input wb_index a, input wb_index b);
     return ~((a[$left(a)] == b[$left(a)]) ^ (a[$left(a)-1:0] < b[$left(a)-1:0]));

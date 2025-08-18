@@ -77,7 +77,6 @@ module ysyx_24110006_IFU (
   assign to_idu1.mcause = 0;
   assign to_idu1.imm = imm1;
   assign to_idu1.bp_info = o_icache_rq.bp_info_out.d1;
-  assign to_idu1.inst_valid = 1;
 
   assign to_idu2.inst = o_icache_rq.rdata2;
   assign to_idu2.pc = o_icache_rq.pc + 4;
@@ -85,9 +84,10 @@ module ysyx_24110006_IFU (
   assign to_idu2.mcause = 0;
   assign to_idu2.imm = imm2;
   assign to_idu2.bp_info = o_icache_rq.bp_info_out.d2;
-  assign to_idu2.inst_valid = !o_icache_rq.bp_info_out.d1.pred_taken && o_icache_rq.pc[3:2] != 2'b11;
   assign to_idu.d1 = to_idu1;
   assign to_idu.d2 = to_idu2;
+  assign to_idu.inst_valid[0] = 1;
+  assign to_idu.inst_valid[1] = !o_icache_rq.bp_info_out.d1.pred_taken && o_icache_rq.pc[3:2] != 2'b11;
   ysyx_24110006_IMM mimm1 (
       .i_inst(o_icache_rq.rdata1),
       .o_imm (imm1)

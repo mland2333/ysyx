@@ -5,11 +5,11 @@ module ysyx_24110006_ROB #(
     input i_clock,
     input i_reset,
     if_pipeline_vr.in vr_in,
-    input rob::inst_info_t dispatch_inst,
-    input rob::commit_info_t commit_int,
+    input rob::info_t dispatch_inst,
+    input rob::commit_info_t commit_int[2],
     input rob::commit_info_t commit_lsu,
     input rob::store_commit_t commit_store,
-    output rob::wb_index rob_index,
+    output rob::wb_index rob_index[2],
     output logic [1:0] retire_valid,
     output rename::retire_group_t retire_info,
     output rob::rob_t rob_out,
@@ -22,22 +22,22 @@ module ysyx_24110006_ROB #(
 );
   logic empty, almost_empty, full, almost_full;
   if_rq_rob_fifo #(
-      .WIDTH($bits(rob::inst_info_t)),
+      .WIDTH($bits(rob::info_single_t)),
       .NUM  (ROB_NUM)
   )
       rq1 (), rq2 ();
   logic [1:0] pop_valid, push_valid;
   logic pop, push, pop2, push2;
-  assign vr_in.ready = !full;
+  assign vr_in.ready = !full && !almost_full;
   assign pop = rq1.pop;
   assign push = vr_in.valid && vr_in.ready;
   assign rq1.push = push;
   assign rq1.pop = valid[rq1.pop_index];
-  assign rq2.push = 0;
+  assign rq2.push = push && dispatch_inst.inst_valid[1];
   assign rq2.pop = pop && valid[rq2.pop_index] && !(two_store || first_flush || second_flush);
-  assign rq1.push_data = dispatch_inst;
-  assign rq2.push_data = 0;
-  rob::inst_info_t inst1, inst2;
+  assign rq1.push_data = dispatch_inst.d[0];
+  assign rq2.push_data = dispatch_inst.d[1];
+  rob::info_single_t inst1, inst2;
   assign inst1 = rq1.pop_data;
   assign inst2 = rq2.pop_data;
   logic two_store, first_flush, second_flush;
@@ -50,7 +50,7 @@ module ysyx_24110006_ROB #(
   rob::result_t result[ROB_NUM];
   logic valid[ROB_NUM];
   ROB_FIFO #(
-      .WIDTH($bits(rob::inst_info_t)),
+      .WIDTH($bits(rob::info_single_t)),
       .NUM  (ROB_NUM)
   ) mrob (
       .i_clock(i_clock),
@@ -61,13 +61,16 @@ module ysyx_24110006_ROB #(
       .empty(empty),
       .almost_empty(almost_empty),
       .full(full),
-      .almost_full()
+      .almost_full(almost_full)
   );
   always_ff @(posedge i_clock) begin
     for (int i = 0; i < ROB_NUM; i++) begin
       if (i_reset || flush) valid[i] <= 0;
-      else if (commit_int.valid && commit_int.index[ROB_INDEX-1:0] == i) begin
-        result[i] <= commit_int.result;
+      else if (commit_int[0].valid && commit_int[0].index[ROB_INDEX-1:0] == i) begin
+        result[i] <= commit_int[0].result;
+        valid[i]  <= 1;
+      end else if (commit_int[1].valid && commit_int[1].index[ROB_INDEX-1:0] == i) begin
+        result[i] <= commit_int[1].result;
         valid[i]  <= 1;
       end else if (commit_lsu.valid && commit_lsu.index[ROB_INDEX-1:0] == i) begin
         result[i] <= commit_lsu.result;
@@ -105,7 +108,8 @@ module ysyx_24110006_ROB #(
   assign bp_result.pred_taken = retire_valid[1] ? inst2.bp_info.pred_taken : inst1.bp_info.pred_taken;
   assign bp_result.pc = retire_valid[1] ? inst2.pc : inst1.pc;
   assign bp_result.upc = retire_valid[1] ? result[rq2.pop_index].upc : result[rq1.pop_index].upc;
-  assign rob_index = rq1.push_index;
+  assign rob_index[0] = rq1.push_index;
+  assign rob_index[1] = rq2.push_index;
   assign quit = retire_valid[1] ? inst2.quit : inst1.quit;
   assign diff_skip[0] = result[rq1.pop_index].sim.difftest_skip;
   assign diff_skip[1] = result[rq2.pop_index].sim.difftest_skip && retire_valid[1];

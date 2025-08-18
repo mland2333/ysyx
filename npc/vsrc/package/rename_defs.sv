@@ -6,7 +6,7 @@ package rename;
     rf::preg prd;
     rf::vreg vrd;
   } commit_t;
-  localparam COMMIT_COUNT = 2;
+  localparam COMMIT_COUNT = 3;
   typedef struct packed {commit_t [COMMIT_COUNT-1:0] d;} commit_group_t;
   typedef struct packed {
     logic valid, flush, has_old_map;

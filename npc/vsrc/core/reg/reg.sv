@@ -4,9 +4,9 @@ module ysyx_24110006_RegisterFile #(
 ) (
     input i_clock,
     input i_reset,
-    input rf::rinfo_t rinfo1, rinfo2, rinfo3,
-    output rf::rdata_t rdata1, rdata2, rdata3,
-    input rf::winfo_t winfo1, winfo2
+    input rf::rinfo_t rinfo1, rinfo2, rinfo3, rinfo4,
+    output rf::rdata_t rdata1, rdata2, rdata3, rdata4,
+    input rf::winfo_t winfo1, winfo2, winfo3
 `ifdef CONFIG_SIM
     ,input logic [31:0][5:0] i_rat
 `endif
@@ -16,6 +16,7 @@ module ysyx_24110006_RegisterFile #(
     for(int i = 0; i<`PREG_NUM; i++)begin
       if(winfo1.valid && winfo1.wen && winfo1.rd == i) reg_file[i] <= winfo1.wdata;
       else if(winfo2.valid && winfo2.wen && winfo2.rd == i) reg_file[i] <= winfo2.wdata;
+      else if(winfo3.valid && winfo3.wen && winfo3.rd == i) reg_file[i] <= winfo3.wdata;
     end
   end
 
@@ -25,6 +26,8 @@ module ysyx_24110006_RegisterFile #(
   assign rdata2.d[1] = rinfo2.rs_zero[1] ? 0 : reg_file[rinfo2.rs[1]];
   assign rdata3.d[0] = rinfo3.rs_zero[0] ? 0 : reg_file[rinfo3.rs[0]];
   assign rdata3.d[1] = rinfo3.rs_zero[1] ? 0 : reg_file[rinfo3.rs[1]];
+  assign rdata4.d[0] = rinfo4.rs_zero[0] ? 0 : reg_file[rinfo4.rs[0]];
+  assign rdata4.d[1] = rinfo4.rs_zero[1] ? 0 : reg_file[rinfo4.rs[1]];
 `ifdef CONFIG_SIM
   reg [DATA_WIDTH-1:0] sim_rf[32];
   always_comb begin

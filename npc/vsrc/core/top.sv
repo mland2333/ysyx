@@ -70,9 +70,9 @@ module ysyx_24110006_top (
     else mtime <= mtime + 1;
   end
 `endif
-  rf::rinfo_t reg_rinfo_int, reg_rinfo_load, reg_rinfo_store;
-  rf::rdata_t reg_rdata_int, reg_rdata_load, reg_rdata_store;
-  rf::winfo_t reg_winfo_int, reg_winfo_lsu;
+  rf::rinfo_t reg_rinfo_int[0], reg_rinfo_load, reg_rinfo_store;
+  rf::rdata_t reg_rdata_int[0], reg_rdata_load, reg_rdata_store;
+  rf::winfo_t reg_winfo_int[0], reg_winfo_lsu;
   if_axi_read icache_axi ();
   if_lsu_adapter rq_axi ();
   if_lsu_dcache rq_dcache ();
@@ -84,7 +84,7 @@ module ysyx_24110006_top (
   if_axi mem_axi ();
   if_icache_rq ifu_icache ();
   pipe::ifu2idu_t from_ifu;
-  pipe::ifu2idu_single_t to_idu;
+  pipe::ifu2idu_t to_idu;
   if_icache_rq ifu_rq ();
   pipe::csr_rinfo_t csr_rinfo;
   pipe::csr_rdata_t csr_rdata;
@@ -97,24 +97,24 @@ module ysyx_24110006_top (
   ooo::idu2rename_t idu2rename;
   if_pipeline_vr idu_vr_rename ();
   if_pipeline_vr rename_vr_dispatch ();
-  if_pipeline_vr dispatch_vr_int ();
+  if_pipeline_vr dispatch_vr_int [2] ();
   if_pipeline_vr dispatch_vr_rob ();
   if_pipeline_vr dispatch_vr_load ();
   if_pipeline_vr dispatch_vr_store ();
-  if_pipeline_vr iq_vr_int ();
+  if_pipeline_vr iq_vr_int [2] ();
   if_pipeline_vr iq_vr_load ();
   if_pipeline_vr iq_vr_store ();
   if_pipeline_vr agu_vr_load ();
   if_pipeline_vr agu_vr_store ();
   ooo::dispatch_info_t dispatch_info;
-  ooo::dispatch_inst_t dispatch_int, dispatch_load, dispatch_store;
-  rob::inst_info_t dispatch_rob;
-  ooo::issue_int_t issue_int;
+  ooo::dispatch_inst_t dispatch_int[2], dispatch_load, dispatch_store;
+  rob::info_t dispatch_rob;
+  ooo::issue_int_t issue_int[2];
   ooo::issue_lsu_t issue_load, issue_store;
-  rob::commit_info_t commit_int, commit_load;
-  rob::wb_index rob_index;
+  rob::commit_info_t commit_int[2], commit_load;
+  rob::wb_index rob_index [2];
   logic [1:0] retire_valid;
-  ooo::exu_info_t exu_info;
+  ooo::exu_info_t exu_info [2];
   ooo::lsu_info_t lsu_info;
   if_rq_load rq_lunit ();
   if_rq_store rq_sunit ();
@@ -125,10 +125,10 @@ module ysyx_24110006_top (
   rob::store_commit_t store_commit;
   logic store_retire;
   logic store_finish;
-  rename::commit_t rename_commit_load, rename_commit_int;
-  bypass::wakeup_t int_wakeup, lsu_wakeup;
-  bypass::src_t bypass_src_int, bypass_src_load, bypass_src_store;
-  bypass::src_loction_t src_loction_int, src_loction_load, src_loction_store;
+  rename::commit_t rename_commit_load, rename_commit_int[2];
+  bypass::wakeup_t int_wakeup[2], lsu_wakeup;
+  bypass::src_t bypass_src_int[2], bypass_src_load, bypass_src_store;
+  bypass::src_loction_t src_loction_int[2], src_loction_load, src_loction_store;
   rename::retire_group_t rename_retire;
   bp::result_t bp_result;
   bp::btb_update_t btb_update;
@@ -137,8 +137,12 @@ module ysyx_24110006_top (
   bypass::wakeup_group_t wakeup;
   rename::commit_group_t commit;
   rename::retire_group_t retire;
-  assign wakeup = {lsu_wakeup, int_wakeup};
-  assign commit = {rename_commit_load, rename_commit_int};
+  assign wakeup = {lsu_wakeup, int_wakeup[1], int_wakeup[0]};
+  assign commit = {rename_commit_load, rename_commit_int[1], rename_commit_int[0]};
+  rob::wb_index rob_int[2], rob_load, rob_store;
+  logic [31:0] bypass_int [2];
+  assign bypass_int[0] = reg_winfo_int[0].wdata;
+  assign bypass_int[1] = reg_winfo_int[1].wdata;
 `ifndef CONFIG_YSYXSOC
   if_axi_write uart_axi ();
 `endif
@@ -220,7 +224,11 @@ module ysyx_24110006_top (
       .dispatch_int(dispatch_int),
       .dispatch_load(dispatch_load),
       .dispatch_store(dispatch_store),
-      .rob_info(dispatch_rob)
+      .rob_info(dispatch_rob),
+      .rob_index(rob_index),
+      .rob_int(rob_int),
+      .rob_load(rob_load),
+      .rob_store(rob_store)
   );
   ysyx_24110006_ROB mrob (
       .i_clock(clock),
@@ -241,26 +249,54 @@ module ysyx_24110006_top (
       .diff_skip(difftest_skip),
       .store_retire(store_retire)
   );
-  ysyx_24110006_INT_IQ mint_iq (
-      .i_clock(clock),
-      .i_reset(reset),
-      .i_flush(flush),
-      .rob_index(rob_index),
-      .dispatch_inst(dispatch_int),
-      .int_wakeup(int_wakeup),
-      .wakeup(wakeup),
-      .commit(commit),
-      .issue_inst(issue_int),
-      .reg_rinfo(reg_rinfo_int),
-      .loc(src_loction_int),
-      .i_vr(dispatch_vr_int),
-      .o_vr(iq_vr_int)
-  );
+  generate
+    for (genvar i = 0; i < 2; i++) begin :int_unit
+      ysyx_24110006_INT_IQ mint_iq (
+          .i_clock(clock),
+          .i_reset(reset),
+          .i_flush(flush),
+          .rob_index(rob_int[i]),
+          .dispatch_inst(dispatch_int[i]),
+          .int_wakeup(int_wakeup[i]),
+          .wakeup(wakeup),
+          .commit(commit),
+          .issue_inst(issue_int[i]),
+          .reg_rinfo(reg_rinfo_int[i]),
+          .loc(src_loction_int[i]),
+          .i_vr(dispatch_vr_int[i]),
+          .o_vr(iq_vr_int[i])
+      );
+      ysyx_24110006_BYPASS mbypass_int (
+          .loc(src_loction_int[i]),
+          .reg_rdata(reg_rdata_int[i]),
+          .int_result(bypass_int),
+          .lsu_result(reg_winfo_lsu.wdata),
+          .src(bypass_src_int[i])
+      );
+      ysyx_24110006_ALUOP maluop (
+          .csr_rdata(csr_rdata),
+          .src(bypass_src_int[i]),
+          .issue_info(issue_int[i]),
+          .exu_info(exu_info[i])
+      );
+
+      ysyx_24110006_EXU mexu (
+          .i_clock(clock),
+          .i_reset(reset),
+          .issue_inst(exu_info[i]),
+          .commit(commit_int[i]),
+          .rename_commit(rename_commit_int[i]),
+          .winfo(reg_winfo_int[i]),
+          .i_vr(iq_vr_int[i]),
+          .i_flush(flush | fencei)
+      );
+    end
+  endgenerate
   ysyx_24110006_LOAD_IQ mload_iq (
       .i_clock(clock),
       .i_reset(reset),
       .i_flush(flush),
-      .rob_index(rob_index),
+      .rob_index(rob_load),
       .dispatch_inst(dispatch_load),
       .wakeup(wakeup),
       .commit(commit),
@@ -276,7 +312,7 @@ module ysyx_24110006_top (
       .i_clock(clock),
       .i_reset(reset),
       .i_flush(flush),
-      .rob_index(rob_index),
+      .rob_index(rob_store),
       .dispatch_inst(dispatch_store),
       .wakeup(wakeup),
       .commit(commit),
@@ -291,14 +327,17 @@ module ysyx_24110006_top (
   ysyx_24110006_RegisterFile mreg (
       .i_clock(clock),
       .i_reset(reset),
-      .rinfo1 (reg_rinfo_int),
-      .rdata1 (reg_rdata_int),
+      .rinfo1 (reg_rinfo_int[0]),
+      .rdata1 (reg_rdata_int[0]),
       .rinfo2 (reg_rinfo_load),
       .rdata2 (reg_rdata_load),
       .rinfo3 (reg_rinfo_store),
       .rdata3 (reg_rdata_store),
-      .winfo1 (reg_winfo_int),
-      .winfo2 (reg_winfo_lsu)
+      .rinfo4 (reg_rinfo_int[1]),
+      .rdata4 (reg_rdata_int[1]),
+      .winfo1 (reg_winfo_int[0]),
+      .winfo2 (reg_winfo_lsu),
+      .winfo3 (reg_winfo_int[1])
 `ifdef CONFIG_SIM,
       .i_rat  (rat)
 `endif
@@ -312,34 +351,10 @@ module ysyx_24110006_top (
   /*     .einfo  (csr_einfo), */
   /*     .i_valid(retire_valid) */
   /* ); */
-  ysyx_24110006_BYPASS mbypass_int (
-      .loc(src_loction_int),
-      .reg_rdata(reg_rdata_int),
-      .int_result(reg_winfo_int.wdata),
-      .lsu_result(reg_winfo_lsu.wdata),
-      .src(bypass_src_int)
-  );
-  ysyx_24110006_ALUOP maluop (
-      .csr_rdata(csr_rdata),
-      .src(bypass_src_int),
-      .issue_info(issue_int),
-      .exu_info(exu_info)
-  );
-
-  ysyx_24110006_EXU mexu (
-      .i_clock(clock),
-      .i_reset(reset),
-      .issue_inst(exu_info),
-      .commit(commit_int),
-      .rename_commit(rename_commit_int),
-      .winfo(reg_winfo_int),
-      .i_vr(iq_vr_int),
-      .i_flush(flush | fencei)
-  );
   ysyx_24110006_BYPASS mbypass_store (
       .loc(src_loction_store),
       .reg_rdata(reg_rdata_store),
-      .int_result(reg_winfo_int.wdata),
+      .int_result(bypass_int),
       .lsu_result(reg_winfo_lsu.wdata),
       .src(bypass_src_store)
   );
@@ -373,7 +388,7 @@ module ysyx_24110006_top (
   ysyx_24110006_BYPASS mbypass_load (
       .loc(src_loction_load),
       .reg_rdata(reg_rdata_load),
-      .int_result(reg_winfo_int.wdata),
+      .int_result(bypass_int),
       .lsu_result(reg_winfo_lsu.wdata),
       .src(bypass_src_load)
   );

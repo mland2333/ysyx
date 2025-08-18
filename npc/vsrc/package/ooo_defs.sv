@@ -24,7 +24,11 @@ package ooo;
     logic mem_wen;
     logic is_lsu;
     bp::info_t bp_info;
-  } idu2rename_t;
+  } idu2rename_single_t;
+  typedef struct packed {
+    idu2rename_single_t [1:0] d;
+    logic [1:0] inst_valid;
+  }idu2rename_t;
   typedef struct packed {
     basic_info_t basic_inst_info;
     rf::rinfo_t reg_rinfo;
@@ -39,6 +43,10 @@ package ooo;
     logic quit;
     logic is_lsu;
     bp::info_t bp_info;
+  } dispatch_single_t;
+  typedef struct packed {
+    dispatch_single_t [1:0] d;
+    logic [1:0] inst_valid;
   } dispatch_info_t;
   typedef struct packed {
     logic flush;

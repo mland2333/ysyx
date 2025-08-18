@@ -1,7 +1,8 @@
 package bypass;
 
-  typedef enum logic [1:0] {
-    from_int,
+  typedef enum {
+    from_int0,
+    from_int1,
     from_lsu,
     from_reg,
     SRC_COUNT
