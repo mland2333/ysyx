@@ -93,7 +93,7 @@ module RAT (
       retire, commit, wakeup, rat, rq[1].vrs[1]
   )) && !(rq[0].valid && rq[0].vrd == rq[1].vrs[1]);
   assign rq[0].has_old_map = reg_state[rq[0].vrd] != IDLE;
-  assign rq[1].has_old_map = reg_state[rq[1].vrd] != IDLE && !(rq[0].valid && rq[1].vrd == rq[0].vrd);
+  assign rq[1].has_old_map = reg_state[rq[1].vrd] != IDLE || rq[0].valid && rq[1].vrd == rq[0].vrd;
   assign rq[0].old_index = rat[rq[0].vrd];
   assign rq[1].old_index = rq[0].valid && rq[1].vrd == rq[0].vrd ? rq[0].prd : rat[rq[1].vrd];
   assign rq[0].prs[0] = rat[rq[0].vrs[0]];

@@ -138,6 +138,7 @@ module ISSUE_QUEUE #(
         end
       end
       assign free_index = nodes[1].index;
+      assign valid = iq_valid[free_index] && rs_valid[free_index] == 2'b11 && ctrl[free_index];
     end else if (MODE == "HEAD") begin : by_head
       logic [INDEX-1:0] r_ptr;
       always_ff @(posedge i_clock) begin
@@ -145,13 +146,14 @@ module ISSUE_QUEUE #(
         else if (free) r_ptr <= r_ptr + 1;
       end
       assign free_index = r_ptr;
+      assign valid = iq_valid[free_index] && rs_valid[free_index] == 2'b11;
     end
   endgenerate
 
   always_ff @(posedge i_clock) begin
     if (alloc) iq[alloc_index] <= alloc_data;
   end
-  assign valid = iq_valid[free_index] && rs_valid[free_index] == 2'b11;
+  ;
   assign loc   = locs[free_index].loc;
   assign free_data = iq[free_index];
 

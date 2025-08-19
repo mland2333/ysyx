@@ -143,6 +143,7 @@ module ysyx_24110006_top (
   logic [31:0] bypass_int [2];
   assign bypass_int[0] = reg_winfo_int[0].wdata;
   assign bypass_int[1] = reg_winfo_int[1].wdata;
+  logic store_prior;
 `ifndef CONFIG_YSYXSOC
   if_axi_write uart_axi ();
 `endif
@@ -224,6 +225,7 @@ module ysyx_24110006_top (
       .dispatch_int(dispatch_int),
       .dispatch_load(dispatch_load),
       .dispatch_store(dispatch_store),
+      .store_prior(store_prior),
       .rob_info(dispatch_rob),
       .rob_index(rob_index),
       .rob_int(rob_int),
@@ -313,6 +315,7 @@ module ysyx_24110006_top (
       .i_reset(reset),
       .i_flush(flush),
       .rob_index(rob_store),
+      .store_prior(store_prior),
       .dispatch_inst(dispatch_store),
       .wakeup(wakeup),
       .commit(commit),

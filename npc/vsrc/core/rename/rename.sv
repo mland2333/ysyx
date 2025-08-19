@@ -164,7 +164,7 @@ module ysyx_24110006_RENAME #(
         end
       end
       always_ff @(posedge i_clock) begin
-        if (pop[i]) begin
+        if (rq_rat[i].valid) begin
           has_old_map[i] <= rq_rat[i].has_old_map;
           old_index[i]   <= rq_rat[i].old_index;
         end
@@ -172,28 +172,27 @@ module ysyx_24110006_RENAME #(
     end
   endgenerate
 
-
-  always_comb begin
-    for (int i = 0; i < 2; i++) begin
-      dispatch_info.d[i].basic_inst_info.op = idu_data.d[i].op;
-      dispatch_info.d[i].basic_inst_info.func = idu_data.d[i].func;
-      dispatch_info.d[i].basic_inst_info.pc = idu_data.d[i].pc;
-      dispatch_info.d[i].basic_inst_info.imm = idu_data.d[i].imm;
-      dispatch_info.d[i].prd = prd[i];
-      dispatch_info.d[i].vrd = idu_data.d[i].vrd;
-      dispatch_info.d[i].mem_wen = idu_data.d[i].mem_wen;
-      dispatch_info.d[i].reg_wen = idu_data.d[i].reg_wen;
-      dispatch_info.d[i].has_old_map = has_old_map[i];
-      dispatch_info.d[i].old_index = old_index[i];
-      dispatch_info.d[i].need_rs = idu_data.d[i].need_rs;
-      dispatch_info.d[i].rs_valid = rs_valid[i];
-      dispatch_info.d[i].reg_rinfo.rs = prs[i];
-      dispatch_info.d[i].reg_rinfo.rs_zero = rs_zero[i];
-      dispatch_info.d[i].quit = idu_data.d[i].quit;
-      dispatch_info.d[i].is_lsu = idu_data.d[i].is_lsu;
-      dispatch_info.d[i].bp_info = idu_data.d[i].bp_info;
-      dispatch_info.inst_valid[i] = idu_data.inst_valid[i];
+  generate
+    for (genvar i = 0; i < 2; i++) begin
+      assign dispatch_info.d[i].basic_inst_info.op = idu_data.d[i].op;
+      assign dispatch_info.d[i].basic_inst_info.func = idu_data.d[i].func;
+      assign dispatch_info.d[i].basic_inst_info.pc = idu_data.d[i].pc;
+      assign dispatch_info.d[i].basic_inst_info.imm = idu_data.d[i].imm;
+      assign dispatch_info.d[i].prd = prd[i];
+      assign dispatch_info.d[i].vrd = idu_data.d[i].vrd;
+      assign dispatch_info.d[i].mem_wen = idu_data.d[i].mem_wen;
+      assign dispatch_info.d[i].reg_wen = idu_data.d[i].reg_wen;
+      assign dispatch_info.d[i].has_old_map = has_old_map[i];
+      assign dispatch_info.d[i].old_index = old_index[i];
+      assign dispatch_info.d[i].need_rs = idu_data.d[i].need_rs;
+      assign dispatch_info.d[i].rs_valid = rs_valid[i];
+      assign dispatch_info.d[i].reg_rinfo.rs = prs[i];
+      assign dispatch_info.d[i].reg_rinfo.rs_zero = rs_zero[i];
+      assign dispatch_info.d[i].quit = idu_data.d[i].quit;
+      assign dispatch_info.d[i].is_lsu = idu_data.d[i].is_lsu;
+      assign dispatch_info.d[i].bp_info = idu_data.d[i].bp_info;
+      assign dispatch_info.inst_valid[i] = idu_data.inst_valid[i];
     end
-  end
+  endgenerate
 
 endmodule

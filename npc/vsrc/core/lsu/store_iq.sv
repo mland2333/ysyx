@@ -6,6 +6,7 @@ module ysyx_24110006_STORE_IQ #(
     input i_flush,
     if_pipeline_vr.in i_vr,
     if_pipeline_vr.out o_vr,
+    input store_prior,
     input rob::wb_index rob_index,
     input ooo::dispatch_inst_t dispatch_inst,
     input bypass::wakeup_group_t wakeup,
@@ -84,6 +85,6 @@ module ysyx_24110006_STORE_IQ #(
     if (i_reset) store_index <= 0;
     else if (alloc) store_index <= rob_index;
   end
-  assign older_store.valid = empty || count == 1 && free;
-  assign older_store.store_index = store_index;
+  assign older_store.valid = (empty || count == 1 && free) && !store_prior;
+  assign older_store.store_index = store_prior ? rob_index : store_index;
 endmodule

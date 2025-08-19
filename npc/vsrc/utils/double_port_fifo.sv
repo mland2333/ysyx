@@ -64,7 +64,7 @@ module DOUBLE_PROT_FIFO #(
   assign w_ptr_2 = w_ptr + 1;
   assign r_ptr_2 = r_ptr + 1;
   assign rq1.pop_data = r_prior ? fifo2[r_ptr] : fifo1[r_ptr];
-  assign rq2.pop_data = r_prior ? fifo1[r_ptr] : fifo2[r_ptr];
+  assign rq2.pop_data = r_prior ? fifo1[r_ptr_2] : fifo2[r_ptr];
   always_ff @(posedge i_clock) begin
     if (push && !i_reset && !i_flush) begin
       if (w_prior && push2) fifo1[w_ptr_2] <= rq2.push_data;

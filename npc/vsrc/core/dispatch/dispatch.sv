@@ -4,6 +4,7 @@ module ysyx_24110006_DISPATCH (
     if_pipeline_vr.out vr_store,
     if_pipeline_vr.out vr_int[2],
     if_pipeline_vr.out vr_rob,
+    output store_prior,
     input ooo::dispatch_info_t dispatch_info,
     output ooo::dispatch_inst_t dispatch_int[2],
     output ooo::dispatch_inst_t dispatch_load,
@@ -25,8 +26,10 @@ module ysyx_24110006_DISPATCH (
       inst[i].reg_wen = dispatch_info.d[i].reg_wen;
       inst[i].rd = dispatch_info.d[i].prd;
       inst[i].vrd = dispatch_info.d[i].vrd;
+      inst[i].bp_info = dispatch_info.d[i].bp_info;
     end
   end
+  assign store_prior = dispatch_info.d[0].is_lsu && dispatch_info.d[0].mem_wen;
   assign dispatch_load = dispatch_info.d[0].is_lsu && !dispatch_info.d[0].mem_wen ? inst[0] : inst[1];
   assign dispatch_store = dispatch_info.d[0].is_lsu && dispatch_info.d[0].mem_wen ? inst[0] : inst[1];
   logic [1:0] has_int;

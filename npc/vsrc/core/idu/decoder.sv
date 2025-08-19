@@ -40,7 +40,7 @@ module DECODER(
   assign to_rename.vrs[0] = inst[19:15];
   assign to_rename.vrs[1] = inst[24:20];
   assign to_rename.vrd = inst[11:7];
-  assign to_rename.reg_wen = !(S || B || FENCE) || inst[11:7]!=0;
+  assign to_rename.reg_wen = !(S || B || FENCE) && inst[11:7]!=0;
   assign to_rename.op = inst[6:0];
   assign to_rename.func = inst[14:12];
   assign to_rename.csr_t = {mret, CSR & (inst_func != 0)};

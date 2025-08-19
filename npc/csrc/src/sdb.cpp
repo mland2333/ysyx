@@ -89,7 +89,7 @@ SIM_STATE Sdb::exec_once() {
     single_inst_clk = 0;
   }
   else single_inst_clk ++;
-  if(single_inst_clk >= 100000) state = SIM_STATE::TIMEOUT;
+  if(single_inst_clk >= 20000) state = SIM_STATE::TIMEOUT;
   clk_num++;
 
   return state;
