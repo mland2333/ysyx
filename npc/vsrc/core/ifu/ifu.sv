@@ -10,7 +10,7 @@ module ysyx_24110006_IFU (
     input i_flush,
     input i_fencei,
     input i_dcache_fencei_fin,
-    if_rq_btb.out o_btb_rq,
+    if_rq_btb.out o_btb_rq[2],
     input bp::result_t bp_result,
     output bp::btb_update_t btb_update,
     if_pipeline_vr.out o_vr
@@ -32,7 +32,10 @@ module ysyx_24110006_IFU (
     end else if (i_fencei) begin
       pc <= bp_result.pc + 4;
     end else if (o_icache_rq.rq && o_icache_rq.cache_ready) begin
-      pc <= o_btb_rq.hit1 ? o_btb_rq.upc1 : pc[3:2] == 2'b11 ? pc + 4 : o_btb_rq.hit2 ? o_btb_rq.upc2 : pc + 8;
+      if (o_btb_rq[0].hit) pc <= o_btb_rq[0].upc;
+      else if (pc[3:2] == 2'b11) pc <= pc + 4;
+      else if (o_btb_rq[1].hit) pc <= o_btb_rq[1].upc;
+      else pc <= pc + 8;
     end
   end
   logic rq_icache;
@@ -62,12 +65,15 @@ module ysyx_24110006_IFU (
   assign o_icache_rq.ready = o_vr.ready;
   assign o_icache_rq.addr = pc;
   assign o_icache_rq.flush = i_fencei;
-  assign o_icache_rq.bp_info_in.d1.pred_taken = o_btb_rq.hit1;
-  assign o_icache_rq.bp_info_in.d2.pred_taken = o_btb_rq.hit2;
-  assign o_btb_rq.pc = pc;
+  assign o_icache_rq.bp_info_in.d1.pred_taken = o_btb_rq[0].hit;
+  assign o_icache_rq.bp_info_in.d2.pred_taken = o_btb_rq[1].hit;
+  assign o_btb_rq[0].pc = pc;
+  assign o_btb_rq[1].pc = pc + 4;
   assign btb_update.valid = bp_result.btb_update;
   assign btb_update.pc = bp_result.pc;
   assign btb_update.upc = bp_result.upc;
+  assign btb_update.call = bp_result.call;
+  assign btb_update.ret = bp_result.ret;
   logic [31:0] imm1, imm2;
   assign o_vr.valid = o_icache_rq.valid && !i_flush && !in_flush;
   pipe::ifu2idu_single_t to_idu1, to_idu2;
@@ -96,4 +102,5 @@ module ysyx_24110006_IFU (
       .i_inst(o_icache_rq.rdata2),
       .o_imm (imm2)
   );
+
 endmodule

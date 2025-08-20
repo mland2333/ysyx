@@ -47,6 +47,8 @@ module ysyx_24110006_EXU (
     branch && !exu_info.bp_info.pred_taken && exu_info.branch_info.branch_back;
   assign wb_result.flush = (branch || exu_info.branch_info.jal || exu_info.branch_info.jalr) ^
     exu_info.bp_info.pred_taken;
+  assign wb_result.call = exu_info.branch_info.jalr && exu_info.vrd == 1;
+  assign wb_result.ret = exu_info.branch_info.ret;
   assign commit.result = wb_result;
   assign commit.valid = o_valid;
   assign commit.index = exu_info.rob_index;

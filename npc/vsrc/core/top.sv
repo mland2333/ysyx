@@ -132,7 +132,7 @@ module ysyx_24110006_top (
   rename::retire_group_t rename_retire;
   bp::result_t bp_result;
   bp::btb_update_t btb_update;
-  if_rq_btb btb_rq ();
+  if_rq_btb btb_rq [2]();
   lsu::older_store_t older_store;
   bypass::wakeup_group_t wakeup;
   rename::commit_group_t commit;
@@ -278,6 +278,7 @@ module ysyx_24110006_top (
       ysyx_24110006_ALUOP maluop (
           .csr_rdata(csr_rdata),
           .src(bypass_src_int[i]),
+          .reg_rinfo(reg_rinfo_int[i]),
           .issue_info(issue_int[i]),
           .exu_info(exu_info[i])
       );

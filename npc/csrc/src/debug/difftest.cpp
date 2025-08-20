@@ -4,8 +4,8 @@
 #include <debug/difftest.h>
 #include <debug/log.h>
 #include <dlfcn.h>
-#include <simulator.h>
 #include <iostream>
+#include <sim.h>
 void (*ref_difftest_memcpy)(uint64_t addr, void *buf, size_t n,
                             bool direction) = nullptr;
 void (*ref_difftest_regcpy)(void *dut, bool direction) = nullptr;
@@ -47,14 +47,9 @@ void Diff::init_difftest(const char *ref_so_file, int port) {
                       DIFFTEST_TO_REF);
   ref_difftest_regcpy((void *)cpu, DIFFTEST_TO_REF);
 }
-extern Simulator* sim;
+extern Sim *sim;
 bool Diff::difftest_step(int n) {
-  /* if (diff_skip){ */
-  /* ref_difftest_regcpy((void*)cpu_, DIFFTEST_TO_REF); */
-  /* diff_skip = diff_skip_buf; */
-  /* return true; */
-  /* } */
-    for (int i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     if (diff_skip_buf[i]) {
       uint32_t temp = cpu->pc;
       cpu->pc = sim->GET_MEMBER(TOP_PREFIX, sim_pc_r[i]);
@@ -64,7 +59,7 @@ bool Diff::difftest_step(int n) {
       /* std::cout << "跳过\n"; */
       continue;
     }
-    diff_nums ++;
+    diff_nums++;
     ref_difftest_exec(1);
   }
 

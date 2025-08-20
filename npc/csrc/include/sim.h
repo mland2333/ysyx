@@ -48,51 +48,23 @@
 #define REG_NUMS 32
 #endif
 enum class SIM_STATE { NORMAL, QUIT, DIFF_FAILURE, TIMEOUT};
-class Simulator {
-private:
+class Sim {
+public:
   VerilatedContext *contextp;
   VerilatedFstC *tfp;
-  bool is_gtk = false;
+  bool wave_on = false;
   bool is_nvboard = false;
-  void step_and_dump_wave();
-  void single_cycle();
   SIM_STATE state = SIM_STATE::NORMAL;
   uint64_t old_clk = 0;
-  void cpu_update(){
-    for(int i = 1; i<REG_NUMS; i++){
-      if(GET_MEMBER(TOP_PREFIX, mrename__DOT__mrat__DOT__areg_state[i]) == 0){
-        cpu.gpr[i] = 0;
-        continue;
-      }
-      // int index = GET_MEMBER(TOP_PREFIX,mrename__DOT__arat[i]);
-      cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__sim_rf[i]);
-    }   
-
-    cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc_w);
-    // cpu.inst = GET_MEMBER(TOP_PREFIX, sim_inst);
-  }
-public:
   TOP_NAME *top;
   Cpu<REG_NUMS> cpu;
-  uint32_t inst = 0;
-
-  Simulator(Args &args);
-  ~Simulator();
-  int run();
-  // 重置n个时钟周期
-  void reset(int n) {
-    top->reset = 1;
-    while (n-- > 0)
-      single_cycle();
-    top->reset = 0;
-  }
+  Sim(Args &args);
+  ~Sim();
+  void step_and_dump_wave();
+  void single_cycle();
+  void cpu_update();
+  void reset(int n);
+  void open_wave(const std::string& path);
   SIM_STATE exec_once();
   void quit() { state = SIM_STATE::QUIT; }
-  int get_inst() { return cpu.inst; }
-  void update_inst(int32_t inst) { old_clk = cpu.inst = inst; }
-  void update_reg(int rd, int wdata) { cpu.gpr[rd] = wdata; }
-  void update_pc(int32_t pc) {
-    cpu.pc = pc;
-    // std::cout << "update_pc " << TOP_MEMBER(mtime) << "\n";
-  }
 };

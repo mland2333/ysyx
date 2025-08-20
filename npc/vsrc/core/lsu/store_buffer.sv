@@ -123,6 +123,9 @@ module ysyx_24110006_STORE_BUFFER#(
       end
     end
   endgenerate
-  assign check.hit = nodes[1].valid;
+  assign check.hit = nodes[1].valid && (check.read_t[1:0] == 2'b00 || check.read_t[0]==1 && buffer[nodes[1].index].wmask != 0 
+  || buffer[nodes[1].index].wmask == 3'b010);
+  assign check.stall = nodes[1].valid && !(check.read_t[1:0] == 2'b00 || check.read_t[0]==1 && buffer[nodes[1].index].wmask != 0 
+  || buffer[nodes[1].index].wmask == 3'b010);
   assign check.data = buffer[nodes[1].index].wdata;
 endmodule

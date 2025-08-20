@@ -88,6 +88,7 @@ module ysyx_24110006_LOAD_UNIT (
 
   assign check.addr = i_rq.addr;
   assign check.store_index = i_rq.store_index;
+  assign check.read_t = i_rq.read_t;
   assign winfo.valid = commit_valid;
   assign winfo.wen = 1;
   assign winfo.rd = rq.rd;

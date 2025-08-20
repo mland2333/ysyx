@@ -1,7 +1,7 @@
 interface if_rq_btb();
   logic [31:0] pc;
-  logic hit1, hit2;
-  logic [31:0] upc1, upc2;
-  modport out(output pc, input hit1, hit2, upc1, upc2 );
-  modport in(input pc, output hit1, hit2, upc1, upc2);
+  logic hit, ret, call;
+  logic [31:0] upc;
+  modport out(output pc, input hit, upc, ret, call);
+  modport in(input pc, output hit, upc, ret, call);
 endinterface

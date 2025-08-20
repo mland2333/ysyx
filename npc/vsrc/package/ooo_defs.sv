@@ -72,7 +72,7 @@ package ooo;
     rf::vreg vrd;
     bp::info_t bp_info;
   } dispatch_inst_t;
-  typedef struct packed {logic branch, beq, bne, blt, bge, branch_back, jal, jalr;} branch_info_t;
+  typedef struct packed {logic branch, beq, bne, blt, bge, branch_back, jal, jalr, ret;} branch_info_t;
   typedef struct packed {
     rob::wb_index rob_index;
     alu::op_t alu_op;

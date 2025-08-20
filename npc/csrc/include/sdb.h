@@ -11,7 +11,7 @@
 #include <iostream>
 #include <memory.h>
 #include <perf.h>
-#include <simulator.h>
+#include <sim.h>
 #include <unordered_map>
 enum class NPC_STATE { RUNNING, STOP, ABORT, QUIT };
 class Sdb {
@@ -23,7 +23,7 @@ class Sdb {
   // PerfMonitor perf;
   uint32_t inst = 0;
   uint32_t pc = 0;
-  Simulator *sim;
+  Sim *sim;
   Memory *mem;
   Itrace *itrace;
   Ftrace *ftrace;
@@ -39,7 +39,7 @@ class Sdb {
   uint64_t single_inst_clk = 0;
 
 public:
-  Sdb(Args &args, Simulator *sim, Memory *mem);
+  Sdb(Args &args, Sim *sim, Memory *mem);
   ~Sdb();
   void init();
   void welcome();
@@ -79,8 +79,5 @@ public:
   void fetch_inst() {
     is_time_to_trace = true;
   }
-  void update_reg(int rd, int wdata) { sim->update_reg(rd, wdata); }
-  void update_pc(int32_t pc) { sim->update_pc(pc); }
-  void update_inst(int32_t inst) { sim->update_inst(inst); }
   void perf();
 };

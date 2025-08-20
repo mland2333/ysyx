@@ -25,6 +25,7 @@ package rob;
     logic [31:0] upc;
     logic flush;
     logic btb_update;
+    logic call, ret;
 `ifdef CONFIG_SIM
     sim_t sim;
 `endif

@@ -1,13 +1,17 @@
 #include "cpu.h"
-#include "simulator.h"
+#include "sim.h"
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <debug/disasm.h>
 #include <debug/log.h>
 #include <device/device.h>
+#include <sched.h>
 #include <sdb.h>
+#include <unistd.h>
 #include <utils.h>
+#include <sys/wait.h>
 
 SIM_STATE cmd_c(Sdb *sdb, char *args) { return sdb->exec(-1); }
 SIM_STATE cmd_si(Sdb *sdb, char *args) {
@@ -41,7 +45,7 @@ void Sdb::init() {
   sdb_map_["info"] = cmd_info;
 }
 
-Sdb::Sdb(Args &args_, Simulator *sim_, Memory *mem_)
+Sdb::Sdb(Args &args_, Sim *sim_, Memory *mem_)
     : args(args_), sim(sim_), mem(mem_) {
   init();
   if (args.is_itrace)
@@ -57,11 +61,14 @@ Sdb::Sdb(Args &args_, Simulator *sim_, Memory *mem_)
     init_vga();
   rtc_begin = Utils::get_time();
 }
-void Sdb::perf(){
-  if(sim->GET_MEMBER(TOP_PREFIX, flush)) flush_num++;
+void Sdb::perf() {
+  if (sim->GET_MEMBER(TOP_PREFIX, flush))
+    flush_num++;
   // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__count) == 0) ibuf_empty++;
-  // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__full) && !sim->top->rootp->__PVT__ysyx_24110006__DOT__top__DOT__ibuffer_vr_idu->ready) ibuf_full++;
-  // if(sim->GET_MEMBER(TOP_PREFIX, mrob__DOT__count) == 64) rob_full++;
+  // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__full) &&
+  // !sim->top->rootp->__PVT__ysyx_24110006__DOT__top__DOT__ibuffer_vr_idu->ready)
+  // ibuf_full++; if(sim->GET_MEMBER(TOP_PREFIX, mrob__DOT__count) == 64)
+  // rob_full++;
 }
 SIM_STATE Sdb::exec_once() {
   SIM_STATE state = sim->exec_once();
@@ -83,25 +90,70 @@ SIM_STATE Sdb::exec_once() {
   if (args.is_vga)
     if (device_update() == -1)
       state = SIM_STATE::QUIT;
-  if (sim->GET_MEMBER(TOP_PREFIX, retire_valid)){
-    if(sim->GET_MEMBER(TOP_PREFIX, retire_valid) == 1) inst_num++;
-    else inst_num += 2;
+  if (sim->GET_MEMBER(TOP_PREFIX, retire_valid)) {
+    if (sim->GET_MEMBER(TOP_PREFIX, retire_valid) == 1)
+      inst_num++;
+    else
+      inst_num += 2;
     single_inst_clk = 0;
-  }
-  else single_inst_clk ++;
-  if(single_inst_clk >= 20000) state = SIM_STATE::TIMEOUT;
+  } else
+    single_inst_clk++;
+  if (single_inst_clk >= 10000)
+    state = SIM_STATE::TIMEOUT;
   clk_num++;
 
   return state;
 }
-
+int pid_num = 0;
+pid_t pids[2] = {};
+volatile sig_atomic_t wake_up = 0;
+void wakeup_handler(int sig) {
+    wake_up = 1;
+}
 SIM_STATE Sdb::exec(uint32_t n) {
   for (int i = 0; i < n; i++) {
+
+    pid_t pid;
+    if (clk_num % 50000 == 0) {
+      pid = fork();
+      if (pid == 0) {
+        signal(SIGUSR1, wakeup_handler);
+        while (!wake_up) {
+          pause();
+        }
+        sim->open_wave("npc.fst");
+        while (i < n) {
+          SIM_STATE sim_state = exec_once();
+          if (sim_state != SIM_STATE::NORMAL){
+            sim->~Sim();
+            _exit(0);
+          }
+        }
+      } else {
+        if (pid_num == 0) {
+          pid_num++;
+          pids[0] = pid;
+        } else if (pid_num == 1) {
+          pid_num++;
+          pids[1] = pids[0];
+          pids[0] = pid;
+        } else if (pid_num == 2) {
+          pids[1] = pids[0];
+          pids[0] = pid;
+        }
+      }
+    }
     SIM_STATE sim_state = exec_once();
-    if (sim_state == SIM_STATE::NORMAL)
-      continue;
-    else
+    if (sim_state != SIM_STATE::NORMAL) {
+      if (pid_num == 1)
+        kill(pids[0], SIGUSR1);
+      else {
+        kill(pids[1], SIGUSR1);
+        kill(pids[0], SIGKILL);
+      }
+      wait(NULL);
       return sim_state;
+    }
   }
   return SIM_STATE::NORMAL;
 }
@@ -122,9 +174,7 @@ int Sdb::run() {
   std::string line;
   SIM_STATE result;
   if (args.is_batch) {
-    uint64_t now = Utils::get_time();
     result = cmd_c(this, nullptr);
-    // perf.timer += Utils::get_time() - now;
   } else {
     std::cout << "(npc) ";
     while (getline(std::cin, line)) {
@@ -159,8 +209,8 @@ int Sdb::run() {
           sim->cpu.pc);
     break;
   case SIM_STATE::TIMEOUT:
-      Log("npc: %s at pc = 0x%08x", ANSI_FMT("TIMEOUT", ANSI_FG_RED),
-          sim->cpu.pc);
+    Log("npc: %s at pc = 0x%08x", ANSI_FMT("TIMEOUT", ANSI_FG_RED),
+        sim->cpu.pc);
     break;
   default:
     Log("npc: %s at pc = 0x%08x", ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED),

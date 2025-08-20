@@ -2,6 +2,7 @@
 module ysyx_24110006_ALUOP(
   input bypass::src_t src,
   input pipe::csr_rdata_t csr_rdata,
+  input rf::rinfo_t reg_rinfo,
   input ooo::issue_int_t issue_info,
   output ooo::exu_info_t exu_info
 );
@@ -56,6 +57,7 @@ assign exu_info.branch_info.bge = B & (f101 | f111);
 assign exu_info.branch_info.branch_back = issue_info.data.imm[31];
 assign exu_info.branch_info.jal = JAL;
 assign exu_info.branch_info.jalr = JALR;
+assign exu_info.branch_info.ret = JALR && reg_rinfo.rs_zero[0] && issue_info.data.imm == 0;
 assign exu_info.zero = src.d[0] == src.d[1];
 assign exu_info.reg_wen = issue_info.reg_wen;
 assign exu_info.rd = issue_info.rd;

@@ -2,17 +2,17 @@
 #include <exception>
 #include <iostream>
 #include <memory>
-#include <simulator.h>
+#include <sim.h>
 #include <area.hpp>
 #include <memory.h>
 #include <args.h>
 #include <sdb.h>
 #include <utils.h>
 Sdb* sdb;
-Simulator* sim;
+Sim* sim;
 
 void signalHandler(int signum) {
-    sim->~Simulator();
+    sim->~Sim();
     sdb->~Sdb();
     std::exit(signum);  // 正常退出并调用析构函数
 }
@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
 
   Args args(argc, argv);
   Memory mem(args);
-  auto msim = std::make_unique<Simulator>(args);
+  auto msim = std::make_unique<Sim>(args);
   sim = msim.get();
   auto msdb = std::make_unique<Sdb>(args, sim, &mem);
   sdb = msdb.get();

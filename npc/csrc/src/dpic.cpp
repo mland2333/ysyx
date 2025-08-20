@@ -45,9 +45,8 @@ extern "C" void flash_read(int32_t addr, int32_t *data) {
 extern "C" void mrom_read(int32_t addr, int32_t *data) {
   *data = sdb->mem_read(addr);
 }
-
 extern "C" void fetch_inst() { sdb->fetch_inst(); }
 
-extern "C" void update_reg(int32_t rd, int32_t wdata) { sdb->update_reg(rd, wdata); }
-extern "C" void update_pc(int32_t pc) { sdb->update_pc(pc); }
-extern "C" void update_inst(int32_t inst) { sdb->update_pc(inst); }
+extern "C" void update_reg(int32_t rd, int32_t wdata) {}
+extern "C" void update_pc(int32_t pc) {}
+extern "C" void update_inst(int32_t inst) {}
