@@ -9,9 +9,9 @@
 #include <device/device.h>
 #include <sched.h>
 #include <sdb.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <utils.h>
-#include <sys/wait.h>
 
 SIM_STATE cmd_c(Sdb *sdb, char *args) { return sdb->exec(-1); }
 SIM_STATE cmd_si(Sdb *sdb, char *args) {
@@ -72,6 +72,7 @@ void Sdb::perf() {
 }
 SIM_STATE Sdb::exec_once() {
   SIM_STATE state = sim->exec_once();
+  if(state == SIM_STATE::QUIT) return state;
   perf();
   if (args.is_itrace && is_time_to_trace) {
     itrace->trace(sim->cpu.pc, sim->cpu.inst);
@@ -107,9 +108,7 @@ SIM_STATE Sdb::exec_once() {
 int pid_num = 0;
 pid_t pids[2] = {};
 volatile sig_atomic_t wake_up = 0;
-void wakeup_handler(int sig) {
-    wake_up = 1;
-}
+void wakeup_handler(int sig) { wake_up = 1; }
 SIM_STATE Sdb::exec(uint32_t n) {
   for (int i = 0; i < n; i++) {
 
@@ -124,7 +123,7 @@ SIM_STATE Sdb::exec(uint32_t n) {
         sim->open_wave("npc.fst");
         while (i < n) {
           SIM_STATE sim_state = exec_once();
-          if (sim_state != SIM_STATE::NORMAL){
+          if (sim_state != SIM_STATE::NORMAL) {
             sim->~Sim();
             _exit(0);
           }
@@ -138,6 +137,7 @@ SIM_STATE Sdb::exec(uint32_t n) {
           pids[1] = pids[0];
           pids[0] = pid;
         } else if (pid_num == 2) {
+          kill(pids[1], SIGKILL);
           pids[1] = pids[0];
           pids[0] = pid;
         }
@@ -145,13 +145,22 @@ SIM_STATE Sdb::exec(uint32_t n) {
     }
     SIM_STATE sim_state = exec_once();
     if (sim_state != SIM_STATE::NORMAL) {
-      if (pid_num == 1)
-        kill(pids[0], SIGUSR1);
-      else {
-        kill(pids[1], SIGUSR1);
-        kill(pids[0], SIGKILL);
+      if (sim_state == SIM_STATE::QUIT) {
+        if (pid_num == 1)
+          kill(pids[0], SIGKILL);
+        else {
+          kill(pids[1], SIGKILL);
+          kill(pids[0], SIGKILL);
+        }
+      } else {
+        if (pid_num == 1)
+          kill(pids[0], SIGUSR1);
+        else {
+          kill(pids[1], SIGUSR1);
+          kill(pids[0], SIGKILL);
+        }
+        wait(NULL);
       }
-      wait(NULL);
       return sim_state;
     }
   }

@@ -1,6 +1,6 @@
-module ysyx_24110006_STORE_BUFFER#(
+module ysyx_24110006_STORE_BUFFER #(
     parameter STORE_BUFFER_NUM = 4
-)(
+) (
     input i_clock,
     input i_reset,
     input i_flush,
@@ -30,7 +30,7 @@ module ysyx_24110006_STORE_BUFFER#(
       w_ptr <= 0;
       r_ptr <= 0;
       count <= 0;
-    end else if(i_flush)begin
+    end else if (i_flush) begin
       w_ptr <= retire_ptr;
       count <= store_finish ? retire_count - 1 : retire_count;
       r_ptr <= store_finish ? r_ptr + 1 : r_ptr;
@@ -45,43 +45,41 @@ module ysyx_24110006_STORE_BUFFER#(
       count <= count - 1;
     end
   end
-  always_ff@(posedge i_clock)begin
-    if(i_reset) retire_ptr <= 0;
-    else if(store_retire) retire_ptr <= retire_ptr + 1;
+  always_ff @(posedge i_clock) begin
+    if (i_reset) retire_ptr <= 0;
+    else if (store_retire) retire_ptr <= retire_ptr + 1;
   end
-  always_ff@(posedge i_clock)begin
-    if(i_reset) active_ptr <= 0;
-    else if(o_vr.valid && o_vr.ready) active_ptr <= active_ptr + 1;
+  always_ff @(posedge i_clock) begin
+    if (i_reset) active_ptr <= 0;
+    else if (o_vr.valid && o_vr.ready) active_ptr <= active_ptr + 1;
   end
-  always_ff@(posedge i_clock)begin
-    if(i_reset) retire_count <= 0;
-    else if(!(store_retire && store_finish))begin
-      if(store_retire) retire_count <= retire_count + 1;
-      else if(store_finish) retire_count <= retire_count - 1;
+  always_ff @(posedge i_clock) begin
+    if (i_reset) retire_count <= 0;
+    else if (!(store_retire && store_finish)) begin
+      if (store_retire) retire_count <= retire_count + 1;
+      else if (store_finish) retire_count <= retire_count - 1;
     end
   end
   always_ff @(posedge i_clock) begin
     if (push) buffer[w_ptr] <= i_rq;
   end
-  
-  always_ff@(posedge i_clock)begin
-    if(i_reset) rq_valid <= 0;
-    else if(i_flush) rq_valid <= rq_retire;
-    else if(push && pop) begin
+
+  always_ff @(posedge i_clock) begin
+    if (i_reset) rq_valid <= 0;
+    else if (i_flush) rq_valid <= rq_retire;
+    else if (push && pop) begin
       rq_valid[w_ptr] <= 1;
       rq_valid[r_ptr] <= 0;
-    end
-    else if(push) rq_valid[w_ptr] <= 1;
-    else if(pop) rq_valid[r_ptr] <= 0;
+    end else if (push) rq_valid[w_ptr] <= 1;
+    else if (pop) rq_valid[r_ptr] <= 0;
   end
-  always_ff@(posedge i_clock)begin
-    if(i_reset) rq_retire <= 0;
-    else if(store_retire && store_finish) begin
+  always_ff @(posedge i_clock) begin
+    if (i_reset) rq_retire <= 0;
+    else if (store_retire && store_finish) begin
       rq_retire[retire_ptr] <= 1;
       rq_retire[r_ptr] <= 0;
-    end
-    else if(store_retire) rq_retire[retire_ptr] <= 1;
-    else if(store_finish) rq_retire[r_ptr] <= 0;
+    end else if (store_retire) rq_retire[retire_ptr] <= 1;
+    else if (store_finish) rq_retire[r_ptr] <= 0;
   end
 
   assign i_vr.ready = !full;
@@ -93,12 +91,25 @@ module ysyx_24110006_STORE_BUFFER#(
     logic [BUFFER_INDEX-1:0] index;
   } entry_t;
   entry_t nodes[STORE_BUFFER_NUM*2];
+  function logic is_related(logic [31:0] raddr, waddr);
+    return raddr[31:2] == waddr[31:2];
+  endfunction
+  function logic can_get_data(logic [1:0] r, w, logic [2:0] read_t, logic [3:0] wmask);
+    return wmask==4'b1111 || (r==w&&(read_t[1:0]==2'b0||read_t[0]&&wmask==4'b0011)) ||
+      (r==2'b01&&w==0 || r==2'b11&&w==2'b10)&&wmask==4'b0011;
+  endfunction
+  function logic [31:0] get_data(logic [1:0] w, logic [3:0] wmask, logic [31:0] wdata);
+    if (wmask == 4'b1111) return wdata;
+    else if (w == 2'b10) return {wdata[15:0], 16'b0};
+    else if (w == 2'b01) return {16'b0, wdata[7:0], 8'b0};
+    else if (w == 2'b11) return {wdata[7:0], 24'b0};
+    else return wdata;
+  endfunction
   always_comb begin
-    for(int i = 0; i<STORE_BUFFER_NUM; i++)begin
+    for (int i = 0; i < STORE_BUFFER_NUM; i++) begin
       check_valid[i] = (check.store_index == buffer[i].rob_index ||
-        rob::is_older(buffer[i].rob_index, check.store_index)) &&
-        check.addr == buffer[i].addr &&
-        rq_valid[i];
+                        rob::is_older(buffer[i].rob_index, check.store_index)) &&
+          is_related(check.addr, buffer[i].addr) && rq_valid[i];
     end
   end
   generate
@@ -117,15 +128,22 @@ module ysyx_24110006_STORE_BUFFER#(
         select_younger_age #(
             .T(entry_t),
             .C(rob::wb_index)
-        ) younger(
-            .a(nodes[j*2]), .b(nodes[j*2+1]), .select(nodes[j])
+        ) younger (
+            .a(nodes[j*2]),
+            .b(nodes[j*2+1]),
+            .select(nodes[j])
         );
       end
     end
   endgenerate
-  assign check.hit = nodes[1].valid && (check.read_t[1:0] == 2'b00 || check.read_t[0]==1 && buffer[nodes[1].index].wmask != 0 
-  || buffer[nodes[1].index].wmask == 3'b010);
-  assign check.stall = nodes[1].valid && !(check.read_t[1:0] == 2'b00 || check.read_t[0]==1 && buffer[nodes[1].index].wmask != 0 
-  || buffer[nodes[1].index].wmask == 3'b010);
-  assign check.data = buffer[nodes[1].index].wdata;
+
+  assign check.hit = nodes[1].valid && can_get_data(
+      check.addr[1:0], buffer[nodes[1].index].addr[1:0], check.read_t, buffer[nodes[1].index].wmask
+  );
+  assign check.stall = nodes[1].valid && !can_get_data(
+      check.addr[1:0], buffer[nodes[1].index].addr[1:0], check.read_t, buffer[nodes[1].index].wmask
+  );
+  assign check.data = get_data(
+      buffer[nodes[1].index].addr[1:0], buffer[nodes[1].index].wmask, buffer[nodes[1].index].wdata
+  );
 endmodule

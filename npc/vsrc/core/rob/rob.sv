@@ -112,7 +112,7 @@ module ysyx_24110006_ROB #(
   assign bp_result.ret = retire_valid[1] ? result[rq2.pop_index].ret : result[rq1.pop_index].ret;
   assign rob_index[0] = rq1.push_index;
   assign rob_index[1] = rq2.push_index;
-  assign quit = retire_valid[1] ? inst2.quit : inst1.quit;
+  assign quit = retire_valid[1] && inst2.quit || retire_valid[0] && inst1.quit;
   assign diff_skip[0] = result[rq1.pop_index].sim.difftest_skip;
   assign diff_skip[1] = result[rq2.pop_index].sim.difftest_skip && retire_valid[1];
   assign retire_pc[0] = inst1.pc;
