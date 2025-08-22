@@ -4,15 +4,12 @@ module ysyx_24110006_IFU (
     input i_clock,
     input i_reset,
     output pipe::ifu2idu_t to_idu,
-    /* if_btb_rq.master o_btb_rq, */
     if_icache_rq.master o_icache_rq,
-    /* if_branch_ctrl.in i_branch_ctrl, */
     input i_flush,
     input i_fencei,
     input i_dcache_fencei_fin,
-    if_rq_btb.out o_btb_rq[2],
+    if_rq_bp.out rq_bp,
     input bp::result_t bp_result,
-    output bp::btb_update_t btb_update,
     if_pipeline_vr.out o_vr
 );
   logic [31:0] pc;
@@ -28,13 +25,12 @@ module ysyx_24110006_IFU (
   always_ff @(posedge i_clock) begin
     if (i_reset) pc <= PC;
     else if (i_flush) begin
-      pc <= bp_result.pred_taken ? bp_result.pc + 4 : bp_result.upc;
+      pc <= bp_result.taken ? bp_result.upc : bp_result.pc + 4;
     end else if (i_fencei) begin
       pc <= bp_result.pc + 4;
     end else if (o_icache_rq.rq && o_icache_rq.cache_ready) begin
-      if (o_btb_rq[0].hit) pc <= o_btb_rq[0].upc;
+      if (rq_bp.pred_taken) pc <= rq_bp.upc;
       else if (pc[3:2] == 2'b11) pc <= pc + 4;
-      else if (o_btb_rq[1].hit) pc <= o_btb_rq[1].upc;
       else pc <= pc + 8;
     end
   end
@@ -65,15 +61,11 @@ module ysyx_24110006_IFU (
   assign o_icache_rq.ready = o_vr.ready;
   assign o_icache_rq.addr = pc;
   assign o_icache_rq.flush = i_fencei;
-  assign o_icache_rq.bp_info_in.d1.pred_taken = o_btb_rq[0].hit;
-  assign o_icache_rq.bp_info_in.d2.pred_taken = o_btb_rq[1].hit;
-  assign o_btb_rq[0].pc = pc;
-  assign o_btb_rq[1].pc = pc + 4;
-  assign btb_update.valid = bp_result.btb_update;
-  assign btb_update.pc = bp_result.pc;
-  assign btb_update.upc = bp_result.upc;
-  assign btb_update.call = bp_result.call;
-  assign btb_update.ret = bp_result.ret;
+  assign o_icache_rq.bp_info_in.d1.pred_taken = rq_bp.pred_taken;
+  assign o_icache_rq.bp_info_in.d1.pred_pc = rq_bp.upc;
+  assign o_icache_rq.bp_info_in.d2.pred_taken = rq_bp.pred_taken;
+  assign o_icache_rq.bp_info_in.d2.pred_pc = rq_bp.upc;
+  assign rq_bp.pc = pc;
   logic [31:0] imm1, imm2;
   assign o_vr.valid = o_icache_rq.valid && !i_flush && !in_flush;
   pipe::ifu2idu_single_t to_idu1, to_idu2;

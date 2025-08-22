@@ -8,7 +8,6 @@ package rob;
     logic has_old_map;
     rf::preg old_index;
     logic quit;
-    bp::info_t bp_info;
     logic type_store;
   } info_single_t;
   typedef struct packed {
@@ -25,7 +24,7 @@ package rob;
     logic [31:0] upc;
     logic flush;
     logic btb_update;
-    logic call, ret;
+    logic call, ret, jal, jalr, branch, pred_taken, taken, pred_err;
 `ifdef CONFIG_SIM
     sim_t sim;
 `endif

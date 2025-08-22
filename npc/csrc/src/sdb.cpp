@@ -145,7 +145,7 @@ SIM_STATE Sdb::exec(uint32_t n) {
     }
     SIM_STATE sim_state = exec_once();
     if (sim_state != SIM_STATE::NORMAL) {
-      if (sim_state == SIM_STATE::QUIT) {
+      if (sim_state == SIM_STATE::QUIT && !args.is_gtk) {
         if (pid_num == 1)
           kill(pids[0], SIGKILL);
         else {

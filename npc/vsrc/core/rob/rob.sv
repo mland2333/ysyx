@@ -102,14 +102,18 @@ module ysyx_24110006_ROB #(
   assign retire_info.d[1].prd = inst2.prd;
 
   assign store_retire = rq1.pop && inst1.type_store || rq2.pop && inst2.type_store;
-
-
-  assign bp_result.btb_update = rq1.pop && result[rq1.pop_index].btb_update;
-  assign bp_result.pred_taken = retire_valid[1] ? inst2.bp_info.pred_taken : inst1.bp_info.pred_taken;
+  
+  assign bp_result.valid = retire_valid[0] || retire_valid[1];
+  assign bp_result.pred_taken = retire_valid[1] ? result[rq2.pop_index].pred_taken : result[rq1.pop_index].pred_taken;
   assign bp_result.pc = retire_valid[1] ? inst2.pc : inst1.pc;
   assign bp_result.upc = retire_valid[1] ? result[rq2.pop_index].upc : result[rq1.pop_index].upc;
   assign bp_result.call = retire_valid[1] ? result[rq2.pop_index].call : result[rq1.pop_index].call;
   assign bp_result.ret = retire_valid[1] ? result[rq2.pop_index].ret : result[rq1.pop_index].ret;
+  assign bp_result.taken = retire_valid[1] ? result[rq2.pop_index].taken : result[rq1.pop_index].taken;
+  assign bp_result.jal = retire_valid[1] ? result[rq2.pop_index].jal : result[rq1.pop_index].jal;
+  assign bp_result.jalr = retire_valid[1] ? result[rq2.pop_index].jalr : result[rq1.pop_index].jalr;
+  assign bp_result.branch = retire_valid[1] ? result[rq2.pop_index].branch : result[rq1.pop_index].branch;
+  assign bp_result.pred_err = retire_valid[1] ? result[rq2.pop_index].pred_err : result[rq1.pop_index].pred_err;
   assign rob_index[0] = rq1.push_index;
   assign rob_index[1] = rq2.push_index;
   assign quit = retire_valid[1] && inst2.quit || retire_valid[0] && inst1.quit;

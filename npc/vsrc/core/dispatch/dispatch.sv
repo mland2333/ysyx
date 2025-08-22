@@ -52,7 +52,6 @@ module ysyx_24110006_DISPATCH (
       rob_info.d[i].has_old_map = dispatch_info.d[i].has_old_map;
       rob_info.d[i].old_index = dispatch_info.d[i].old_index;
       rob_info.d[i].quit = dispatch_info.d[i].quit;
-      rob_info.d[i].bp_info = dispatch_info.d[i].bp_info;
       rob_info.d[i].type_store = dispatch_info.d[i].mem_wen;
     end
   end

@@ -37,16 +37,7 @@ module ysyx_24110006_top (
   logic [31:0] sim_pc_w;
   always_ff @(posedge clock) begin
     if (retire_valid != 0)
-      if (flush) sim_pc_w <= bp_result.pred_taken ? bp_result.pc + 4 : bp_result.upc;
-      else sim_pc_w <= bp_result.pred_taken ? bp_result.upc : bp_result.pc + 4;
-  end
-  always_comb begin
-    if (flush) sim_pc[0] = bp_result.pred_taken ? retire_pc[0] + 4 : bp_result.upc;
-    else sim_pc[0] = bp_result.pred_taken ? bp_result.upc : retire_pc[0] + 4;
-  end
-  always_comb begin
-    if (flush) sim_pc[1] = bp_result.pred_taken ? retire_pc[1] + 4 : bp_result.upc;
-    else sim_pc[1] = bp_result.pred_taken ? bp_result.upc : retire_pc[1] + 4;
+      sim_pc_w <= bp_result.taken ? bp_result.upc : bp_result.pc + 4;
   end
   always_ff @(posedge clock) begin
     if (retire_valid != 0) begin
@@ -131,8 +122,7 @@ module ysyx_24110006_top (
   bypass::src_loction_t src_loction_int[2], src_loction_load, src_loction_store;
   rename::retire_group_t rename_retire;
   bp::result_t bp_result;
-  bp::btb_update_t btb_update;
-  if_rq_btb btb_rq [2]();
+  if_rq_bp rq_bp ();
   lsu::older_store_t older_store;
   bypass::wakeup_group_t wakeup;
   rename::commit_group_t commit;
@@ -154,19 +144,18 @@ module ysyx_24110006_top (
       .i_reset(reset),
       .to_idu(from_ifu),
       .o_icache_rq(ifu_icache),
-      .o_btb_rq(btb_rq),
-      .btb_update(btb_update),
+      .rq_bp(rq_bp),
       .bp_result(bp_result),
       .i_fencei(fencei),
       .i_dcache_fencei_fin(fencei_fin),
       .o_vr(ifu_vr_ibuffer),
       .i_flush(flush)
   );
-  ysyx_24110006_BTB mbtb (
+  BPU mbpu (
       .i_clock(clock),
       .i_reset(reset),
-      .update(btb_update),
-      .i_rq(btb_rq)
+      .result(bp_result),
+      .i_rq(rq_bp)
   );
   ysyx_24110006_ICACHE micache (
       .i_clock(clock),

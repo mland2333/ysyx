@@ -40,15 +40,23 @@ module ysyx_24110006_EXU (
   rob::result_t wb_result;
   assign cmp = alu_result.cmp;
   assign branch = is_beq & zero | is_bne & ~zero | is_blt & cmp | is_bge & ~cmp;
-
-  /* assign wb_result.result = alu_result.r; */
-  assign wb_result.upc = exu_info.upc + exu_info.imm;
-  assign wb_result.btb_update = exu_info.branch_info.jal && !exu_info.bp_info.pred_taken ||
-    branch && !exu_info.bp_info.pred_taken && exu_info.branch_info.branch_back;
-  assign wb_result.flush = (branch || exu_info.branch_info.jal || exu_info.branch_info.jalr) ^
-    exu_info.bp_info.pred_taken;
+  
+  
+  logic [31:0] upc;
+  logic taken, pred_err;
+  assign upc = exu_info.upc + exu_info.imm;
+  assign taken = branch || exu_info.branch_info.jal || exu_info.branch_info.jalr;
+  assign pred_err = taken && exu_info.bp_info.pred_taken && upc != exu_info.bp_info.pred_pc;
+  assign wb_result.upc = upc;
+  assign wb_result.flush = taken ^ exu_info.bp_info.pred_taken || pred_err;
   assign wb_result.call = exu_info.branch_info.jalr && exu_info.vrd == 1;
   assign wb_result.ret = exu_info.branch_info.ret;
+  assign wb_result.taken = taken;
+  assign wb_result.jal = exu_info.branch_info.jal;
+  assign wb_result.jalr = exu_info.branch_info.jalr;
+  assign wb_result.pred_taken = exu_info.bp_info.pred_taken;
+  assign wb_result.branch = exu_info.branch_info.branch;
+  assign wb_result.pred_err = pred_err;
   assign commit.result = wb_result;
   assign commit.valid = o_valid;
   assign commit.index = exu_info.rob_index;
