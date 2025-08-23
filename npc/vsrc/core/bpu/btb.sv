@@ -6,9 +6,10 @@ module BTB #(
     input bp::update_btb_t update,
     if_rq_btb.in i_rq
 );
-  localparam BTB_INDEX_WIDTH = $clog2(NUM);
+  localparam INDEX = $clog2(NUM);
   typedef struct packed {
-    logic [31:BTB_INDEX_WIDTH+4] tag;
+    logic valid;
+    logic [31:INDEX+4] tag;
     logic [1:0] offset;
     logic [31:0] target;
   } btb_t;
@@ -16,36 +17,37 @@ module BTB #(
   function logic [1:0] get_offset(input [31:0] pc);
     return pc[3:2];
   endfunction
-  function logic [BTB_INDEX_WIDTH-1:0] get_index(input [31:0] pc);
-    return pc[BTB_INDEX_WIDTH+3:4];
+  function logic [INDEX-1:0] get_index(input [31:0] pc);
+    return pc[INDEX+3:4];
   endfunction
-  function logic [31:BTB_INDEX_WIDTH+4] get_tag(input [31:0] pc);
-    return pc[31:BTB_INDEX_WIDTH+4];
+  function logic [31:INDEX+4] get_tag(input [31:0] pc);
+    return pc[31:INDEX+4];
   endfunction
+  logic [INDEX-1:0] update_index, rq_index;
+  logic [1:0] update_offset, rq_offset;
+  logic [31:INDEX+4] update_tag, rq_tag;
+  assign update_index = get_index(update.pc);
+  assign rq_index = get_index(i_rq.pc);
+  assign update_offset = get_offset(update.pc);
+  assign rq_offset = get_offset(i_rq.pc);
+  assign update_tag = get_tag(update.pc);
+  assign rq_tag = get_tag(i_rq.pc);
   always_ff @(posedge i_clock) begin
     for (int i = 0; i < NUM; i++) begin
-      if (i_reset) btbs[i] <= 0;
-      else if (update.valid && get_index(
-              update.pc
-          ) == i && get_offset(
-              update.pc
-          ) > btbs[i].offset) begin
-        btbs[get_index(update.pc)].tag <= get_tag(update.pc);
-        btbs[get_index(update.pc)].target <= update.upc;
-        btbs[get_index(update.pc)].offset <= get_offset(update.pc);
+      if (i_reset) begin
+        btbs[i] <= 0;
+      end else if (update.valid && update_index == i && (!btbs[i].valid || update_offset <= btbs[i].offset)) begin
+        btbs[i].tag <= update_tag;
+        btbs[i].target <= update.upc;
+        btbs[i].offset <= update_offset;
+        btbs[i].valid <= 1;
       end
     end
   end
   function logic in_effect(logic [1:0] rq, offset);
     return rq == offset || rq==0 && offset==1 || rq==1&&offset==2 || rq==2&&offset==3;
   endfunction
-  assign i_rq.hit = get_tag(
-      i_rq.pc
-  ) == btbs[get_index(
-      i_rq.pc
-  )].tag && in_effect(
-      get_offset(i_rq.pc), btbs[get_index(i_rq.pc)].offset
-  );
-  assign i_rq.upc = btbs[get_index(i_rq.pc)].target;
-
+  assign i_rq.hit = rq_tag == btbs[rq_index].tag && in_effect(rq_offset, btbs[rq_index].offset);
+  assign i_rq.upc = btbs[rq_index].target;
+  assign i_rq.inst_valid = i_rq.hit && i_rq.pht_hit && rq_offset == btbs[rq_index].offset || rq_offset == 2'b11 ? 2'b01 : 2'b11;
 endmodule

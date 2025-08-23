@@ -116,7 +116,7 @@ module ysyx_24110006_ICACHE #(
   assign i_rq.rdata1 = cache_line_s2.data[{addr_s2.offset, 3'b000}+:32];
   addr_info_t addr_s2_2;
   assign addr_s2_2.offset = addr_s2.offset + 4;
-  assign i_rq.rdata2 = addr_s2.offset[OFFSET_WIDTH-1:OFFSET_WIDTH-3] == 2'b11 ? 0 : cache_line_s2.data[{addr_s2_2.offset, 3'b000}+:32];
+  assign i_rq.rdata2 = cache_line_s2.data[{addr_s2_2.offset, 3'b000}+:32];
   assign i_rq.pc = addr_s2;
   assign i_rq.bp_info_out = bp_info_s2;
 

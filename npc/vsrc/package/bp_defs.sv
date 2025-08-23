@@ -26,6 +26,7 @@ package bp;
   }update_btb_t;
   typedef struct packed{
     info_t d1, d2;
+    logic [1:0] inst_valid;
   }info_group_t;
 
 

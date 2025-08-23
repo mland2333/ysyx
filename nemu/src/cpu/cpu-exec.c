@@ -81,9 +81,15 @@ char* cache_file;
 void cachesim_write(uint32_t pc){
   fwrite(&pc, sizeof(pc), 1, cache_fd);
 }
-
 #endif
 
+#ifdef CONFIG_BRANCHSIM
+FILE* branch_fd;
+char* branch_file;
+void branchsim_write(uint32_t pc){
+  fwrite(&pc, sizeof(pc), 1, cache_fd);
+}
+#endif
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) { log_write("%s\n", _this->logbuf); }

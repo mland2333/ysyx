@@ -46,6 +46,10 @@ module ysyx_24110006_top (
       sim_pc_r[2] <= retire_pc[0];
     end
   end
+  always_comb begin
+    sim_pc[0] = bp_result.taken ? bp_result.upc : retire_pc[0] + 4;
+    sim_pc[1] = bp_result.taken ? bp_result.upc : retire_pc[1] + 4;
+  end
   always @(posedge clock) begin
     if (retire_valid[0]) begin
       if (difftest_skip[0]) diff_skip();

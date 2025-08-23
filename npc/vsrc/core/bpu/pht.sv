@@ -15,7 +15,7 @@ module PHT #(
   fsm pht[NUM];
   always_ff @(posedge i_clock) begin
     for (int i = 0; i < NUM; i++) begin
-      if (i_reset) pht[i] <= weak_nt;
+      if (i_reset) pht[i] <= weak_t;
       else if (update.valid && update.index == i) begin
         case (pht[i])
           strong_nt: begin
