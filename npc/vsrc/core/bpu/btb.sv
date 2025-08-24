@@ -8,12 +8,12 @@ module BTB #(
 );
   localparam INDEX = $clog2(NUM);
   typedef struct packed {
-    logic valid;
     logic [31:INDEX+4] tag;
     logic [1:0] offset;
     logic [31:0] target;
   } btb_t;
   btb_t btbs[NUM];
+  logic [NUM-1:0] valid;
   function logic [1:0] get_offset(input [31:0] pc);
     return pc[3:2];
   endfunction
@@ -35,12 +35,12 @@ module BTB #(
   always_ff @(posedge i_clock) begin
     for (int i = 0; i < NUM; i++) begin
       if (i_reset) begin
-        btbs[i] <= 0;
-      end else if (update.valid && update_index == i && (!btbs[i].valid || update_offset <= btbs[i].offset)) begin
+        valid[i] <= 0;
+      end else if (update.valid && update_index == i && (!valid[i] || update_offset <= btbs[i].offset)) begin
         btbs[i].tag <= update_tag;
         btbs[i].target <= update.upc;
         btbs[i].offset <= update_offset;
-        btbs[i].valid <= 1;
+        valid[i] <= 1;
       end
     end
   end

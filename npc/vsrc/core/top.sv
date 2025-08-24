@@ -36,8 +36,7 @@ module ysyx_24110006_top (
   logic [2:0][31:0] sim_pc_r;
   logic [31:0] sim_pc_w;
   always_ff @(posedge clock) begin
-    if (retire_valid != 0)
-      sim_pc_w <= bp_result.taken ? bp_result.upc : bp_result.pc + 4;
+    if (retire_valid != 0) sim_pc_w <= bp_result.taken ? bp_result.upc : bp_result.pc + 4;
   end
   always_ff @(posedge clock) begin
     if (retire_valid != 0) begin
@@ -63,6 +62,46 @@ module ysyx_24110006_top (
   always_ff @(posedge clock) begin
     if (reset) mtime <= 0;
     else mtime <= mtime + 1;
+  end
+  logic [31:0] branch_miss, jal_miss, jalr_miss;
+  logic [31:0] branch_count, jal_count;
+  perf::bpu_t perf_bpu;
+  always_ff @(posedge clock) begin
+    if (reset) begin
+      branch_miss <= 0;
+      jal_miss <= 0;
+      jalr_miss <= 0;
+    end else if (flush) begin
+      branch_miss <= branch_miss + bp_result.branch;
+      jal_miss <= jal_miss + bp_result.jal;
+      jalr_miss <= jalr_miss + bp_result.jalr;
+    end else if (sim_quit) begin
+      $display("miss: branch, jal, jalr : %d, %d, %d", branch_miss, jal_miss, jalr_miss);
+    end
+  end
+  always_ff @(posedge clock) begin
+    if (reset) begin
+      branch_count <= 0;
+      jal_count <= 0;
+    end else if (sim_quit) begin
+      $display("count: branch, jal : %d, %d", branch_count, jal_count);
+    end else if (retire_valid != 0) begin
+      branch_count <= branch_count + bp_result.branch;
+      jal_count <= jal_count + bp_result.jal;
+    end
+  end
+  perf::type_t branch_type[perf::PERF_BPU_COUNT];
+  always_comb begin
+    for(int i=0; i<perf::PERF_BPU_COUNT; i++)
+      branch_type[i] = perf::type_t'(i);
+  end
+  always_ff @(posedge clock) begin
+    for (int i = 0; i < perf::PERF_BPU_COUNT; i++) begin
+      if (sim_quit) begin
+        $display("%s: pred_right, pred_wrong, unpred_right, unpred_wrong: ", branch_type[i].name(), perf_bpu.d[i].pred_right,
+                 perf_bpu.d[i].pred_wrong, perf_bpu.d[i].unpred_right, perf_bpu.d[i].unpred_wrong);
+      end
+    end
   end
 `endif
   rf::rinfo_t reg_rinfo_int[0], reg_rinfo_load, reg_rinfo_store;
@@ -92,11 +131,11 @@ module ysyx_24110006_top (
   ooo::idu2rename_t idu2rename;
   if_pipeline_vr idu_vr_rename ();
   if_pipeline_vr rename_vr_dispatch ();
-  if_pipeline_vr dispatch_vr_int [2] ();
+  if_pipeline_vr dispatch_vr_int[2] ();
   if_pipeline_vr dispatch_vr_rob ();
   if_pipeline_vr dispatch_vr_load ();
   if_pipeline_vr dispatch_vr_store ();
-  if_pipeline_vr iq_vr_int [2] ();
+  if_pipeline_vr iq_vr_int[2] ();
   if_pipeline_vr iq_vr_load ();
   if_pipeline_vr iq_vr_store ();
   if_pipeline_vr agu_vr_load ();
@@ -107,9 +146,9 @@ module ysyx_24110006_top (
   ooo::issue_int_t issue_int[2];
   ooo::issue_lsu_t issue_load, issue_store;
   rob::commit_info_t commit_int[2], commit_load;
-  rob::wb_index rob_index [2];
+  rob::wb_index rob_index[2];
   logic [1:0] retire_valid;
-  ooo::exu_info_t exu_info [2];
+  ooo::exu_info_t exu_info[2];
   ooo::lsu_info_t lsu_info;
   if_rq_load rq_lunit ();
   if_rq_store rq_sunit ();
@@ -134,7 +173,7 @@ module ysyx_24110006_top (
   assign wakeup = {lsu_wakeup, int_wakeup[1], int_wakeup[0]};
   assign commit = {rename_commit_load, rename_commit_int[1], rename_commit_int[0]};
   rob::wb_index rob_int[2], rob_load, rob_store;
-  logic [31:0] bypass_int [2];
+  logic [31:0] bypass_int[2];
   assign bypass_int[0] = reg_winfo_int[0].wdata;
   assign bypass_int[1] = reg_winfo_int[1].wdata;
   logic store_prior;
@@ -160,6 +199,9 @@ module ysyx_24110006_top (
       .i_reset(reset),
       .result(bp_result),
       .i_rq(rq_bp)
+`ifdef CONFIG_SIM,
+      .perf_bpu(perf_bpu)
+`endif
   );
   ysyx_24110006_ICACHE micache (
       .i_clock(clock),
@@ -245,7 +287,7 @@ module ysyx_24110006_top (
       .store_retire(store_retire)
   );
   generate
-    for (genvar i = 0; i < 2; i++) begin :int_unit
+    for (genvar i = 0; i < 2; i++) begin : int_unit
       ysyx_24110006_INT_IQ mint_iq (
           .i_clock(clock),
           .i_reset(reset),

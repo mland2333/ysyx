@@ -10,9 +10,9 @@ module BHT #(
 );
   localparam INDEX = $clog2(NUM);
   function automatic logic [INDEX-1:0] hash(logic [31:0] pc);
-    /* logic [29:0 ]_pc = {pc[31:4], 2'b0}; */
-    /* return _pc[4:0] ^ _pc[9:5] ^ _pc[14:10] ^ _pc[19:15] ^ _pc[24:20] ^ _pc[29:25]; */
-    return pc[INDEX+3:4];
+    logic [29:0 ]_pc = {pc[31:4], 2'b0};
+    return _pc[6:0] ^ _pc[11:5] ^ _pc[16:10] ^ _pc[21:15] ^ _pc[26:20] ^ _pc[29:23];
+    /* return pc[INDEX+3:4]; */
   endfunction
   logic [NUM-1:0][WIDTH-1:0] bht;
   always @(posedge i_clock) begin
@@ -22,6 +22,6 @@ module BHT #(
     end
   end
 
-  assign i_rq.index   = {bht[hash(i_rq.pc)], i_rq.pc[8:4]};
-  assign update_index = {bht[hash(update.pc)], update.pc[8:4]};
+  assign i_rq.index   = {bht[hash(i_rq.pc)], i_rq.pc[6:4]};
+  assign update_index = {bht[hash(update.pc)], update.pc[6:4]};
 endmodule
