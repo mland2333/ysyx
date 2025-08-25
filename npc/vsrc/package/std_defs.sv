@@ -11,7 +11,7 @@ package mstd;
       capacity = 1;
       data = new[1];
     endfunction
-    function automatic void push_back(ref T d);
+    function automatic void push_back(T d);
       if (size == capacity) begin
         capacity = capacity * 2;
         data = new[capacity] (data);

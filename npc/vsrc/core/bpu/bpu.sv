@@ -96,22 +96,22 @@ module BPU #(
     fd = $fopen("state.logic", "w");
     history = new();
   end
-  always_ff@(posedge i_clock)begin
-    for(int i=0; i<perf::PERF_BPU_COUNT; i++)begin
-      if(perf_trigger[i])begin
-        if(result.pc != _pc) begin
-          $fwrite(fd, "0x%x, %s, %b, %b\n", result.pc, branch_type[i].name(), result.pred_taken, result.taken);
-        end
-        else begin
-          $fwrite(fd, "%s, %s, %b, %b\n", "          ", branch_type[i].name(), result.pred_taken, result.taken);
-        end
-      end
-    end
-  end
+  /* always_ff@(posedge i_clock)begin */
+  /*   for(int i=0; i<perf::PERF_BPU_COUNT; i++)begin */
+  /*     if(perf_trigger[i])begin */
+  /*       if(result.pc != _pc) begin */
+  /*         $fwrite(fd, "0x%x, %s, %b, %b\n", result.pc, branch_type[i].name(), result.pred_taken, result.taken); */
+  /*       end */
+  /*       else begin */
+  /*         $fwrite(fd, "%s, %s, %b, %b\n", "          ", branch_type[i].name(), result.pred_taken, result.taken); */
+  /*       end */
+  /*     end */
+  /*   end */
+  /* end */
 
   always_ff@(posedge i_clock)begin
     if(perf_trigger[perf::branch])
-      history.update(result.pc, result.pred_taken);
+      history.update(result.pc, result.pred_taken, result.taken);
   end
   final begin
     $fclose(fd);
