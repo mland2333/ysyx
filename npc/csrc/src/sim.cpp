@@ -20,15 +20,9 @@ void Sim::reset(int n) {
   top->reset = 0;
 }
 void Sim::cpu_update() {
-  for (int i = 1; i < REG_NUMS; i++) {
-    if (GET_MEMBER(TOP_PREFIX, mrename__DOT__mrat__DOT__areg_state[i]) == 0) {
-      cpu.gpr[i] = 0;
-      continue;
-    }
-    cpu.gpr[i] = GET_MEMBER(TOP_PREFIX, mreg__DOT__sim_rf[i]);
-  }
-
-  cpu.pc = GET_MEMBER(TOP_PREFIX, sim_pc_w);
+  for (int i = 1; i < REG_NUMS; i++)
+    cpu.gpr[i] = GET_MEMBER(regfile__DOT___GEN[i]);
+  cpu.pc = GET_MEMBER(ifu__DOT__pc);
 }
 void Sim::open_wave(const std::string& path) {
   if (wave_on)

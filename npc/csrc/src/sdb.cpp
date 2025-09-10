@@ -62,47 +62,23 @@ Sdb::Sdb(Args &args_, Sim *sim_, Memory *mem_)
   rtc_begin = Utils::get_time();
 }
 void Sdb::perf() {
-  if (sim->GET_MEMBER(TOP_PREFIX, flush))
-    flush_num++;
-  // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__count) == 0) ibuf_empty++;
-  // if(sim->GET_MEMBER(TOP_PREFIX, mibuffer__DOT__full) &&
-  // !sim->top->rootp->__PVT__ysyx_24110006__DOT__top__DOT__ibuffer_vr_idu->ready)
-  // ibuf_full++; if(sim->GET_MEMBER(TOP_PREFIX, mrob__DOT__count) == 64)
-  // rob_full++;
+  
 }
 SIM_STATE Sdb::exec_once() {
   SIM_STATE state = sim->exec_once();
   if(state == SIM_STATE::QUIT) return state;
-  perf();
   if (args.is_itrace && is_time_to_trace) {
     itrace->trace(sim->cpu.pc, sim->cpu.inst);
     /* if (args.is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump()); */
     is_time_to_trace = false;
   }
-  if (args.is_diff && is_time_to_diff) {
-    is_time_to_diff = false;
+  if (args.is_diff) {
     if (!diff->difftest_step(1))
       state = SIM_STATE::DIFF_FAILURE;
-  } else if (args.is_diff && is_time_to_diff2) {
-    is_time_to_diff2 = false;
-    if (!diff->difftest_step(2))
-      state = SIM_STATE::DIFF_FAILURE;
-  }
+  }  
   if (args.is_vga)
     if (device_update() == -1)
       state = SIM_STATE::QUIT;
-  if (sim->GET_MEMBER(TOP_PREFIX, retire_valid)) {
-    if (sim->GET_MEMBER(TOP_PREFIX, retire_valid) == 1)
-      inst_num++;
-    else
-      inst_num += 2;
-    single_inst_clk = 0;
-  } else
-    single_inst_clk++;
-  if (single_inst_clk >= 10000)
-    state = SIM_STATE::TIMEOUT;
-  clk_num++;
-
   return state;
 }
 int pid_num = 0;
@@ -111,7 +87,6 @@ volatile sig_atomic_t wake_up = 0;
 void wakeup_handler(int sig) { wake_up = 1; }
 SIM_STATE Sdb::exec(uint32_t n) {
   for (int i = 0; i < n; i++) {
-
     pid_t pid;
     if (clk_num % 50000 == 0) {
       pid = fork();
@@ -120,7 +95,7 @@ SIM_STATE Sdb::exec(uint32_t n) {
         while (!wake_up) {
           pause();
         }
-        sim->open_wave("npc.fst");
+        sim->open_wave("chisel.fst");
         while (i < n) {
           SIM_STATE sim_state = exec_once();
           if (sim_state != SIM_STATE::NORMAL) {
@@ -202,12 +177,6 @@ int Sdb::run() {
       std::cout << "(npc) ";
     }
   }
-  std::cout << "inst_num = " << inst_num << " clk_num = " << clk_num << '\n';
-  std::cout << "ipc = " << (double)inst_num / (double)clk_num << '\n';
-  std::cout << "flush_num = " << flush_num << '\n';
-  std::cout << "ibuffer_empty_num = " << ibuf_empty << '\n';
-  std::cout << "ibuffer_full_num = " << ibuf_full << '\n';
-  std::cout << "rob_full_num = " << rob_full << '\n';
   switch (result) {
   case SIM_STATE::QUIT:
     if (sim->cpu.gpr[10] == 0)

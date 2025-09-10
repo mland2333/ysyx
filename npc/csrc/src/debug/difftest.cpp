@@ -52,7 +52,7 @@ bool Diff::difftest_step(int n) {
   for (int i = 0; i < n; i++) {
     if (diff_skip_buf[i]) {
       uint32_t temp = cpu->pc;
-      cpu->pc = sim->GET_MEMBER(TOP_PREFIX, sim_pc_r[i]);
+      cpu->pc = sim->GET_MEMBER(_exu_io_upc);
       ref_difftest_regcpy((void *)cpu, DIFFTEST_TO_REF);
       cpu->pc = temp;
       diff_skip_buf[i] = false;

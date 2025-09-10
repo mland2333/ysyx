@@ -2,51 +2,22 @@
 
 #include <cstdint>
 
-#define STRING_HELPER(x) #x
-#define STRING(x) STRING_HELPER(x)
-#define CONCAT_HELPER(x, y) x##y
-#define CONCAT(x, y) CONCAT_HELPER(x, y)
-#define CONCAT_BY(x, y, z) CONCAT(CONCAT(x, z), y)
-#define ADDH(x) x.h
-#define HEADER_FILE(x) STRING(ADDH(x))
-#define ROOT_HEADER_FILE(x) STRING(CONCAT(x, ___024root.h))
-#define SV_HEADER_FILE_HELPER(x) STRING(CONCAT_BY(TOP_NAME, x, _))
-#define SV_HEADER_FILE(x) SV_HEADER_FILE_HELPER(x)
-
-#include HEADER_FILE(TOP_NAME)
-// #include ROOT_HEADER_FILE(TOP_NAME)
-#include SV_HEADER_FILE(ADDH(__024root))
-#include SV_HEADER_FILE(ADDH(if_pipeline_vr))
-// #include SV_HEADER_FILE(ADDH(TOP_NAME_NOTV))
-#include SV_HEADER_FILE(ADDH(_Syms))
 #include "regs.h"
 #include "verilated_fst_c.h"
+#include "Vtop.h"
+#include "Vtop___024root.h"
 #include <args.h>
 #include <cpu.h>
 #include <iostream>
 #include <verilated.h>
 
-#ifdef CONFIG_YSYXSOC
-#define TOP_PREFIX                                                             \
-  top->rootp->ysyxSoCFull->asic->cpu->cpu->top
-#define PC_BEGIN 0xa0000000
-#else
-// #define TOP_PREFIX top->rootp->ysyx_24110006->top
-#define TOP_PREFIX top->rootp->ysyx_24110006__DOT__top__DOT__
+#define TOP_PREFIX top->rootp->top__DOT__
 #define PC_BEGIN 0x80000000
-#endif
-// #define TOP_MEMBER(member) CONCAT(TOP_PREFIX, member)
-// #define INTERFACE(member) CONCAT(INTERFACE_PREFIX, member)
-// #define ARROW_MEMBER(obj, member) obj->member
-// #define GET_MEMBER(obj, member) ARROW_MEMBER(obj, member)
+
 #define GET(x) x
 #define GET_MEMBER_HELPER(obj, member) obj ## member
-#define GET_MEMBER(obj, member) GET_MEMBER_HELPER(obj, member)
-#ifdef CONFIG_RISCV32E
-#define REG_NUMS 16
-#else
+#define GET_MEMBER(member) GET_MEMBER_HELPER(top->rootp->top__DOT__, member)
 #define REG_NUMS 32
-#endif
 enum class SIM_STATE { NORMAL, QUIT, DIFF_FAILURE, TIMEOUT};
 class Sim {
 public:

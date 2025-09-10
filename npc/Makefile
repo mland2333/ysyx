@@ -13,7 +13,7 @@ VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -DCONFIG_YSYXSOC
 CXXFLAGS += -DCONFIG_YSYXSOC
 
 else
-TOPNAME = ysyx_24110006
+TOPNAME = top
 endif
 
 NXDC_FILES = constr/top.nxdc
@@ -29,9 +29,9 @@ ARGS ?=
 CXXFLAGS += -DCONFIG_ICACHE
 CXXFLAGS += -DCONFIG_RENAME
 VERILATOR_CFLAGS += -sv
-VERILATOR_CFLAGS += -DCONFIG_DCACHE
-VERILATOR_CFLAGS += -DCONFIG_IBUFFER
-VERILATOR_CFLAGS += -DCONFIG_RENAME
+# VERILATOR_CFLAGS += -DCONFIG_DCACHE
+# VERILATOR_CFLAGS += -DCONFIG_IBUFFER
+# VERILATOR_CFLAGS += -DCONFIG_RENAME
 VERILATOR_CFLAGS += -Wno-UNOPTFLAT
 # VERILATOR_CFLAGS += -DCONFIG_ICACHE
 # VERILATOR_CFLAGS += -DCONFIG_PIPELINE
@@ -53,7 +53,7 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 CSRCS += $(SRC_AUTO_BIND)
 CXXFLAGS += -fsanitize=address
-LDFLAGS +=  -fsanitize=address -Wl,--print-statistics
+LDFLAGS +=  -fsanitize=address
 include $(NVBOARD_HOME)/scripts/nvboard.mk
 endif
 
@@ -64,20 +64,7 @@ VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
 VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
 VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
 else
-# VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
-VSRCS += ./vsrc/package/std_defs.sv
-VSRCS += ./vsrc/package/perf_defs.sv
-VSRCS += ./vsrc/package/reg_defs.sv
-VSRCS += ./vsrc/package/bp_defs.sv
-VSRCS += ./vsrc/package/pipe_defs.sv
-VSRCS += ./vsrc/package/rename_defs.sv
-VSRCS += ./vsrc/package/bypass_defs.sv
-VSRCS += ./vsrc/package/rob_defs.sv
-VSRCS += ./vsrc/package/alu_defs.sv
-VSRCS += ./vsrc/package/lsu_defs.sv
-VSRCS += ./vsrc/package/ooo_defs.sv
-VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
-# VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
+VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
 endif
 
 CDIRS := $(shell find $(abspath ./csrc) -mindepth 1 -type d)
@@ -95,9 +82,10 @@ LDFLAGS += -fuse-ld=mold
 OBJCACHE = ccache
 CC = ccache gcc
 CXX = ccache g++
-
+MILL_BUILD_FILE = ~/ysyx-workbench/npc/chisel/build.sc
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 	# @rm -rf $(OBJ_DIR)
+	cd ./chisel && mill npc
 	$(VERILATOR) $(VERILATOR_CFLAGS) \
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
