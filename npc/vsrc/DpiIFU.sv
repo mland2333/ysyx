@@ -7,7 +7,7 @@
     );
       import "DPI-C" function int fetch_inst(input int pc);
 
-      always @(pc) begin
+      always @(pc or reset) begin
         if(!reset) inst = fetch_inst(pc);
       end
     endmodule

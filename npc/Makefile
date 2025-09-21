@@ -26,18 +26,8 @@ VERILATOR_CFLAGS += -DCONFIG_SIM
 LIBS += -lcapstone
 ARGS ?=
 
-CXXFLAGS += -DCONFIG_ICACHE
-CXXFLAGS += -DCONFIG_RENAME
 VERILATOR_CFLAGS += -sv
-# VERILATOR_CFLAGS += -DCONFIG_DCACHE
-# VERILATOR_CFLAGS += -DCONFIG_IBUFFER
-# VERILATOR_CFLAGS += -DCONFIG_RENAME
 VERILATOR_CFLAGS += -Wno-UNOPTFLAT
-# VERILATOR_CFLAGS += -DCONFIG_ICACHE
-# VERILATOR_CFLAGS += -DCONFIG_PIPELINE
-# VERILATOR_CFLAGS += -DCONFIG_FORWARD
-# VERILATOR_CFLAGS += -DCONFIG_ICACHE_PIPELINE
-# VERILATOR_CFLAGS += -DCONFIG_BTB
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 BIN = $(BUILD_DIR)/$(TOPNAME)
@@ -47,16 +37,6 @@ default: $(BIN)
 $(shell mkdir -p $(BUILD_DIR))
 
 # constraint file
-ifdef CONFIG_NVBOARD
-SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
-$(SRC_AUTO_BIND): $(NXDC_FILES)
-	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
-CSRCS += $(SRC_AUTO_BIND)
-CXXFLAGS += -fsanitize=address
-LDFLAGS +=  -fsanitize=address
-include $(NVBOARD_HOME)/scripts/nvboard.mk
-endif
-
 ifdef CONFIG_YSYXSOC
 VSRCS += $(YSYX_HOME)/ysyxSoC/build/ysyxSoCFull.v
 VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")

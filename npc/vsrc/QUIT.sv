@@ -4,10 +4,8 @@
       input is_quit
     );
       import "DPI-C" function void quit();
-      import "DPI-C" function void difftest();
       always_comb begin
         if(is_quit) quit();
-        difftest();
       end
     endmodule
     

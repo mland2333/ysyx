@@ -13,5 +13,7 @@
 !README.md
 !*.nxdc
 !*.sv
-chisel/
+# !*.sc
+!chisel/build.sc
+!chisel/src/**/*.scala
 build/

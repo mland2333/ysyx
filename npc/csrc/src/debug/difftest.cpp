@@ -49,19 +49,7 @@ void Diff::init_difftest(const char *ref_so_file, int port) {
 }
 extern Sim *sim;
 bool Diff::difftest_step(int n) {
-  for (int i = 0; i < n; i++) {
-    if (diff_skip_buf[i]) {
-      uint32_t temp = cpu->pc;
-      cpu->pc = sim->GET_MEMBER(_exu_io_upc);
-      ref_difftest_regcpy((void *)cpu, DIFFTEST_TO_REF);
-      cpu->pc = temp;
-      diff_skip_buf[i] = false;
-      /* std::cout << "跳过\n"; */
-      continue;
-    }
-    diff_nums++;
-    ref_difftest_exec(1);
-  }
+  ref_difftest_exec(1);
 
   ref_difftest_regcpy((void *)ref_cpu, DIFFTEST_TO_DUT);
   int i;

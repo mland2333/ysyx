@@ -48,37 +48,21 @@ void Sdb::init() {
 Sdb::Sdb(Args &args_, Sim *sim_, Memory *mem_)
     : args(args_), sim(sim_), mem(mem_) {
   init();
-  if (args.is_itrace)
-    itrace = new Itrace;
-  if (args.is_ftrace)
-    ftrace = new Ftrace(args.image);
   if (args.is_diff) {
     const Area *area = mem_->find_area_has_image();
     diff = new Diff(area, &sim->cpu);
     diff->init_difftest(diff_file, 1234);
   }
-  if (args.is_vga)
-    init_vga();
   rtc_begin = Utils::get_time();
 }
-void Sdb::perf() {
-  
-}
+
 SIM_STATE Sdb::exec_once() {
   SIM_STATE state = sim->exec_once();
   if(state == SIM_STATE::QUIT) return state;
-  if (args.is_itrace && is_time_to_trace) {
-    itrace->trace(sim->cpu.pc, sim->cpu.inst);
-    /* if (args.is_ftrace) ftrace->trace(pc, sim->get_upc(), sim->is_jump()); */
-    is_time_to_trace = false;
-  }
   if (args.is_diff) {
     if (!diff->difftest_step(1))
       state = SIM_STATE::DIFF_FAILURE;
   }  
-  if (args.is_vga)
-    if (device_update() == -1)
-      state = SIM_STATE::QUIT;
   return state;
 }
 int pid_num = 0;
@@ -200,11 +184,6 @@ int Sdb::run() {
 }
 
 Sdb::~Sdb() {
-  // if (args.is_perf) perf.print_summary();
-  if (args.is_ftrace)
-    delete ftrace;
-  if (args.is_itrace)
-    delete itrace;
   if (args.is_diff)
     delete diff;
 }

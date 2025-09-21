@@ -1,17 +1,8 @@
 #include "sim.h"
-#include <cstdio>
 #include <getopt.h>
-#ifdef CONFIG_NVBOARD
-#include <nvboard.h>
-#endif
 
 Sim::Sim(Args &args) : is_nvboard(args.is_nvboard) {
   top = new TOP_NAME;
-#ifdef CONFIG_NVBOARD
-  void nvboard_bind_all_pins(TOP_NAME *);
-  nvboard_bind_all_pins(top);
-  nvboard_init();
-#endif
 }
 void Sim::reset(int n) {
   top->reset = 1;
@@ -50,9 +41,6 @@ void Sim::single_cycle() {
 }
 
 SIM_STATE Sim::exec_once() {
-#ifdef CONFIG_NVBOARD
-  nvboard_update();
-#endif
   single_cycle();
   cpu_update();
   return state;

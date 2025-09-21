@@ -5,12 +5,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <debug/difftest.h>
-#include <debug/ftrace.h>
-#include <debug/itrace.h>
 #include <functional>
 #include <iostream>
 #include <memory.h>
-#include <perf.h>
 #include <sim.h>
 #include <unordered_map>
 enum class NPC_STATE { RUNNING, STOP, ABORT, QUIT };
@@ -20,24 +17,12 @@ class Sdb {
   Args args;
   const char *diff_file =
       "/home/mland/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so";
-  // PerfMonitor perf;
-  uint32_t inst = 0;
-  uint32_t pc = 0;
   Sim *sim;
   Memory *mem;
-  Itrace *itrace;
-  Ftrace *ftrace;
   Diff *diff;
-  bool is_time_to_diff = false;
-  bool is_time_to_diff2 = false;
-  bool is_time_to_trace = false;
-  uint64_t rtc_begin;
+  uint64_t rtc_begin = 0;
   uint64_t inst_num = 0;
   uint64_t clk_num = 0;
-  uint64_t ibuf_empty = 0, ibuf_full = 0, flush_num = 0;
-  uint64_t rob_full = 0;
-  uint64_t single_inst_clk = 0;
-
 public:
   Sdb(Args &args, Sim *sim, Memory *mem);
   ~Sdb();
@@ -66,18 +51,5 @@ public:
   void quit() { sim->quit(); }
   uint64_t get_rtc();
   int run();
-  void diff_skip_step() {
-    if (args.is_diff)
-      diff->diff_skip_step();
-  }
-  void diff_skip_step2() {
-    if (args.is_diff)
-      diff->diff_skip_step2();
-  }
-  void difftest() { is_time_to_diff = true; }
-  void difftest2() { is_time_to_diff2 = true; }
-  void fetch_inst() {
-    is_time_to_trace = true;
-  }
-  void perf();
+  int fetch_inst(int pc) { return mem_read(pc);}
 };
