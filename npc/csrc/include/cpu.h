@@ -8,14 +8,9 @@ template <uint32_t N> class Cpu {
 public:
   uint32_t gpr[N] = {0};
   uint32_t pc = 0;
-  uint32_t inst = 0;
   constexpr static uint32_t nums = N;
   Cpu() {
-#ifdef CONFIG_YSYXSOC
-    pc = 0x30000000;
-#else
     pc = 0x80000000;
-#endif
   }
   void display() {
     for (int i = 0; i < N; i++) {

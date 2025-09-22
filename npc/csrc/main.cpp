@@ -3,7 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <sim.h>
-#include <area.hpp>
+#include <area.h>
 #include <memory.h>
 #include <args.h>
 #include <sdb.h>

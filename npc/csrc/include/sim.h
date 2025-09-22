@@ -24,9 +24,7 @@ public:
   VerilatedContext *contextp;
   VerilatedFstC *tfp;
   bool wave_on = false;
-  bool is_nvboard = false;
   SIM_STATE state = SIM_STATE::NORMAL;
-  uint64_t old_clk = 0;
   TOP_NAME *top;
   Cpu<REG_NUMS> cpu;
   Sim(Args &args);

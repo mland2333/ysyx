@@ -1,3 +1,4 @@
+#include "utils.h"
 #include <assert.h>
 #include <cstdint>
 #include <cstdio>
@@ -11,7 +12,7 @@ void (*ref_difftest_memcpy)(uint64_t addr, void *buf, size_t n,
 void (*ref_difftest_regcpy)(void *dut, bool direction) = nullptr;
 void (*ref_difftest_exec)(uint64_t n) = nullptr;
 
-void Diff::init_difftest(const char *ref_so_file, int port) {
+void Diff::init_difftest(const char *ref_so_file, int port, const char* img) {
   assert(ref_so_file != nullptr);
 
   void *handle;
@@ -43,12 +44,21 @@ void Diff::init_difftest(const char *ref_so_file, int port) {
       ref_so_file);
 
   ref_difftest_init(port);
-  ref_difftest_memcpy(area->base, (void *)area->mem, area->img_size,
+  long image_size = Utils::img_size(img);
+  char* mem = new char[image_size];
+  Utils::load_img(mem, img);
+  ref_difftest_memcpy(0x80000000, (void*)mem, image_size,
                       DIFFTEST_TO_REF);
   ref_difftest_regcpy((void *)cpu, DIFFTEST_TO_REF);
+  delete [] mem;
 }
 extern Sim *sim;
 bool Diff::difftest_step(int n) {
+  if(difftest_skip){
+    ref_difftest_regcpy((void*)cpu, DIFFTEST_TO_REF);
+    difftest_skip = false;
+    return true;
+  }
   ref_difftest_exec(1);
 
   ref_difftest_regcpy((void *)ref_cpu, DIFFTEST_TO_DUT);

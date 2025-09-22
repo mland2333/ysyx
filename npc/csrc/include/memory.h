@@ -1,17 +1,18 @@
 #pragma once
 
+#include <area.h>
 #include <args.h>
-#include <area.hpp>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
-class Memory{
-public:
-  std::vector<Area> areas;
+class Memory {
 
+  std::vector<std::unique_ptr<Area>> areas;
+
+public:
   Memory(Args);
   uint32_t read(uint32_t raddr);
   void write(uint32_t waddr, uint32_t wdata, char wmask);
-  const Area* find_area_by_name(const std::string& name);
-  const Area* find_area_has_image();
+  bool in_devide_area(uint32_t addr);
 };

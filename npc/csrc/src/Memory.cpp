@@ -1,45 +1,37 @@
+#include "area.h"
 #include <cstdint>
+#include <cstdio>
 #include <memory.h>
-Memory::Memory(Args args){
-  areas.emplace_back("sram", 0x80000000, 0x10000000, args.image);
+Memory::Memory(Args args) {
+  areas.emplace_back(
+      std::make_unique<RamArea>(0x80000000, 0x10000000, args.image));
+  areas.emplace_back(std::make_unique<UartArea>(0xa00003f8, 0x4));
+  areas.emplace_back(std::make_unique<ClintArea>(0xa0000048, 0x8));
 }
 
-uint32_t Memory::read(uint32_t raddr){
-  for (auto&area: areas) {
-    if (area.in_mem(raddr)) return area.read<uint32_t>(raddr);
+uint32_t Memory::read(uint32_t raddr) {
+  for (auto &area : areas) {
+    if (area->in_mem(raddr))
+      return area->read(raddr);
   }
-  // throw std::runtime_error("No Area\n");
+  throw std::runtime_error("No Area\n");
   return 0;
 }
 
-void Memory::write(uint32_t waddr, uint32_t wdata, char wmask){
-  for (auto&area: areas) {
-    if (area.in_mem(waddr)) {
-      uint32_t addr = waddr & ~0x3u;
-      uint8_t* data = (uint8_t*)&wdata;
-      for(int i = 0; i<4; i++){
-        if(((1<<i)&wmask) != 0)
-          area.write<uint8_t>(waddr + i, data[i]);
-      }
-      return ;
+void Memory::write(uint32_t waddr, uint32_t wdata, char wmask) {
+  for (auto &area : areas) {
+    if (area->in_mem(waddr)) {
+      area->write(waddr, wdata, wmask);
+      return;
     }
   }
-  return ;
-  // throw std::runtime_error("No Area\n");
+  throw std::runtime_error("No Area\n");
 }
 
-const Area* Memory::find_area_by_name(const std::string& name){
-  for (auto& area : areas) {
-    if (area.name == name) return &area;
+bool Memory::in_devide_area(uint32_t addr) {
+  for (auto &area : areas) {
+    if (area->in_mem(addr))
+      return area->device;
   }
-  // throw std::runtime_error("No Area\n");
-  return nullptr;
-}
-
-const Area* Memory::find_area_has_image(){
-  for (auto& area : areas) {
-    if (area.has_image) return &area;
-  }
-  // throw std::runtime_error("No Area\n");
-  return nullptr;
+  return false;
 }

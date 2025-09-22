@@ -49,20 +49,20 @@ Sdb::Sdb(Args &args_, Sim *sim_, Memory *mem_)
     : args(args_), sim(sim_), mem(mem_) {
   init();
   if (args.is_diff) {
-    const Area *area = mem_->find_area_has_image();
-    diff = new Diff(area, &sim->cpu);
-    diff->init_difftest(diff_file, 1234);
+    diff = new Diff(&sim->cpu);
+    diff->init_difftest(diff_file, 1234, args.image);
   }
-  rtc_begin = Utils::get_time();
 }
 
 SIM_STATE Sdb::exec_once() {
   SIM_STATE state = sim->exec_once();
-  if(state == SIM_STATE::QUIT) return state;
+  clk_num++;
+  if (state == SIM_STATE::QUIT)
+    return state;
   if (args.is_diff) {
     if (!diff->difftest_step(1))
       state = SIM_STATE::DIFF_FAILURE;
-  }  
+  }
   return state;
 }
 int pid_num = 0;
@@ -127,13 +127,10 @@ SIM_STATE Sdb::exec(uint32_t n) {
 }
 
 void Sdb::welcome() {
-
   Log("Build time: %s, %s", __TIME__, __DATE__);
   printf("Welcome to npc\n");
   printf("For help, type \"help\"\n");
 }
-
-uint64_t Sdb::get_rtc() { return Utils::get_time() - rtc_begin; }
 
 int Sdb::run() {
   char args_[32];
@@ -154,7 +151,6 @@ int Sdb::run() {
         sdb_args = nullptr;
       uint64_t now = Utils::get_time();
       result = sdb_map_[cmd](this, sdb_args);
-      // perf.timer += Utils::get_time() - now;
       if (result != SIM_STATE::NORMAL) {
         break;
       }
@@ -182,7 +178,25 @@ int Sdb::run() {
 
   return 0;
 }
-
+uint32_t Sdb::mem_read(uint32_t addr) {
+  if (mem->in_devide_area(addr))
+    diff->difftest_skip = true;
+  if (args.is_mtrace)
+    printf("pc=0x%x, raddr=0x%x, ", sim->cpu.pc, addr);
+  uint32_t rdata = mem->read(addr & ~0x3u);
+  if (args.is_mtrace)
+    printf("rdata=0x%x\n", rdata);
+  return rdata;
+}
+void Sdb::mem_write(uint32_t addr, uint32_t wdata, char wmask) {
+  if (mem->in_devide_area(addr))
+    diff->difftest_skip = true;
+  if (args.is_mtrace)
+    printf("pc=0x%x, waddr=0x%x, wdata=0x%x\n", sim->cpu.pc, addr, wdata);
+  mem->write(addr, wdata, wmask);
+}
+void Sdb::quit() { sim->quit(); }
+int Sdb::fetch_inst(int pc) { return mem_read(pc); }
 Sdb::~Sdb() {
   if (args.is_diff)
     delete diff;

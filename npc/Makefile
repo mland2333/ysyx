@@ -1,51 +1,24 @@
-ifeq ($(VERILATOR_ROOT),)
-VERILATOR = verilator
-else
-export VERILATOR_ROOT
-VERILATOR = $(VERILATOR_ROOT)/bin/verilator
-endif
-
-ifdef CONFIG_YSYXSOC
-TOPNAME = ysyxSoCFull
-INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/uart16550/rtl
-INC_PATH += $(YSYX_HOME)/ysyxSoC/perip/spi/rtl
-VERILATOR_CFLAGS += --timescale "1ns/1ns" --notiming -DCONFIG_YSYXSOC
-CXXFLAGS += -DCONFIG_YSYXSOC
-
-else
 TOPNAME = top
-endif
-
-NXDC_FILES = constr/top.nxdc
 INC_PATH += $(NPC_HOME)/csrc/include
 INC_PATH += $(NPC_HOME)/vsrc
 INC_PATH += $(NPC_HOME)/vsrc/config
 VERILATOR_CFLAGS += -MMD --build -cc  \
 				-O3 --x-assign fast --x-initial fast --noassert --autoflush --trace-fst --trace-structs -DDUMP_INTERFACE_HIERARCHY -Wno-WIDTHEXPAND
 VERILATOR_CFLAGS += -DCONFIG_SIM
-LIBS += -lcapstone
-ARGS ?=
-
 VERILATOR_CFLAGS += -sv
 VERILATOR_CFLAGS += -Wno-UNOPTFLAT
+ARGS ?=
+
 BUILD_DIR = ./build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 BIN = $(BUILD_DIR)/$(TOPNAME)
 IMG ?=
-default: $(BIN)
+# .PHONY: compile run gdb clean perf $(BIN)
+default: complie
 
 $(shell mkdir -p $(BUILD_DIR))
 
-# constraint file
-ifdef CONFIG_YSYXSOC
-VSRCS += $(YSYX_HOME)/ysyxSoC/build/ysyxSoCFull.v
-VSRCS += $(shell find $(abspath ./vsrc/package) -name "*.v" -or -name "*.sv")
-# VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
-VSRCS += $(shell find $(abspath ./vsrc) -path "$(abspath ./vsrc)/package" -prune -o \( -name "*.v" -o -name "*.sv" \) -print)
-VSRCS += $(shell find $(abspath $(YSYX_HOME)/ysyxSoC/perip) -name "*.v")
-else
 VSRCS += $(shell find $(abspath ./vsrc) -name "*.v" -or -name "*.sv")
-endif
 
 CDIRS := $(shell find $(abspath ./csrc) -mindepth 1 -type d)
 CSRCS += $(shell find $(abspath $(CDIRS)) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
@@ -55,30 +28,33 @@ CSRCS += $(shell find $(abspath ./csrc) -maxdepth 1 -name "*.c" -or -name "*.cc"
 INCFLAGS = $(addprefix -I, $(INC_PATH))
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\"" -DTOP_NAME_NOTV="$(TOPNAME)" -g
 LDFLAGS += $(LIBS) -lSDL2
-# CXXFLAGS += -flto
 LDFLAGS += -flto
-# LDFLAGS += -fuse-ld=lld
 LDFLAGS += -fuse-ld=mold
 OBJCACHE = ccache
 CC = ccache gcc
 CXX = ccache g++
-MILL_BUILD_FILE = ~/ysyx-workbench/npc/chisel/build.sc
-$(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
+LIBS += -lcapstone
+$(BIN): $(VSRCS) $(CSRCS)
 	# @rm -rf $(OBJ_DIR)
+	@echo "Running mill npc..."
 	cd ./chisel && mill npc
-	$(VERILATOR) $(VERILATOR_CFLAGS) \
+	@echo "Running verilator..."
+	verilator $(VERILATOR_CFLAGS) \
 		--top-module $(TOPNAME) $^ \
 		$(addprefix -CFLAGS , $(CXXFLAGS)) $(addprefix -LDFLAGS , $(LDFLAGS)) \
 		$(INCFLAGS) --Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN))
+	@echo "Build completed: $(BIN)"
 
-all: default
+compile: $(BIN)
+	@echo "Compilation finished"
 
-sim: all
+sim: compile
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
-run: $(BIN)
-	@$^ $(IMG) $(ARGS)
-gdb: $(BIN)
+run: compile
+	@echo "Running simulation..."
+	@$(BIN) $(IMG) $(ARGS)
+gdb: compile
 	gdb --args $(BIN) $(IMG) $(ARGS)
 clean:
 	rm -rf $(BUILD_DIR)
