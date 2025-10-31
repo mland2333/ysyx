@@ -84,10 +84,22 @@ void cachesim_write(uint32_t pc){
 #endif
 
 #ifdef CONFIG_BRANCHSIM
+typedef struct{
+  uint32_t pc;
+  uint32_t upc;
+  bool taken;
+  uint8_t type;
+}branch_info_t;
 FILE* branch_fd;
 char* branch_file;
-void branchsim_write(uint32_t pc){
-  fwrite(&pc, sizeof(pc), 1, cache_fd);
+branch_info_t branch_info;
+void branchsim_write(branch_info_t* info){
+  fwrite(info, sizeof(branch_info_t), 1, branch_fd);
+}
+uint8_t get_branch_type(uint32_t inst){
+  if((inst & 0x7f) == 0x63) return 1;
+  else if((inst & 0x7f) == 0x6f) return 2;
+  else return 0;
 }
 #endif
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
@@ -96,6 +108,14 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #endif
   IFDEF(CONFIG_ITRACE, insert_buffer(_this->logbuf));
   IFDEF(CONFIG_CACHESIM, cachesim_write(_this->pc));
+#ifdef CONFIG_BRANCHSIM
+  branch_info.pc = _this->pc;
+  branch_info.upc = _this->dnpc;
+  branch_info.taken = _this->snpc != _this->dnpc;
+  branch_info.type = get_branch_type(_this->isa.inst);
+  branchsim_write(&branch_info);
+  // printf("0x%x, 0x%x, jump = %s, jump=%d\n", branch_info.pc, branch_info.upc, branch_info.taken ? "true" : "false", branch_info.type!=0);
+#endif
   IFDEF(CONFIG_WATCHPOINT, watch_update());
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));

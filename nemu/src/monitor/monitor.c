@@ -80,12 +80,16 @@ Ftrace* ftrace;
 #ifdef CONFIG_CACHESIM
 extern char* cache_file;
 #endif
+#ifdef CONFIG_BRANCHSIM
+extern char* branch_file;
+#endif
 bool is_ftrace = false;
 static int parse_args(int argc, char *argv[]) {
   const struct option table[] = {
     {"batch"    , no_argument      , NULL, 'b'},
     {"log"      , required_argument, NULL, 'l'},
     {"cachesim" , required_argument, NULL, 'c'},
+    {"branchsim", required_argument, NULL, 'j'},
     {"diff"     , required_argument, NULL, 'd'},
     {"port"     , required_argument, NULL, 'p'},
     {"help"     , no_argument      , NULL, 'h'},
@@ -93,13 +97,16 @@ static int parse_args(int argc, char *argv[]) {
     {0          , 0                , NULL,  0 },
   };
   int o;
-  while ( (o = getopt_long(argc, argv, "-bhl:d:p:e:c:", table, NULL)) != -1) {
+  while ( (o = getopt_long(argc, argv, "-bhl:d:p:e:c:j:", table, NULL)) != -1) {
     switch (o) {
       case 'b': sdb_set_batch_mode(); break;
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
       case 'l': log_file = optarg; break;
       #ifdef CONFIG_CACHESIM
       case 'c': cache_file = optarg; break;
+      #endif
+      #ifdef CONFIG_BRANCHSIM
+      case 'j': branch_file = optarg; break;
       #endif
       case 'd': diff_so_file = optarg; break;
       case 'e': is_ftrace = true; elf_file = optarg; break;
@@ -154,6 +161,10 @@ void init_monitor(int argc, char *argv[]) {
 #ifdef CONFIG_CACHESIM
   extern FILE* cache_fd;
   cache_fd = fopen(cache_file, "wb");
+#endif
+#ifdef CONFIG_BRANCHSIM
+  extern FILE* branch_fd;
+  branch_fd = fopen(branch_file, "wb");
 #endif
   /* Display welcome message. */
   welcome();

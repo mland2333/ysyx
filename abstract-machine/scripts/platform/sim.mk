@@ -1,25 +1,24 @@
-AM_SRCS := riscv/cachesim/start.S \
-					 riscv/cachesim/bootloader.S \
-           riscv/cachesim/trm.c \
-           riscv/cachesim/ioe.c \
-           riscv/cachesim/timer.c \
-           riscv/cachesim/input.c \
-           riscv/cachesim/cte.c \
-           riscv/cachesim/trap.S \
-					 riscv/cachesim/gpu.c \
+AM_SRCS := riscv/npc/start.S \
+           riscv/npc/trm.c \
+           riscv/npc/ioe.c \
+           riscv/npc/timer.c \
+           riscv/npc/input.c \
+           riscv/npc/cte.c \
+           riscv/npc/trap.S \
+					 riscv/npc/gpu.c \
            platform/dummy/vme.c \
            platform/dummy/mpe.c
 
 CFLAGS    += -fdata-sections -ffunction-sections
-CFLAGS    += -I$(AM_HOME)/am/src/riscv/ysyxsoc/include
-LDSCRIPTS += $(AM_HOME)/scripts/ysyxsoc.ld
-LDFLAGS   += --defsym=_sram_start=0x0f000000 --defsym=_mrom_start=0x20000000
+CFLAGS    += -I$(AM_HOME)/am/src/riscv/npc/include
+LDSCRIPTS += $(AM_HOME)/scripts/linker.ld
+LDFLAGS   += --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0
 LDFLAGS   += --gc-sections -e _start
 
 MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = The insert-arg rule in Makefile will insert mainargs here.
 CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\""$(MAINARGS_PLACEHOLDER)"\"
-NEMUFLAGS += -c /home/mland/ysyx-workbench/cachesim/itrace/$(NAME).dat -b -l $(shell dirname $(IMAGE).elf)/nemu-log.txt
+NEMUFLAGS += -j /home/mland/ysyx-workbench/branchsim/btrace/$(NAME).dat -b -l $(shell dirname $(IMAGE).elf)/nemu-log.txt
 
 
 insert-arg: image
@@ -32,8 +31,13 @@ image: image-dep
 
 
 run: insert-arg
-	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin CONFIG_CACHESIM=1
+	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin CONFIG_BRANCHSIM=1
+	ifdef CACHESIM
 	$(MAKE) -C $(NPC_HOME)/../cachesim run ITRACE=$(NAME).txt
+	endif
+	ifdef BRANCHSIM
+	$(MAKE) -C $(NPC_HOME)/../branchsim run BTRACE=$(NAME).txt
+	endif
 
 cachesim: insert-arg
 	$(MAKE) -C $(NEMU_HOME) ISA=$(ISA) run ARGS="$(NEMUFLAGS)" IMG=$(IMAGE).bin CONFIG_CACHESIM=1

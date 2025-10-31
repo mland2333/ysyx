@@ -34,7 +34,6 @@ module ysyx_24110006_LOAD_UNIT (
   always_ff @(posedge i_clock) begin
     if (r_valid && i_vr.ready && !i_flush) rq <= i_rq;
   end
-  assign o_rq.addr = rq.addr;
   logic commit_valid;
   always_ff@(posedge i_clock)begin
     if(i_reset || i_flush || in_flush) commit_valid <= 0 ;

@@ -35,5 +35,9 @@ int main(int argc, char *argv[]) {
   extern FILE* cache_fd;
   fclose(cache_fd);
 #endif
+#ifdef CONFIG_BRANCHSIM
+  extern FILE* branch_fd;
+  fclose(branch_fd);
+#endif
   return is_exit_status_bad();
 }

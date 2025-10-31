@@ -10,8 +10,7 @@ module BHT #(
 );
   localparam INDEX = $clog2(NUM);
   function automatic logic [INDEX-1:0] hash(logic [31:0] pc);
-    logic [29:0 ]_pc = {pc[31:4], 2'b0};
-    return _pc[6:0] ^ _pc[11:5] ^ _pc[16:10] ^ _pc[21:15] ^ _pc[26:20] ^ _pc[29:23];
+    return pc[31:25] ^ pc[24:18] ^ pc[17:11] ^ pc[10:4] ;
     /* return pc[INDEX+3:4]; */
   endfunction
   logic [NUM-1:0][WIDTH-1:0] bht;

@@ -71,7 +71,7 @@ package perf;
     endfunction
     function void print();
       for (int i = 0; i < history.size; i++) begin
-        if(history.data[i].num >= 200) history.data[i].print();
+        history.data[i].print();
       end
     endfunction
   endclass
